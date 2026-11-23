@@ -158,7 +158,14 @@ function detail(slug: string, overrides: Partial<Detail>): Detail {
       },
     ],
     conflict: null,
-    discussion: { discussionVersion: 1, disputeVersion: 0, disputed: false },
+    discussion: {
+      discussionVersion: 1,
+      disputeVersion: 0,
+      disputed: false,
+      disputeOpen: false,
+      held: false,
+      topicId: null,
+    },
     can,
     history: historyActions.map(([time, action, actor], index) => ({
       id: uuid(900 + index),
