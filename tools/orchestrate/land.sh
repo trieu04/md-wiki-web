@@ -15,6 +15,7 @@ if ! git rebase -q main >/dev/null 2>&1; then
     [ -z "$C" ] && break
     for f in $C; do
       if [ "$f" = pnpm-lock.yaml ]; then git show main:pnpm-lock.yaml > pnpm-lock.yaml && pnpm install --prefer-offline >/dev/null 2>&1 && git add pnpm-lock.yaml
+      elif [ "$f" = docs/system-logic.md ] || [ "$f" = docs/implementation-plan.md ]; then git checkout -q main -- "$f" && git add "$f"   # orchestrator-owned; worktrees only hold copies
       elif python3 -I tools/orchestrate/union-exports.py "$f"; then git add "$f"
       else echo "CONFLICT needs an OPUS merge in $WT: $f"; exit 1; fi
     done
