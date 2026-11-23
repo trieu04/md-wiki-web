@@ -8,7 +8,7 @@ Live tracker for [implementation-plan.md](implementation-plan.md). Updated by th
 | P0-02 | luna | sol | **done** | 1 | attempt 2 fixed secret leaks; review-2 'major' (uv-managed Python) overruled by orchestrator: spec intent is 3.12, met; 2 minors (pydantic <3, caplog INFO) fixed by OPUS |
 | P0-03 | luna → sol → astra | sol | **done** | 5 | a6 (astra) gate PASS, sol PASS no issues under D-28 rubric |
 | P0-04 | luna | sol | **done** | 0 | sol PASS, no issues |
-| P0-05 | astra | sol | running | 0 | |
+| P0-05 | astra | sol | **done** | 1 | a1 review: body-parser 413 → 500, internal bind hardcoded; a2 PASS (12 tests) |
 | P0-06 | sol | astra | running | 0 | |
 | P0-07 | sol | astra | todo | 0 | |
 | P0-08 | sol | astra | **done** | 1 | a1 review: runtime not in clean clone (D-24), non-atomic publish, tests not in pnpm test; a2 PASS, 504/504 deterministic. Minor carried to P0-09: assert state-only variants independent of variants.json |
@@ -48,4 +48,5 @@ none yet
 | Task | Finding | Planned in |
 | --- | --- | --- |
 | P0-01 | API test teardown signals pnpm wrapper; test script rebuilds deps | P0-05 brief |
+| P0-05 | internal route auth test used an unregistered path (fixed in a2) | — |
 | P0-08 | coverage test should assert state-only variants independently of variants.json | P0-09 brief |

@@ -24,6 +24,10 @@ export default tseslint.config(
     },
   },
   {
+    files: ['apps/api/**/*.module.ts', 'apps/api/test/**/*.ts'],
+    rules: { '@typescript-eslint/no-extraneous-class': ['error', { allowWithDecorator: true }] },
+  },
+  {
     files: ['apps/api/vitest.config.ts'],
     languageOptions: {
       parserOptions: {
