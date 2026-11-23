@@ -215,7 +215,7 @@ Common to every P2 task: implement in `apps/web/src/ui/`, add every variant to `
 | P2-02 | `TrustIcon` (exact paths §3), `TrustBadge` (3 variants), `SpreadBar` (+caption), `labelMeta` in `packages/domain` (label → words) | F-01 labels card, F-02 result badge, F-03 header | SVG path strings byte-equal to the frame; `aria-label` on badge link |
 | P2-03 | Button, PillToggle, Chip, CountBadge, AITag, Mono, Mark | F-01, F-02, F-10, C-TopBar | hover/pressed/disabled/loading per approved §6.1 |
 | P2-04 | SearchInput (2 sizes), TextInput, Textarea, Select, Checkbox, Radio, RadioCards, Switch | C-TopBar, F-01, F-02, F-04, F-05, F-07, F-10 | keyboard: space toggles checkbox/switch, arrows move radio; label association |
-| P2-05 | Card (+header), Tabs (with counts, arrow keys), Table (scroll box), Callout (5 tones), Drawer (focus trap, Esc, return focus) | F-01, F-04, F-05, F-09, F-10 | axe: no violations in gallery |
+| P2-05 | Card (+header), Tabs (with counts, arrow keys), Table (scroll box), Callout (5 tones), Drawer (non-modal per F-04 / D-39: focus moves in on open, Esc, return focus) | F-01, F-04, F-05, F-09, F-10 | axe: no violations in gallery |
 | P2-06 | TopBar all `active` values, reader vs page-author, query value | C-TopBar | compared against C-TopBar frame at full width (not the in-frame import) |
 | P2-07 | WorkNav all `active` values, counts, footer | C-WorkNav | |
 | P2-08 | `ReadingLayout`, `WorkspaceLayout`, TanStack Router route tree (all routes in design-system.md §1, screens as empty placeholders), `/__gallery` dev-only | F-01, F-08 | layouts wrap like the frames at 390/768 (side columns stack) |
@@ -291,6 +291,7 @@ Reversible; each is used as written until a human changes it.
 | D-36 | Storage faults and out-of-band lookup (P1-C BLOCKED): `beforeRename`/`afterRename`/`receipt` throw `STORAGE_ERROR` (afterRename after the rename happened), `beforeVerify` makes read-back differ → `VERIFY_FAILED`; indexer uses port `PublicationLookup.lastPublishedSha256` returning `null` until Publication exists (system-logic §3.2, §4) | orchestrator (OPUS) |
 | D-37 | Callout and Drawer gaps (P2-B BLOCKED, UI decision delegated): info/accent callout = white, 1px `accent.tint`, r10, 16/18 (F-10 Your decision); AI callout = white, 1px `border.default`, r10, 16/18 + AITag in heading (F-10 Agent review), no `ai.bg` fill; Drawer has no open/close animation (the brief's mention was an orchestrator error) | orchestrator (OPUS) |
 | D-38 | Admin users contract gap (P1-D BLOCKED): PATCH `/admin/users/{id}` accepts `disabled?: boolean`; `UserDto` defined (no hash, `disabled` flag); disabling deletes sessions, disabled user's tokens → `ACCOUNT_DISABLED`; `LAST_OWNER` when demotion or disabling leaves no enabled owner (system-logic §6) | orchestrator (OPUS) |
+| D-39 | Drawer modality (P2-B BLOCKED): F-04 draws a non-modal side panel (`aria-modal="false"`, no scrim) — frame overrides the plan's "focus trap": no trap, background stays interactive, focus moves into the drawer on open, Esc/close return focus to the trigger | orchestrator (OPUS) |
 | D-13 | Before Phase 9, Home/Page regions whose data does not exist are not rendered (no placeholders) | §4 Phase 3 |
 
 ### 6.1 Decisions on former open questions (2026-11-23, by the orchestrator under the user's delegation)

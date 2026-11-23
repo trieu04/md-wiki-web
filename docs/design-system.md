@@ -148,7 +148,7 @@ Each component lives in `apps/web/src/ui/<Name>.tsx`, takes only presentational 
 | `CountBadge` | dark pill (`#14161B` bg, white, 20px) | C-TopBar, C-WorkNav |
 | `Mono` | JetBrains Mono inline text | F-07, F-10, F-13, F-14 |
 | `Mark` | search highlight | F-02 |
-| `Drawer` | right drawer `role="dialog"` with tabs and close — [D-37] opens/closes instantly, no animation | F-04 |
+| `Drawer` | right drawer `role="dialog"` with tabs and close — [D-37] opens/closes instantly, no animation; [D-39] non-modal side panel as drawn (`aria-modal="false"`, no scrim, page stays interactive, **no focus trap**): on open focus moves to the drawer heading/first control, Esc and the close button close it, focus returns to the trigger | F-04 |
 | `DiffView` | line diff with flagged phrase, inline | F-06 Changes, F-10 Changes (CodeMirror merge) |
 | `MarkdownToolbar` | B, I, H, [ ], ¹, ⊞ buttons with aria-labels | F-06 |
 | `PublishProgress` | phase steps | F-10 scenario publishing/blocked |
