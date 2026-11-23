@@ -293,6 +293,7 @@ Reversible; each is used as written until a human changes it.
 | D-38 | Admin users contract gap (P1-D BLOCKED): PATCH `/admin/users/{id}` accepts `disabled?: boolean`; `UserDto` defined (no hash, `disabled` flag); disabling deletes sessions, disabled user's tokens → `ACCOUNT_DISABLED`; `LAST_OWNER` when demotion or disabling leaves no enabled owner (system-logic §6) | orchestrator (OPUS) |
 | D-39 | Drawer modality (P2-B BLOCKED): F-04 draws a non-modal side panel (`aria-modal="false"`, no scrim) — frame overrides the plan's "focus trap": no trap, background stays interactive, focus moves into the drawer on open, Esc/close return focus to the trigger | orchestrator (OPUS) |
 | D-40 | Auth/admin DTO gaps (P1-D BLOCKED): MeDto, TeamDto, ApiTokenDto fields; admin lists use the cursor envelope; `/auth/session` returns nulls for bad cookies, bad bearer → 401, disabled → 403; scope above role → 400 VALIDATION_FAILED (system-logic §6) | orchestrator (OPUS) |
+| D-41 | Read DTO gaps pre-empted before P1-E: PageSummaryDto, VersionDto, RecentChangeDto, tree/topic filter, search total/pageCount/facet scope/snippets/meta nulls/validation, /context content (system-logic §6) | orchestrator (OPUS) |
 | D-13 | Before Phase 9, Home/Page regions whose data does not exist are not rendered (no placeholders) | §4 Phase 3 |
 
 ### 6.1 Decisions on former open questions (2026-11-23, by the orchestrator under the user's delegation)

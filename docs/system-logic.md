@@ -225,6 +225,14 @@ interface SearchHitDto { path: string; pageTitle: string; anchor: string; sectio
 
 **Search rules**: section-level `tsvector` (`english` config, title weight A, text weight B); relevance = `ts_rank_cd`. `sort=trust` orders by label rank (`checked, reviewed, not_reviewed, recheck, error`) then relevance; `sort=recent` by `updatedAt desc`. The label filter excludes labels not selected **except `recheck` hits, which are always returned** (ux.md › Search). Label never enters `relevance`. Snippet: `ts_headline` with `StartSel/StopSel` sentinels split into `before/hit/after` server-side (no HTML from the server).
 
+**Read DTOs not spelled out above [D-41]** (Phase 1 values; later phases fill the nullable fields):
+- `PageSummaryDto = { path, title, pageLabel: { label, spread }, updatedAt }`. `/wiki/tree?topic=<id>` returns only that topic (unknown id → empty `topics`); topics and pages sorted by name/title, then path.
+- `VersionDto = { versionLabel, sha256, capturedAt }` from `Snapshot` rows, newest first. `/versions/{label}` for an unknown label → `404 NOT_FOUND`; its `PageDto` uses that snapshot's content, sections and labels as computed for those section hashes.
+- `RecentChangeDto = { path, pageTitle, versionLabel, at, changedOutsideReview }` — one item per captured snapshot, newest first; `scope=mine` returns an empty page before Phase 9.
+- `PageDto.maintainers = []` and `usedByTeams = null` until the phases that introduce them.
+- `/search`: `total` = number of matching **sections** after filters, `pageCount` = distinct pages among them; `facets.labels` is counted with every filter applied except the label filter, `facets.topics` with every filter except the topic filter. Up to 2 snippet fragments per hit. `meta.checkedBy`, `meta.sourceName`, `meta.usedByTeams` are `null` before Phase 9. `q` is required, trimmed, 1–200 chars, else `400 VALIDATION_FAILED`; unknown `sort`/`updated`/label values → `400 VALIDATION_FAILED`.
+- `/context?path` returns `content` = the markdown with the status block stripped (same as `PageDto.markdown`); missing → `NOT_FOUND`, bad path → `INVALID_PATH`.
+
 ## 7. Public API — later phases (outline, expanded by each `-00` task)
 
 | Phase | Endpoints |
