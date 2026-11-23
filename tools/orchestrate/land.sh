@@ -7,7 +7,8 @@ ID=$1; MSG=$2
 ROOT=$(git rev-parse --show-toplevel); WT="$(dirname "$ROOT")/md-wiki-web-wt-$ID"
 [ -d "$WT" ] || { echo "no worktree $WT"; exit 2; }
 cd "$WT"
-git add -A && git commit -q -F "$MSG" || { echo "nothing to commit"; exit 2; }
+git add -A && { git diff --cached --quiet || git commit -q -F "$MSG"; }
+git log -1 --format=%s | grep -q "($ID)" || { echo "no task commit on branch"; exit 2; }
 if ! git rebase -q main >/dev/null 2>&1; then
   while :; do
     C=$(git diff --name-only --diff-filter=U)
@@ -17,6 +18,6 @@ if ! git rebase -q main >/dev/null 2>&1; then
     GIT_EDITOR=true git rebase --continue >/dev/null 2>&1 && break
   done
 fi
-tools/orchestrate/gate.sh "$ID" land 2>&1 | grep -E "^(FAIL|GATE)"
-grep -q "^GATE PASS" ".orchestrate/gates/$ID-land.txt" || { echo "gate failed after rebase — not landing"; exit 1; }
+G=$(tools/orchestrate/gate.sh "$ID" land 2>&1); echo "$G" | grep -E "^(FAIL|GATE)"
+echo "$G" | grep -q "^GATE PASS" || { echo "gate failed after rebase — not landing"; exit 1; }
 cd "$ROOT" && git merge --ff-only -q "task/$ID" && git worktree remove --force "$WT" && git branch -q -d "task/$ID" && git log --oneline -1
