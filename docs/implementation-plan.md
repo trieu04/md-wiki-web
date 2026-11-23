@@ -295,6 +295,7 @@ Reversible; each is used as written until a human changes it.
 | D-40 | Auth/admin DTO gaps (P1-D BLOCKED): MeDto, TeamDto, ApiTokenDto fields; admin lists use the cursor envelope; `/auth/session` returns nulls for bad cookies, bad bearer → 401, disabled → 403; scope above role → 400 VALIDATION_FAILED (system-logic §6) | orchestrator (OPUS) |
 | D-41 | Read DTO gaps pre-empted before P1-E: PageSummaryDto, VersionDto, RecentChangeDto, tree/topic filter, search total/pageCount/facet scope/snippets/meta nulls/validation, /context content (system-logic §6) | orchestrator (OPUS) |
 | D-42 | Top-bar search placeholder (P2-B review): frames leave placeholders unstyled (browser #757575, 4.3:1 on canvas — fails AA); top-bar placeholder uses `text.muted` #545B68, accepted pixel deviation on that crop; axe runs on the full /__gallery with color-contrast enabled | orchestrator (OPUS) |
+| D-43 | Phone top bar (pre-empted for P2-C): no menu is drawn, so the TopBar wraps intrinsically as the frame does at 390/768; ux.md's collapsed menu stays undesigned (design-system §6 item 5) | orchestrator (OPUS) |
 | D-13 | Before Phase 9, Home/Page regions whose data does not exist are not rendered (no placeholders) | §4 Phase 3 |
 
 ### 6.1 Decisions on former open questions (2026-11-23, by the orchestrator under the user's delegation)

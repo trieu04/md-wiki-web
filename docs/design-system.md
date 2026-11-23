@@ -167,7 +167,7 @@ Verification widths: **390, 768, 1024, 1440** (phone, tablet, small laptop, fram
 2. Loading states (skeletons/spinners) on any screen.
 3. Empty states, other than copy in ux.md (Home nothing followed, no search results, no attestations, empty Inbox).
 4. Error states for API failures, form field errors, toasts.
-5. Phone top bar: ux.md says nav collapses into a menu and search becomes an icon; the frame just wraps.
+5. Phone top bar: ux.md says nav collapses into a menu and search becomes an icon; the frame just wraps. **[D-43]** Until a menu is designed, the TopBar reproduces the frame's intrinsic wrapping at 390/768 (no collapsing menu, no search icon).
 6. Dark theme values (ux.md says tokens support it; no values drawn).
 7. Screens: Login, Page History, Browse (top-bar "Browse" links to F-03), Notifications (bell), ⌘K search palette, Review tabs *Final page*, *Current page*, *Discussion* (drawn as placeholder text only), Import `.contribution.md` dialog, Assign dialog, Audit log, AI jobs page, 404/403 pages.
 8. Reference-renderer quirk: inside full frames the imported TopBar renders at its intrinsic width (≈976px) instead of stretching; the TopBar is judged against its own frame `C-TopBar` at full width, and frame comparisons mask the top 56px band.
