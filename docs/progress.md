@@ -22,7 +22,7 @@ Live tracker for [implementation-plan.md](implementation-plan.md). Updated by th
 | P2-B | sol | astra | **done** | 3 | a1 BLOCKED → D-37; a2 BLOCKED → D-39; a3 review: placeholder contrast → D-42; a4 PASS; 267/272 exact, axe 0; terra pass |
 | P2-C | sol | astra | **done** | 0 | a1 PASS (2 minors); OPUS fixes on landing: WorkNav idle weight 500 (D-46, 36 → 0 WorkNav diffs), notification dot box-content. 304/340 exact. Fixed P0-G follow-up (Vite binds 127.0.0.1) |
 | P3-A | sol | astra | **done** | 0 | a1 PASS (3 minors: token fixed by OPUS; initials → P3-B; Browse fixture → P3-C); terra derived-screen Login pass; DV-3 Login |
-| P3-B | sol | terra+astra | running (attempt 1) | 0 | merges P3-02,P3-03 |
+| P3-B | sol | terra+astra | **done** | 2 | merges P3-02,P3-03. a2 gate PASS, astra PASS (2 minors); landed by OPUS as 0cc666e with a3's count-line copy fix. a3's partial visual-tooling edits (TopBar-aligned Home/Search scoring) were not landed: kept in `git stash` "P3-B attempt 3 partial visual tooling edits" |
 | P3-C | sol | astra | **done** | 1 | a1 FAIL (section badge not a button; local date formatting); a2 PASS 0 issues. F-03 aligned below TopBar: 0.0000% at 390/768/1440, 0.0026% at 1024; DV-5 History; D-47 deferrals |
 | P3-D | sol | terra+astra | pending | 0 | merges P3-07,P3-08 |
 | P4-A | astra | sol | pending | 0 | merges P4-01,P4-02,P4-03 |
@@ -33,6 +33,8 @@ Live tracker for [implementation-plan.md](implementation-plan.md). Updated by th
 | P5-C | sol | terra+astra | pending | 0 | merges P5-05,P5-06 |
 | P5-D | sol | terra+astra | pending | 0 | merges P5-07,P5-08,P5-09 |
 | H-1 | orchestrator (delegated) | — | done | — | decided D-14..D-21, see plan §6.1 |
+
+**Orchestration change (user, 2026-11-23):** from P3-D on, the Pi workflow (implementation-plan §5) is skipped; tasks run as Claude subagents in worktrees, the orchestrator reviews and commits (D-27 kept). Briefs: `.orchestrate/claude-common.md`.
 
 ## Incidents
 
@@ -79,7 +81,7 @@ none yet
 | P2-A | terra: Mono/Chip crop surroundings white vs light-gray in frame (crop background only; 0% pixel diff) | P2-G — closed (rows pixel-identical; terra P2-G found nothing) |
 | P2-C | wiki name was a build-time define missing from turbo inputs (astra) | P3-A — **fixed** (`/meta`, D-44) |
 | P2-C | Table/scroll crop at 390/768 clipped by the gallery's layout padding (harness, not component) | recheck on the Main/mine screen (P8) |
-| P3-A | TopBar shows fixture initials for signed-in users (astra) | P3-B |
+| P3-A | TopBar shows fixture initials for signed-in users (astra) | P3-B — **fixed** |
 | P3-A | visual-mode Browse link opens a page the fixtures don't serve (astra) | P3-C — **fixed** |
 
 ## Phase report — Phase 0 (Foundations), 2026-11-23
