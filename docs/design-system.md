@@ -50,6 +50,7 @@ A task cites a node as `F-03 Page › <element>` (heading text or `aria-label` f
 | `text.secondary` | `#3A404C` [48] | secondary copy |
 | `text.muted` | `#545B68` [139] | meta, labels, counts |
 | `text.placeholder` | `#8A909C` [11] | unchecked checkbox border, quiet text |
+| `text.input-placeholder` [D-42] | `#545B68` (= `text.muted`) on the top-bar search (`canvas` background); native `#757575` elsewhere on white | frames leave input placeholders unstyled (browser default #757575 = 4.3:1 on `#F6F7F9`, fails AA); accepted pixel deviation on the top-bar search crop |
 | `accent` | `#2453D6` [72] | links, primary buttons, selection, focus ring |
 | `accent.hover` | `#1C42AE` [17] | `a:hover`, avatar initials |
 | `accent.tint` | `#C9D3F2` [4] | accent borders on tinted surfaces |
