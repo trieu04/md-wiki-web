@@ -24,7 +24,7 @@ Live tracker for [implementation-plan.md](implementation-plan.md). Updated by th
 | P3-A | sol | astra | **done** | 0 | a1 PASS (3 minors: token fixed by OPUS; initials → P3-B; Browse fixture → P3-C); terra derived-screen Login pass; DV-3 Login |
 | P3-B | sol | terra+astra | **done** | 2 | merges P3-02,P3-03. a2 gate PASS, astra PASS (2 minors); landed by OPUS as 0cc666e with a3's count-line copy fix. a3's partial visual-tooling edits (TopBar-aligned Home/Search scoring) were not landed: kept in `git stash` "P3-B attempt 3 partial visual tooling edits" |
 | P3-C | sol | astra | **done** | 1 | a1 FAIL (section badge not a button; local date formatting); a2 PASS 0 issues. F-03 aligned below TopBar: 0.0000% at 390/768/1440, 0.0026% at 1024; DV-5 History; D-47 deferrals |
-| P3-D | sol | terra+astra | pending | 0 | merges P3-07,P3-08 |
+| P3-D | Claude agent | OPUS | **done** | 0 | merges P3-07,P3-08. 1c81996. Settings People/Agents (F-14), derived 403 + management forms (DV candidates in D-49..D-52), `pnpm e2e` 2/2 (D-53). Follow-ups: no token expiry/copy button, agent users not creatable from UI, e2e/*.mjs not linted |
 | P4-A | astra | sol | pending | 0 | merges P4-01,P4-02,P4-03 |
 | P4-B | sol | astra | pending | 0 | merges P4-04 |
 | P4-C | sol | terra+astra | pending | 0 | merges P4-05,P4-06 |
