@@ -4,6 +4,12 @@ export function formatDate(date: Date): string {
   return `${String(date.getUTCDate())} ${month.format(date)}`;
 }
 
+export function formatDateTime(date: Date): string {
+  const hours = String(date.getUTCHours()).padStart(2, '0');
+  const minutes = String(date.getUTCMinutes()).padStart(2, '0');
+  return `${formatDate(date)} ${String(date.getUTCFullYear())}, ${hours}:${minutes} UTC`;
+}
+
 export function formatRelative(date: Date, now: Date): string {
   const minutes = Math.floor((now.getTime() - date.getTime()) / 60_000);
   if (minutes < 1) return 'just now';

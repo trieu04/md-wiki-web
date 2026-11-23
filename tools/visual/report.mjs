@@ -1,6 +1,6 @@
 import { mkdir, mkdtemp, rename, rm, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import { diffPng, PIXELMATCH_THRESHOLD } from './diff.mjs';
+import { alignBelowTopBars, diffPng, PIXELMATCH_THRESHOLD } from './diff.mjs';
 
 const escapeHtml = (text) =>
   text.replace(
@@ -16,21 +16,69 @@ export async function writeReport(reportRoot, task, images) {
   const results = [];
   try {
     const sections = [];
-    for (const { label, reference, actual, maskRows } of images) {
+    for (const {
+      label,
+      reference,
+      actual,
+      maskRows,
+      referenceTopBar,
+      actualTopBar,
+      height,
+    } of images) {
       const folder = `image-${results.length + 1}`;
-      const diff = diffPng(reference, actual, { maskRows });
-      const { mismatchPixels, comparedPixels, percent } = diff;
-      results.push({ label, mismatchPixels, comparedPixels, percent });
       await mkdir(join(stage, folder));
+      if (!reference) {
+        results.push({ label });
+        const src = `${folder}/actual.png`;
+        await writeFile(join(stage, src), actual);
+        sections.push(`<section>
+<h2>${escapeHtml(label)}</h2>
+<p>Derived screen (D-16): no reference frame or pixel score.</p>
+<a href="${src}"><img loading="lazy" alt="${escapeHtml(label)}" src="${src}"></a>
+</section>`);
+        continue;
+      }
+      let comparison = [reference, actual];
+      let mask = maskRows;
+      let details = maskRows ? ` · top ${maskRows}px masked` : '';
+      let beforePercent;
+      if (referenceTopBar && actualTopBar) {
+        beforePercent = diffPng(reference, actual, { maskRows }).percent;
+        comparison = alignBelowTopBars(
+          reference,
+          actual,
+          referenceTopBar.bottom,
+          actualTopBar.bottom,
+          height,
+        );
+        mask = 0;
+        details =
+          ` · aligned below TopBar (reference ${referenceTopBar.bottom}px, actual ${actualTopBar.bottom}px)` +
+          `<br>TopBar widths: reference ${referenceTopBar.width.toFixed(1)}px, actual ${actualTopBar.width.toFixed(1)}px. Fixed ${maskRows}px mask before alignment: ${beforePercent.toFixed(4)}%.`;
+        await Promise.all([
+          writeFile(join(stage, folder, 'reference-full.png'), reference),
+          writeFile(join(stage, folder, 'actual-full.png'), actual),
+        ]);
+        details += ` <a href="${folder}/reference-full.png">Full reference</a> · <a href="${folder}/actual-full.png">Full actual</a>`;
+      }
+      const diff = diffPng(...comparison, { maskRows: mask });
+      const { mismatchPixels, comparedPixels, percent } = diff;
+      results.push({
+        label,
+        mismatchPixels,
+        comparedPixels,
+        percent,
+        ...(beforePercent != null && { beforePercent }),
+      });
       await Promise.all([
-        writeFile(join(stage, folder, 'reference.png'), reference),
-        writeFile(join(stage, folder, 'actual.png'), actual),
+        writeFile(join(stage, folder, 'reference.png'), comparison[0]),
+        writeFile(join(stage, folder, 'actual.png'), comparison[1]),
         writeFile(join(stage, folder, 'diff.png'), diff.png),
       ]);
       const mismatch = percent > 0 && percent < 0.0001 ? '&lt;0.0001' : percent.toFixed(4);
       sections.push(`<section>
 <h2>${escapeHtml(label)}</h2>
-<p><strong>${mismatch}% mismatch</strong> (${mismatchPixels} / ${comparedPixels} pixels)${maskRows ? ` · top ${maskRows}px masked` : ''}</p>
+<p><strong>${mismatch}% mismatch</strong> (${mismatchPixels} / ${comparedPixels} pixels)${details}</p>
 <div class="comparison">${['Reference', 'Actual', 'Diff']
         .map((name) => {
           const src = `${folder}/${name.toLowerCase()}.png`;

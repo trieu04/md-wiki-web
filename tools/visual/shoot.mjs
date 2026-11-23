@@ -14,6 +14,7 @@ import { cropPlan, layoutProbeStyle, markLayoutColumns } from '../design-ref/cro
 import referenceConfig from '../design-ref/variants.json' with { type: 'json' };
 import canvas from '../../design/v4/canvas.json' with { type: 'json' };
 import { diffPng, maskRowsFor } from './diff.mjs';
+import { pageHistoryCapture, pageReadingCases } from './page-reading.mjs';
 import { writeReport } from './report.mjs';
 
 const root = fileURLToPath(new URL('../..', import.meta.url));
@@ -40,13 +41,13 @@ async function readReference(manifest, frame, variant, width) {
   if (createHash('sha256').update(png).digest('hex') !== entry.sha256) {
     throw new Error(`Reference checksum mismatch for ${name}; run pnpm design:shots`);
   }
-  return png;
+  return { png, topBar: entry.topBar };
 }
 
 export function capturePlan(cases) {
   if (!Array.isArray(cases) || !cases.length) throw new Error('Expected a nonempty case array');
   const seen = new Set();
-  return cases.flatMap(({ frame, variant, path, ready, prepare }) => {
+  return cases.flatMap(({ frame, variant, path, ready, prepare, topBarSelector }) => {
     const board = canvas.boards[`${frame}.dc.html`];
     if (!board || typeof variant !== 'string' || !/^[a-z0-9-]+$/.test(variant)) {
       throw new Error(`Invalid frame/variant: ${frame}/${variant}`);
@@ -77,6 +78,7 @@ export function capturePlan(cases) {
       prepare,
       width,
       height: board.h,
+      topBarSelector,
     }));
   });
 }
@@ -116,7 +118,7 @@ async function withApp(run) {
   }
 }
 
-async function capture(browser, origin, { path, ready, prepare, width, height, crop }) {
+async function capture(browser, origin, { path, ready, prepare, width, height, crop }, measure) {
   const context = await browser.newContext({
     baseURL: origin,
     viewport: { width, height },
@@ -154,6 +156,7 @@ async function capture(browser, origin, { path, ready, prepare, width, height, c
         }
         for (let i = 0; i < 2; i++) await new Promise(requestAnimationFrame);
       });
+      await measure?.(page);
       const options = { animations: 'disabled', caret: 'hide' };
       let png;
       if (crop) {
@@ -197,26 +200,60 @@ async function capture(browser, origin, { path, ready, prepare, width, height, c
   }
 }
 
-async function runCases(cases, manifest) {
+async function runCases(cases, manifest, derived = []) {
   const plan = capturePlan(cases);
   const entries = await Promise.all(
-    plan.map(async (entry) => ({
-      ...entry,
-      label: `${entry.frame}/${entry.variant}@${entry.width}`,
-      reference: await readReference(manifest, entry.frame, entry.variant, entry.width),
-    })),
+    plan.map(async (entry) => {
+      const { png, topBar } = await readReference(
+        manifest,
+        entry.frame,
+        entry.variant,
+        entry.width,
+      );
+      if (entry.topBarSelector && !topBar) {
+        throw new Error(
+          `No TopBar measurement for ${entry.frame}/${entry.variant}@${entry.width}; run pnpm design:shots`,
+        );
+      }
+      return {
+        ...entry,
+        label: `${entry.frame}/${entry.variant}@${entry.width}`,
+        reference: png,
+        referenceTopBar: topBar,
+      };
+    }),
   );
   return withApp(async (browser, origin) => {
     const images = [];
     for (const entry of entries) {
       try {
+        let actualTopBar;
+        const actual = await capture(browser, origin, entry, async (page) => {
+          if (entry.topBarSelector) {
+            actualTopBar = await page.locator(entry.topBarSelector).evaluate((header) => {
+              const { bottom, width } = header.getBoundingClientRect();
+              return { bottom: Math.round(bottom + window.scrollY), width };
+            });
+          }
+        });
         images.push({
           ...entry,
-          actual: await capture(browser, origin, entry),
+          actual,
+          actualTopBar,
           maskRows: maskRowsFor(entry.frame),
         });
       } catch (error) {
         throw new Error(`${entry.label}: ${error.message}`, { cause: error });
+      }
+    }
+    for (const { name, ...screen } of derived) {
+      for (const width of widths) {
+        const label = `${name}@${width}`;
+        try {
+          images.push({ label, actual: await capture(browser, origin, { ...screen, width }) });
+        } catch (error) {
+          throw new Error(`${label}: ${error.message}`, { cause: error });
+        }
       }
     }
     return images;
@@ -348,7 +385,7 @@ async function runGallery() {
 }
 
 async function selfTest(manifest) {
-  const reference = await readReference(manifest, 'Search', 'recent', 390);
+  const { png: reference } = await readReference(manifest, 'Search', 'recent', 390);
   const maskRows = maskRowsFor('Search');
   assert.equal(diffPng(reference, reference, { maskRows }).percent, 0);
   return withApp(async (browser, origin) => {
@@ -376,7 +413,7 @@ async function selfTest(manifest) {
             // Standalone probe (not a product frame): move only this element.
             const scroller = document.createElement('div');
             scroller.style.cssText =
-              'position: absolute; left: 0; top: 64px; width: 96px; height: 80px; overflow: hidden;';
+              'position: absolute; left: 0; top: 64px; width: 96px; height: 80px; overflow: hidden; background: white;';
             const content = document.createElement('div');
             content.style.cssText = 'position: relative; width: 192px; height: 160px;';
             const element = document.createElement('div');
@@ -438,7 +475,15 @@ async function main() {
   if (!/^[a-z0-9][a-z0-9_-]*$/i.test(task)) throw new Error(`Invalid task ID: ${task}`);
   let images;
   if (values.gallery) {
-    images = await runGallery();
+    const screens =
+      task === 'P3-C'
+        ? await runCases(
+            pageReadingCases,
+            JSON.parse(await readFile(join(references, 'manifest.json'), 'utf8')),
+            [pageHistoryCapture],
+          )
+        : [];
+    images = [...screens, ...(await runGallery())];
   } else {
     const manifest = JSON.parse(await readFile(join(references, 'manifest.json'), 'utf8'));
     images = values['self-test']
@@ -449,7 +494,7 @@ async function main() {
         );
   }
   const { index } = await writeReport(join(root, 'visual/report'), task, images);
-  log(`Wrote ${images.length} comparisons to ${index}`);
+  log(`Wrote ${images.length} captures to ${index}`);
 }
 
 if (argv[1] && pathToFileURL(resolve(argv[1])).href === import.meta.url) await main();

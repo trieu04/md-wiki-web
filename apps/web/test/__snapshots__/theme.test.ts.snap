@@ -56,6 +56,7 @@ exports[`lists the design-system §2 tokens and the exact frame additions in §2
   "--color-trust-reviewed-fg": "#5c4300",
   "--color-wiki-body": "#22252b",
   "--container-article": "820px",
+  "--container-page-nav": "250px",
   "--container-rail-max": "400px",
   "--container-rail-min": "260px",
   "--container-reading": "1240px",

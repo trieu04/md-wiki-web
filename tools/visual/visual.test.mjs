@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
 import { PNG } from 'pngjs';
-import { diffPng, maskRowsFor } from './diff.mjs';
+import { alignBelowTopBars, diffPng, maskRowsFor } from './diff.mjs';
 import { writeReport } from './report.mjs';
 import { capturePlan } from './shoot.mjs';
 
@@ -56,6 +56,20 @@ test('size mismatch counts only pixels present in either unmasked image', () => 
   assert.equal(diffPng(solid(10, 56), solid(15, 56), { maskRows: 56 }).comparedPixels, 0);
 });
 
+test('aligns by the measured top-bar edges and compares content still present below the viewport', () => {
+  const reference = solid(20, 80, 246, { x: 0, y: 40, w: 20, h: 1 });
+  const actual = solid(20, 80, 246, { x: 0, y: 30, w: 20, h: 1 });
+  const aligned = alignBelowTopBars(reference, actual, 30, 20, 80);
+  assert.ok(diffPng(reference, actual, { maskRows: 20 }).percent > 0);
+  assert.equal(diffPng(...aligned).percent, 0);
+  assert.equal(diffPng(...aligned).comparedPixels, 20 * 60);
+
+  const overflowing = solid(20, 85, 246, { x: 0, y: 40, w: 20, h: 1 });
+  const overflow = alignBelowTopBars(overflowing, actual, 30, 20, 75);
+  assert.equal(diffPng(...overflow).mismatchPixels, 20 * 5);
+  assert.throws(() => alignBelowTopBars(reference, actual, 80, 20, 80), /Invalid TopBar bottom/);
+});
+
 test('capture plan uses reference viewport widths and board heights', () => {
   const config = {
     frame: 'Search',
@@ -101,4 +115,38 @@ test('report is self-contained and shows the exact comparison and mask', async (
   }
   assert.ok(html.includes('src="image-1/diff.png"'));
   assert.equal(PNG.sync.read(await readFile(join(root, 'Test/image-1/diff.png'))).height, 70);
+});
+
+test('reports both the fixed-band and aligned measurements without losing the full screenshots', async (t) => {
+  const root = await mkdtemp(join(tmpdir(), 'visual-aligned-'));
+  t.after(() => rm(root, { recursive: true, force: true }));
+  const reference = solid(20, 90, 246, { x: 0, y: 70, w: 20, h: 1 });
+  const actual = solid(20, 90, 246, { x: 0, y: 60, w: 20, h: 1 });
+  const { index, results } = await writeReport(root, 'Test', [
+    {
+      label: 'Page',
+      reference,
+      actual,
+      maskRows: 56,
+      height: 90,
+      referenceTopBar: { width: 19, bottom: 67 },
+      actualTopBar: { width: 20, bottom: 57 },
+    },
+  ]);
+  assert.equal(results[0].percent, 0);
+  assert.ok(results[0].beforePercent > 0);
+  const html = await readFile(index, 'utf8');
+  assert.match(html, /reference 67px, actual 57px/);
+  assert.match(html, /Fixed 56px mask before alignment:/);
+  assert.deepEqual(await readFile(join(root, 'Test/image-1/actual-full.png')), actual);
+});
+
+test('reports a D-16 screen as a capture, not a comparison', async (t) => {
+  const root = await mkdtemp(join(tmpdir(), 'visual-derived-'));
+  t.after(() => rm(root, { recursive: true, force: true }));
+  const actual = solid(20, 70);
+  const { index, results } = await writeReport(root, 'Test', [{ label: 'History', actual }]);
+  assert.deepEqual(results, [{ label: 'History' }]);
+  assert.match(await readFile(index, 'utf8'), /no reference frame or pixel score/);
+  assert.deepEqual(await readFile(join(root, 'Test/image-1/actual.png')), actual);
 });

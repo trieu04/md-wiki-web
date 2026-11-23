@@ -22,6 +22,18 @@ The runner builds the actual React app in Vite's `visual` mode into a temporary 
 
 Open `visual/report/<ID>/index.html` for original-size reference, actual, and diff PNGs. The TopBar's first 56px are excluded only for full frames, not for standalone TopBar or WorkNav. Image dimensions that differ count as mismatches outside the overlap (excluding the mask). Mismatch percentages are diagnostic; there is no implicit pass/fail threshold for a screen.
 
+## Phase 3 reading view (P3-C)
+
+`pnpm visual:shots --task P3-C --gallery` adds full-screen F-03 comparisons for
+its initial state and four other section selections. Use the `Page/*-reading`
+references; the renderer omits deferred regions before layout and keeps the
+original F-03 screenshots for later phases. The report gives both the usual
+56px-mask score and the content score after cropping each image below its
+measured TopBar. The shorter content viewport is padded with canvas only to
+normalize viewport height; differences in overflow still count. Full original
+screenshots are linked. The same report includes History captures at all four
+widths for D-16 review (no pixel score).
+
 ## Component gallery (D-32/D-35)
 
 After building the domain workspace (`pnpm --filter @md-wiki/domain build`), run

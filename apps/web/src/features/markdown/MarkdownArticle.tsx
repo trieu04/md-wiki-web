@@ -5,7 +5,7 @@ import type { Root } from 'hast';
 import { markdownModel, type PageDto } from './model';
 import './markdown.css';
 
-function renderContent(tree: Root) {
+export function renderMarkdown(tree: Root) {
   return toJsxRuntime(tree, {
     Fragment,
     jsx,
@@ -26,10 +26,10 @@ export function MarkdownArticle({ markdown, sections }: Pick<PageDto, 'markdown'
           id={section?.anchor}
           aria-label={section?.title || undefined}
         >
-          {renderContent(content)}
+          {renderMarkdown(content)}
         </section>
       ))}
-      {model.footnotes && renderContent(model.footnotes)}
+      {model.footnotes && renderMarkdown(model.footnotes)}
     </div>
   );
 }

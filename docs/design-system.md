@@ -104,6 +104,7 @@ Exact values that appear in a frame but were missing from §2.1–2.3 are added 
 | --- | --- | --- |
 | `size.icon-badge-sm` | 13px | F-03 page header badge |
 | `container.article` | 820px (article column max width) | F-03 article |
+| `container.page-nav` | 250px (page navigation max width) | F-03 topic and contents nav |
 | `space.mark-x` | 1px (horizontal padding of search highlight) | F-02 result snippet |
 | `radius.mark` | 2px | F-02 result snippet |
 | `space.9` | 9px | F-03 section badge horizontal padding |

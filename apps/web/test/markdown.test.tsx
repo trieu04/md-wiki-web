@@ -119,14 +119,12 @@ it('maps portable wikilinks to local pages and leaves unsafe or invalid targets 
   expect(screen.getByText('[[not-a-link]]').tagName).toBe('CODE');
 });
 
-it('renders the F-03 fixture text and citations verbatim', () => {
+it('renders the F-03 section text verbatim, with structured citations deferred (D-47)', () => {
   const { container } = render(<MarkdownArticle {...visualPage} />);
-  for (const { id, title, body, fn } of frameSamples.Page.data) {
+  for (const { id, title, body } of frameSamples.Page.data) {
     const wrapper = container.querySelector(`#${id}`);
     expect(wrapper).toHaveTextContent(title);
-    expect(wrapper?.querySelector('p')).toHaveTextContent(`${body}${fn}`);
+    expect(wrapper?.querySelector('p')?.textContent).toBe(body);
   }
-  for (const { cite, status } of frameSamples.Page.sources) {
-    expect(screen.getByText(`${cite} · ${status}`, { exact: false })).toBeVisible();
-  }
+  expect(screen.queryByRole('heading', { name: 'Sources' })).not.toBeInTheDocument();
 });

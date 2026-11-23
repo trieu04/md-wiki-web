@@ -1,51 +1,68 @@
-import { useQuery } from '@tanstack/react-query';
-import { useEffect } from 'react';
-import { useApi } from '../../lib/api';
-import { messageForError } from '../../lib/error-copy';
-import { Button } from '../../ui/Button';
+import { Link } from '@tanstack/react-router';
+import type { PageArticleModel } from '../page/model';
 import { Callout } from '../../ui/Callout';
-import { Card } from '../../ui/Card';
-import { MarkdownArticle } from './MarkdownArticle';
-import { pageQueryOptions } from './page-query';
+import { TrustBadge } from '../../ui/TrustBadge';
+import { renderMarkdown } from './MarkdownArticle';
 
-export function MarkdownPageContent({ path, anchor }: { path: string; anchor: string }) {
-  const page = useQuery(pageQueryOptions(useApi(), path));
-  useEffect(() => {
-    if (page.data && anchor) document.getElementById(anchor)?.scrollIntoView();
-  }, [page.data, anchor]);
-
-  if (page.isPending) return <Card title="Wiki page" state={{ type: 'loading' }} />;
-  if (page.isError) {
-    return (
-      <Callout
-        tone="error"
-        queryError
-        title="Could not load the page."
-        action={
-          <Button variant="secondary" onClick={() => void page.refetch()}>
-            Try again
-          </Button>
-        }
-      >
-        {messageForError(page.error)}
-      </Callout>
-    );
-  }
-  if (!page.data.markdown.trim()) {
-    return (
-      <Card
-        title={page.data.title}
-        header
-        state={{ type: 'empty', message: 'This page is empty.' }}
-      />
-    );
-  }
+export function MarkdownPageContent({
+  markdown,
+  selected,
+  onSelectSection,
+}: {
+  markdown: PageArticleModel['markdown'];
+  selected: string;
+  onSelectSection: (anchor: string) => void;
+}) {
   return (
-    <article
-      aria-label={page.data.title}
-      className="min-w-0 max-w-article rounded-12 border border-edge bg-surface px-40px pt-28px pb-36px"
-    >
-      <MarkdownArticle {...page.data} />
-    </article>
+    <div className="wiki-markdown flex min-w-0 flex-col gap-22px">
+      {markdown.groups.map(({ section, heading, warning, content }, index) => (
+        <section
+          id={section?.anchor}
+          key={section?.anchor ?? index}
+          aria-label={section?.title || undefined}
+          className={`-mx-14px rounded-10 px-14px ${section?.anchor === selected ? 'bg-subtle-section' : ''}`}
+        >
+          {(heading || section) && (
+            <div className="flex flex-wrap items-center justify-between gap-x-14px gap-y-8px">
+              {heading && renderMarkdown({ type: 'root', children: [heading] })}
+              {section && (
+                <span className="inline-flex font-ui">
+                  <TrustBadge
+                    variant="section"
+                    label={section.label.label}
+                    context={section.title}
+                    onClick={() => {
+                      onSelectSection(section.anchor);
+                    }}
+                  />
+                </span>
+              )}
+            </div>
+          )}
+          {warning && (
+            <div className="font-ui leading-base">
+              <Callout tone="warn" title={warning.title}>
+                <span>
+                  {warning.reason}
+                  {warning.fixHref && (
+                    <>
+                      {' '}
+                      <Link
+                        to={warning.fixHref}
+                        className="font-semibold text-trust-recheck-fg underline hover:text-trust-recheck-note-fg"
+                      >
+                        See the proposed fix
+                      </Link>
+                    </>
+                  )}
+                </span>
+              </Callout>
+            </div>
+          )}
+          {renderMarkdown(content)}
+        </section>
+      ))}
+      {markdown.footnotes && renderMarkdown(markdown.footnotes)}
+    </div>
   );
 }

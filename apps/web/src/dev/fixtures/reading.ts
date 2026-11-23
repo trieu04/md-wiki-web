@@ -9,6 +9,17 @@ export const visualMeta = {
 
 const frame = frameSamples.Page;
 const updatedAt = '2026-11-23T00:00:00Z';
+const sampleLabels = {
+  checked: 'checked',
+  reviewed: 'reviewed',
+  recheck: 'recheck',
+  error: 'error',
+  none: 'not_reviewed',
+} as const;
+function sampleLabel(key: string) {
+  if (!Object.hasOwn(sampleLabels, key)) throw new Error(`Unknown F-03 label: ${key}`);
+  return sampleLabels[key as keyof typeof sampleLabels];
+}
 export const visualPage = {
   path: 'confocal-microscopy.md',
   title: 'Confocal microscopy',
@@ -23,12 +34,8 @@ export const visualPage = {
     label: 'recheck',
     spread: { checked: 1, reviewed: 2, not_reviewed: 1, recheck: 1, error: 0 },
   },
-  markdown: [
-    ...frame.data.map(({ title, body, fn }) => `## ${title}\n\n${body}[^${fn}]`),
-    ...frame.sources.map(
-      ({ cite, status }, index) => `[^${String(index + 1)}]: ${cite} · ${status}`,
-    ),
-  ].join('\n\n'),
+  // F-03 source markers point to structured citations, not author-written footnotes (D-47).
+  markdown: frame.data.map(({ title, body }) => `## ${title}\n\n${body}`).join('\n\n'),
   sections: frame.data.map(({ id, title, k }): PageDto['sections'][number] => {
     const reason =
       k === 'recheck'
@@ -40,15 +47,45 @@ export const visualPage = {
       level: 2,
       hash: '0'.repeat(64),
       label: {
-        label: k === 'none' ? 'not_reviewed' : (k as 'reviewed' | 'checked' | 'recheck'),
+        label: sampleLabel(k),
         since: k === 'none' ? null : updatedAt,
         reviewerKind: k === 'reviewed' ? 'agent' : k === 'checked' ? 'person' : null,
         reason,
       },
-      warn: reason ? { reason, fixProposalSlug: null } : null,
+      warn: reason ? { reason, fixProposalSlug: 'confocal-pinhole-wording' } : null,
     };
   }),
 } satisfies PageDto;
+
+export const visualPageTopic = {
+  ...visualPage.topic,
+  pageCount: frame.siblings.length,
+  pages: frame.siblings.map(({ name, k, cur }) => ({
+    path: cur ? visualPage.path : `${name.toLowerCase().replaceAll(' ', '-')}.md`,
+    title: name,
+    pageLabel: cur
+      ? visualPage.pageLabel
+      : {
+          label: sampleLabel(k),
+          spread: {
+            checked: 0,
+            reviewed: 0,
+            not_reviewed: 0,
+            recheck: 0,
+            error: 0,
+            [sampleLabel(k)]: 1,
+          },
+        },
+    updatedAt,
+  })),
+} satisfies components['schemas']['TreeTopicDto'];
+
+export const visualHistory = {
+  items: [
+    { versionLabel: visualPage.versionLabel, sha256: visualPage.sha256, capturedAt: updatedAt },
+  ],
+  nextCursor: null,
+} satisfies components['schemas']['HistoryDto'];
 
 export const visualSession = {
   user: {

@@ -1,3 +1,4 @@
+import { Buffer } from 'node:buffer';
 import pixelmatch from 'pixelmatch';
 import { PNG } from 'pngjs';
 
@@ -9,6 +10,32 @@ function copyRows(image, target, width, rows, sourceY, targetY) {
     const offset = (sourceY + y) * image.width * 4;
     image.data.copy(target.data, (targetY + y) * target.width * 4, offset, offset + width * 4);
   }
+}
+
+export function alignBelowTopBars(
+  referenceBytes,
+  actualBytes,
+  referenceBottom,
+  actualBottom,
+  viewportHeight,
+) {
+  // Keep the same minimum content viewport in both images. Only account for
+  // blank viewport space lost to the taller bar; never pad away page overflow.
+  const minHeight = viewportHeight - Math.min(referenceBottom, actualBottom);
+  return [
+    [referenceBytes, referenceBottom],
+    [actualBytes, actualBottom],
+  ].map(([bytes, bottom]) => {
+    const image = PNG.sync.read(bytes);
+    if (!Number.isInteger(bottom) || bottom <= 0 || bottom >= image.height) {
+      throw new Error(`Invalid TopBar bottom: ${bottom}`);
+    }
+    const rows = image.height - bottom;
+    const cropped = new PNG({ width: image.width, height: Math.max(rows, minHeight) });
+    copyRows(image, cropped, image.width, rows, bottom, 0);
+    cropped.data.fill(Buffer.from([0xf6, 0xf7, 0xf9, 0xff]), rows * image.width * 4);
+    return PNG.sync.write(cropped);
+  });
 }
 
 export function diffPng(referenceBytes, actualBytes, { maskRows = 0 } = {}) {

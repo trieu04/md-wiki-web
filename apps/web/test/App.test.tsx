@@ -5,7 +5,12 @@ import { userEvent } from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
 import { setupServer } from 'msw/node';
 import { afterAll, afterEach, beforeAll, beforeEach, expect, it, vi } from 'vitest';
-import { visualPage, visualSession } from '../src/dev/fixtures/reading';
+import {
+  visualHistory,
+  visualPage,
+  visualPageTopic,
+  visualSession,
+} from '../src/dev/fixtures/reading';
 import { createAppRouter } from '../src/router';
 
 const server = setupServer(
@@ -14,6 +19,8 @@ const server = setupServer(
   ),
   http.get('*/api/v1/auth/session', () => HttpResponse.json(visualSession)),
   http.get('*/api/v1/wiki/pages/:path', () => HttpResponse.json(visualPage)),
+  http.get('*/api/v1/wiki/pages/:path/history', () => HttpResponse.json(visualHistory)),
+  http.get('*/api/v1/wiki/tree', () => HttpResponse.json({ topics: [visualPageTopic] })),
 );
 beforeAll(() => {
   server.listen({ onUnhandledRequest: 'error' });
@@ -129,6 +136,182 @@ it('loads a nested wiki path as one API parameter and renders the requested sect
   expect(router.state.matches.at(-1)?.params).toMatchObject({ _splat: expectedPath });
   expect(read).toHaveBeenCalled();
   expect(scrollIntoView).toHaveBeenCalled();
+});
+
+it('shows page and section labels, follows section anchors and omits deferred regions', async () => {
+  const tree = vi.fn(({ request }: { request: Request }) => {
+    expect(new URL(request.url).searchParams.get('topic')).toBe(visualPage.topic.id);
+    return HttpResponse.json({ topics: [visualPageTopic] });
+  });
+  server.use(http.get('*/api/v1/wiki/tree', tree));
+  const router = open(`/wiki/${visualPage.path}`);
+  const nav = await screen.findByRole('navigation', { name: 'Pages and contents' });
+  expect(
+    await within(nav).findByRole('link', {
+      name: 'Confocal microscopy: Under re-check',
+      current: 'page',
+    }),
+  ).toBeVisible();
+  expect(tree).toHaveBeenCalled();
+  const principle = within(nav).getByRole('link', { name: 'Principle: Under re-check' });
+  expect(principle).toHaveAttribute('aria-current', 'location');
+  expect(router.history.location.href).toBe(`/wiki/${visualPage.path}`);
+  const overview = within(nav).getByRole('link', { name: 'Overview: Reviewed' });
+  await userEvent.setup().click(overview);
+  expect(overview).toHaveAttribute('aria-current', 'location');
+  expect(principle).not.toHaveAttribute('aria-current');
+  expect(router.history.location.href).toBe(`/wiki/${visualPage.path}#overview`);
+  const article = screen.getByRole('article', { name: visualPage.title });
+  expect(within(article).getByText('1 section under re-check')).toBeVisible();
+  expect(within(article).getByRole('img', { name: /5 sections/ })).toBeVisible();
+  const note = within(article).getByRole('note');
+  expect(note).toHaveTextContent(visualPage.sections[1]?.warn?.reason ?? 'missing reason');
+  expect(within(note).getByRole('link', { name: 'See the proposed fix' })).toHaveAttribute(
+    'href',
+    '/work/proposals/confocal-pinhole-wording',
+  );
+  expect(within(article).getByRole('link', { name: 'History' })).toHaveAttribute(
+    'href',
+    `/wiki/${visualPage.path}/history`,
+  );
+  expect(
+    within(article).queryByText(
+      /^(Follow|Suggest an edit|Ask a question|Sources|Changed outside review|Did this page help with your work\?|This section:)$/u,
+    ),
+  ).not.toBeInTheDocument();
+  expect(screen.queryByRole('complementary', { name: 'About this page' })).not.toBeInTheDocument();
+});
+
+it.each(['click', 'Enter', 'Space'] as const)(
+  'selects a section with the heading TrustBadge by %s without opening the Why rail',
+  async (input) => {
+    const url = `/wiki/${visualPage.path}?section=overview`;
+    const router = open(`${url}#overview`);
+    const article = await screen.findByRole('article', { name: visualPage.title });
+    const nav = screen.getByRole('navigation', { name: 'Pages and contents' });
+    const overview = within(nav).getByRole('link', { name: 'Overview: Reviewed' });
+    expect(overview).toHaveAttribute('aria-current', 'location');
+    const region = within(article).getByRole('region', { name: 'Resolution' });
+    const badge = within(region).getByRole('button', {
+      name: /^Resolution: Checked against source/u,
+    });
+    const user = userEvent.setup();
+    if (input === 'click') {
+      await user.click(badge);
+    } else {
+      badge.focus();
+      await user.keyboard(input === 'Enter' ? '{Enter}' : ' ');
+    }
+    expect(router.history.location.href).toBe(`${url}#resolution`);
+    expect(badge).toHaveFocus();
+    expect(region).toHaveClass('bg-subtle-section');
+    expect(overview).not.toHaveAttribute('aria-current');
+    expect(within(nav).getByRole('link', { name: /^Resolution:/u })).toHaveAttribute(
+      'aria-current',
+      'location',
+    );
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('complementary', { name: 'About this page' }),
+    ).not.toBeInTheDocument();
+  },
+);
+
+it('opens nested History, loads cursor pages and retries without dropping existing versions', async () => {
+  const path = 'microscopy/Guide 文.md';
+  const pageUrl = '/wiki/microscopy/Guide%20%E6%96%87.md';
+  const cursor = 'test+opaque/=cursor';
+  const [first] = visualHistory.items;
+  if (!first) throw new Error('Missing history fixture');
+  const older = { ...first, versionLabel: '20261122-1' };
+  let attempts = 0;
+  const read = vi.fn(
+    ({ params, request }: { params: Record<string, unknown>; request: Request }) => {
+      expect(params.path).toBe(path);
+      const value = new URL(request.url).searchParams.get('cursor');
+      if (value == null) return HttpResponse.json({ ...visualHistory, nextCursor: cursor });
+      expect(value).toBe(cursor);
+      if (++attempts === 1) return problem('STORAGE_ERROR', 500);
+      return HttpResponse.json({ items: [older], nextCursor: null });
+    },
+  );
+  server.use(
+    http.get('*/api/v1/wiki/pages/:path', ({ params }) => {
+      expect(params.path).toBe(path);
+      return HttpResponse.json({ ...visualPage, path });
+    }),
+    http.get('*/api/v1/wiki/pages/:path/history', read),
+  );
+  const router = open(pageUrl);
+  const user = userEvent.setup();
+  const historyLink = await screen.findByRole('link', { name: 'History' });
+  expect(historyLink).toHaveAttribute('href', `${pageUrl}/history`);
+  await user.click(historyLink);
+  expect(await screen.findByRole('heading', { level: 1, name: 'History' })).toBeVisible();
+  expect(router.state.matches.at(-1)?.params).toMatchObject({ _splat: path });
+  const table = await screen.findByRole('table', { name: 'Versions' });
+  expect(within(table).getByText(visualPage.versionLabel)).toHaveClass('font-mono');
+  await user.click(screen.getByRole('button', { name: 'Load more' }));
+  expect(await screen.findByRole('alert')).toHaveTextContent('The wiki storage is unavailable.');
+  expect(within(table).getByText(visualPage.versionLabel)).toBeVisible();
+  await user.click(screen.getByRole('button', { name: 'Try again' }));
+  expect(await within(table).findByText(older.versionLabel)).toBeVisible();
+  expect(screen.queryByRole('button', { name: 'Load more' })).not.toBeInTheDocument();
+  expect(read).toHaveBeenCalledTimes(3);
+  await user.click(
+    within(screen.getByRole('article', { name: 'History' })).getByRole('link', {
+      name: visualPage.title,
+    }),
+  );
+  expect(await screen.findByRole('heading', { level: 1, name: visualPage.title })).toBeVisible();
+});
+
+it('keeps page content readable when the topic tree fails and can retry into an empty tree', async () => {
+  let release = () => {};
+  const pending = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  server.use(
+    http.get('*/api/v1/wiki/tree', async () => {
+      await pending;
+      return problem('STORAGE_ERROR', 500);
+    }),
+  );
+  open(`/wiki/${visualPage.path}`);
+  const nav = await screen.findByRole('navigation', { name: 'Pages and contents' });
+  expect(within(nav).getByRole('region', { name: visualPage.topic.name })).toHaveAttribute(
+    'aria-busy',
+    'true',
+  );
+  release();
+  expect(await within(nav).findByRole('alert')).toHaveTextContent(
+    'The wiki storage is unavailable.',
+  );
+  expect(screen.getByRole('article', { name: visualPage.title })).toBeVisible();
+  server.use(http.get('*/api/v1/wiki/tree', () => HttpResponse.json({ topics: [] })));
+  await userEvent.setup().click(within(nav).getByRole('button', { name: 'Try again' }));
+  expect(await within(nav).findByText('No pages in this topic.')).toBeVisible();
+  expect(within(nav).getByRole('link', { name: 'Principle: Under re-check' })).toBeVisible();
+});
+
+it('shows an approved loading card then a neutral empty state for History', async () => {
+  let finish = () => {};
+  const pending = new Promise<void>((resolve) => {
+    finish = resolve;
+  });
+  server.use(
+    http.get('*/api/v1/wiki/pages/:path/history', async () => {
+      await pending;
+      return HttpResponse.json({ items: [], nextCursor: null });
+    }),
+  );
+  open(`/wiki/${visualPage.path}/history`);
+  expect(await screen.findByRole('region', { name: 'Versions' })).toHaveAttribute(
+    'aria-busy',
+    'true',
+  );
+  finish();
+  expect(await screen.findByText('No versions yet.')).toBeVisible();
 });
 
 it('renders the approved loading, query-error and empty states', async () => {

@@ -13,8 +13,8 @@ import {
 } from '@tanstack/react-router';
 import type { RouterHistory } from '@tanstack/react-router';
 import { LoginScreen } from './features/login/LoginScreen';
-import { MarkdownPageContent } from './features/markdown/MarkdownPageContent';
 import { pageQueryOptions } from './features/markdown/page-query';
+import { PageScreen } from './features/page/PageScreen';
 import { ApiContext, createWebData, safeNext, useWikiMeta } from './lib/api';
 import { useSession } from './lib/session';
 import { ReadingLayout } from './ui/ReadingLayout';
@@ -43,6 +43,7 @@ function useTopBar(active: TopBarActive, query = '') {
     active,
     query,
     wikiName: meta.data?.wikiName ?? 'Wiki',
+    ...(import.meta.env.MODE === 'visual' && { browseHref: '/wiki/confocal-microscopy.md' }),
     role: data?.user?.roles.some(
       (role) => role === 'owner' || role === 'reviewer' || role === 'publisher',
     )
@@ -98,11 +99,15 @@ const page = createRoute({
   component: function WikiPage() {
     const { _splat } = page.useParams();
     const anchor = useLocation({ select: ({ hash }) => hash });
-    return (
-      <ReadingLayout topBar={useTopBar('browse')}>
-        {_splat && <MarkdownPageContent path={_splat} anchor={anchor} />}
-      </ReadingLayout>
-    );
+    return <PageScreen path={_splat ?? ''} anchor={anchor} topBar={useTopBar('browse')} />;
+  },
+});
+const history = createRoute({
+  getParentRoute: () => root,
+  path: '/wiki/{$}/history',
+  component: function WikiHistory() {
+    const { _splat } = history.useParams();
+    return <PageScreen path={_splat ?? ''} history topBar={useTopBar('browse')} />;
   },
 });
 const login = createRoute({
@@ -203,6 +208,7 @@ const routeTree = root.addChildren([
   home,
   search,
   page,
+  history,
   login,
   editor,
   you,

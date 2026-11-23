@@ -13,14 +13,19 @@ type SpreadBarProps = {
   spread: Partial<Record<Label, number>>;
   ariaLabel: string;
   caption: string;
+  flowWithParent?: boolean;
 };
 
-export function SpreadBar({ size, spread, ariaLabel, caption }: SpreadBarProps) {
+export function SpreadBar({ size, spread, ariaLabel, caption, flowWithParent }: SpreadBarProps) {
   const small = size === 'sm';
   return (
     <div
       className={
-        small ? 'flex flex-wrap items-center gap-x-16px gap-y-8px' : 'flex w-full flex-col gap-6px'
+        flowWithParent
+          ? 'contents'
+          : small
+            ? 'flex flex-wrap items-center gap-x-16px gap-y-8px'
+            : 'flex w-full flex-col gap-6px'
       }
     >
       <div

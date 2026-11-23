@@ -1,5 +1,5 @@
 import { expect, it } from 'vitest';
-import { formatRelative, formatDate } from '../src/time.js';
+import { formatRelative, formatDate, formatDateTime } from '../src/time.js';
 
 const minute = 60_000,
   hour = minute * 60,
@@ -21,4 +21,11 @@ it.each<[number, string]>([
 });
 it('formats day and short month in UTC without year or leading zero', () => {
   expect(formatDate(new Date('2026-11-04T23:50:00-02:00'))).toBe('5 Nov');
+});
+
+it.each([
+  ['2026-12-31T23:05:59-01:00', '1 Jan 2027, 00:05 UTC'],
+  ['2026-11-22T18:04:00Z', '22 Nov 2026, 18:04 UTC'],
+])('formats the capture timestamp %s in UTC', (date, expected) => {
+  expect(formatDateTime(new Date(date))).toBe(expected);
 });

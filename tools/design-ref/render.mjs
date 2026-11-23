@@ -136,6 +136,28 @@ function trackNetwork(page) {
   };
 }
 
+// Phase 3 intentionally omits the deferred F-03 regions before layout. Keep
+// the original shots/crops intact for Phase 9 and show History as the only action.
+const pageReadingOmissions = `
+  [data-sc-name="Page"] aside[aria-label="About this page"],
+  [data-sc-name="Page"] article #sources,
+  [data-sc-name="Page"] article sup:has(a[href="#sources"]),
+  [data-sc-name="Page"] article [aria-label="Feedback on this page"],
+  [data-sc-name="Page"] article > header button,
+  [data-sc-name="Page"] article > header a[href="Editor.dc.html"],
+  [data-sc-name="Page"] article > header a[href="Discussions.dc.html"],
+  [data-sc-name="Page"] article > section > div:has(> a[href="Trust.dc.html"]) {
+    display: none !important;
+  }
+`;
+const pageReadingVariants = new Set([
+  'principle',
+  'overview',
+  'resolution',
+  'detectors',
+  'history',
+]);
+
 async function shoot(context, server, stage, { frame, variant, width, height, config, crops }) {
   const page = await context.newPage();
   const network = trackNetwork(page);
@@ -230,8 +252,25 @@ async function shoot(context, server, stage, { frame, variant, width, height, co
         throw new Error(`${id} (${selector}): ${error.message}`, { cause: error });
       }
     }
+    let projection;
+    if (frame === 'Page' && pageReadingVariants.has(variant)) {
+      await page.addStyleTag({ content: pageReadingOmissions });
+      await page.evaluate(() => window.scrollTo(0, 0));
+      const topBar = await page.locator('[data-sc-name="TopBar"] header').evaluate((header) => {
+        const { bottom, width } = header.getBoundingClientRect();
+        return { bottom: Math.round(bottom + window.scrollY), width };
+      });
+      const phase3 = await page.screenshot({
+        fullPage: true,
+        animations: 'disabled',
+        caret: 'hide',
+      });
+      const projectedVariant = `${variant}-reading`;
+      await writeFile(join(stage, frame, `${projectedVariant}@${width}.png`), phase3);
+      projection = { frame, variant: projectedVariant, width, topBar, sha256: hash(phase3) };
+    }
     network.check();
-    return { frame: { frame, variant, width, sha256: hash(png) }, elements };
+    return { frame: { frame, variant, width, sha256: hash(png) }, projection, elements };
   } catch (error) {
     const label = `${frame}/${variant}@${width}`;
     try {
@@ -302,7 +341,7 @@ async function captureReferences(stage, runtime) {
       await writeFile(
         join(stage, 'manifest.json'),
         `${JSON.stringify(
-          manifest.map((entry) => entry.frame),
+          manifest.flatMap(({ frame, projection }) => (projection ? [frame, projection] : [frame])),
           null,
           2,
         )}\n`,
@@ -314,7 +353,10 @@ async function captureReferences(stage, runtime) {
           `${JSON.stringify(elements, null, 2)}\n`,
         );
       }
-      return { frames: manifest.length, crops: elements.length };
+      return {
+        frames: manifest.length + manifest.filter(({ projection }) => projection).length,
+        crops: elements.length,
+      };
     } finally {
       await browser.close();
     }
