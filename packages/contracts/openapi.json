@@ -3048,7 +3048,8 @@
             "schema": {
               "enum": [
                 "ping",
-                "quality_check"
+                "quality_check",
+                "agent_review"
               ],
               "type": "string"
             }
@@ -4946,6 +4947,598 @@
         ]
       }
     },
+    "/api/v1/proposals/{slug}/escalations": {
+      "post": {
+        "operationId": "EscalationsController_escalate",
+        "parameters": [
+          {
+            "name": "slug",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EscalationStateDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_FAILED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN | ACCOUNT_DISABLED | CSRF_INVALID",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "NOT_ASSIGNED | SELF_REVIEW | PRECONDITION_FAILED | ALREADY_EXISTS",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Escalations"
+        ]
+      }
+    },
+    "/api/v1/proposals/{slug}/escalation": {
+      "get": {
+        "operationId": "EscalationsController_state",
+        "parameters": [
+          {
+            "name": "slug",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EscalationStateDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_FAILED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN | ACCOUNT_DISABLED | CSRF_INVALID",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Escalations"
+        ]
+      }
+    },
+    "/api/v1/inbox": {
+      "get": {
+        "operationId": "InboxController_list",
+        "parameters": [
+          {
+            "name": "tab",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "enum": [
+                "all",
+                "decide",
+                "check",
+                "spot",
+                "mentions",
+                "done"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 25
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InboxDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_FAILED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN | ACCOUNT_DISABLED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Inbox"
+        ]
+      }
+    },
+    "/api/v1/spot-checks/{id}": {
+      "get": {
+        "operationId": "SpotChecksController_get",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SpotCheckDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_FAILED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN | ACCOUNT_DISABLED | CSRF_INVALID",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "SpotChecks"
+        ]
+      }
+    },
+    "/api/v1/spot-checks/{id}/outcome": {
+      "post": {
+        "operationId": "SpotChecksController_decide",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SpotCheckDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_FAILED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN | ACCOUNT_DISABLED | CSRF_INVALID",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "NOT_ASSIGNED | SELF_REVIEW | PRECONDITION_FAILED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "SpotChecks"
+        ]
+      }
+    },
+    "/api/v1/admin/review-settings": {
+      "get": {
+        "operationId": "ReviewAdminController_get",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReviewSettingsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN | ACCOUNT_DISABLED | CSRF_INVALID",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "ReviewAdmin"
+        ]
+      },
+      "patch": {
+        "operationId": "ReviewAdminController_update",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReviewSettingsDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_FAILED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN | ACCOUNT_DISABLED | CSRF_INVALID",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "ReviewAdmin"
+        ]
+      }
+    },
+    "/api/v1/admin/agent/pause": {
+      "post": {
+        "operationId": "ReviewAdminController_pause",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReviewSettingsDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_FAILED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN | ACCOUNT_DISABLED | CSRF_INVALID",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "ReviewAdmin"
+        ]
+      }
+    },
+    "/api/v1/ops/agent": {
+      "get": {
+        "operationId": "AgentOpsController_get",
+        "parameters": [
+          {
+            "name": "days",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 90,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentMetricsDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_FAILED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN | ACCOUNT_DISABLED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "AgentOps"
+        ]
+      }
+    },
     "/api/v1/dev/ping": {
       "post": {
         "operationId": "DevPingController_create",
@@ -6588,6 +7181,7 @@
           "page.changed",
           "discussion.changed",
           "quality.changed",
+          "inbox.changed",
           "ping"
         ]
       },
@@ -8096,7 +8690,8 @@
         "type": "string",
         "enum": [
           "ping",
-          "quality_check"
+          "quality_check",
+          "agent_review"
         ]
       },
       "JobTrigger": {
@@ -8105,7 +8700,10 @@
           "dev",
           "submit",
           "rerun",
-          "self_check"
+          "self_check",
+          "after_check",
+          "returned",
+          "resumed"
         ]
       },
       "JobSubjectDto": {
@@ -10571,6 +11169,1144 @@
           "disputeVersion",
           "action",
           "reason"
+        ]
+      },
+      "FiredTriggerDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "detail": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "detail"
+        ]
+      },
+      "PageAuthorSource": {
+        "type": "string",
+        "enum": [
+          "owners_file",
+          "published_authors",
+          "owner"
+        ]
+      },
+      "PageAuthorsDto": {
+        "type": "object",
+        "properties": {
+          "users": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/UserRefDto"
+            }
+          },
+          "source": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PageAuthorSource"
+              }
+            ]
+          }
+        },
+        "required": [
+          "users",
+          "source"
+        ]
+      },
+      "EscalationKind": {
+        "type": "string",
+        "enum": [
+          "rereview",
+          "discussion"
+        ]
+      },
+      "EscalationResolution": {
+        "type": "string",
+        "enum": [
+          "decided",
+          "withdrawn",
+          "discussion_closed"
+        ]
+      },
+      "EscalationDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "kind": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EscalationKind"
+              }
+            ]
+          },
+          "triggers": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "notes": {
+            "type": "string",
+            "description": "The requester’s notes (the agent’s notes, AI)"
+          },
+          "requestedBy": {
+            "$ref": "#/components/schemas/UserRefDto"
+          },
+          "assignees": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/UserRefDto"
+            }
+          },
+          "topicId": {
+            "type": "string",
+            "nullable": true,
+            "format": "uuid"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "resolvedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "resolution": {
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EscalationResolution"
+              }
+            ]
+          },
+          "reminders": {
+            "type": "integer"
+          },
+          "lastRemindedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "triggers",
+          "notes",
+          "requestedBy",
+          "assignees",
+          "topicId",
+          "createdAt",
+          "resolvedAt",
+          "resolution",
+          "reminders",
+          "lastRemindedAt"
+        ]
+      },
+      "AgentOutcome": {
+        "type": "string",
+        "enum": [
+          "approved",
+          "rejected",
+          "escalated",
+          "left_pending"
+        ]
+      },
+      "AgentVerdict": {
+        "type": "string",
+        "enum": [
+          "approve",
+          "reject",
+          "escalate"
+        ]
+      },
+      "AgentClaimDto": {
+        "type": "object",
+        "properties": {
+          "claim": {
+            "type": "string"
+          },
+          "source": {
+            "type": "string",
+            "nullable": true
+          },
+          "supported": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "claim",
+          "source",
+          "supported"
+        ]
+      },
+      "AgentRefusalDto": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "triggers": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "code",
+          "triggers"
+        ]
+      },
+      "AgentReviewDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "jobId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "outcome": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AgentOutcome"
+              }
+            ]
+          },
+          "verdict": {
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AgentVerdict"
+              }
+            ]
+          },
+          "notes": {
+            "type": "string"
+          },
+          "claims": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AgentClaimDto"
+            }
+          },
+          "refusals": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AgentRefusalDto"
+            }
+          },
+          "decisionId": {
+            "type": "string",
+            "nullable": true,
+            "format": "uuid"
+          },
+          "escalationId": {
+            "type": "string",
+            "nullable": true,
+            "format": "uuid"
+          },
+          "provider": {
+            "type": "string",
+            "nullable": true
+          },
+          "model": {
+            "type": "string",
+            "nullable": true
+          },
+          "promptVersion": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "jobId",
+          "outcome",
+          "verdict",
+          "notes",
+          "claims",
+          "refusals",
+          "decisionId",
+          "escalationId",
+          "provider",
+          "model",
+          "promptVersion",
+          "createdAt"
+        ]
+      },
+      "AgentRunTrigger": {
+        "type": "string",
+        "enum": [
+          "after_check",
+          "returned",
+          "resumed"
+        ]
+      },
+      "AgentRunDto": {
+        "type": "object",
+        "properties": {
+          "jobId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "status": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/JobStatus"
+              }
+            ]
+          },
+          "trigger": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AgentRunTrigger"
+              }
+            ]
+          },
+          "errorCode": {
+            "type": "string",
+            "nullable": true
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "jobId",
+          "status",
+          "trigger",
+          "errorCode",
+          "createdAt"
+        ]
+      },
+      "SpotCheckOutcome": {
+        "type": "string",
+        "enum": [
+          "passed",
+          "failed"
+        ]
+      },
+      "SpotCheckDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "targetPath": {
+            "type": "string"
+          },
+          "pageTitle": {
+            "type": "string"
+          },
+          "versionLabel": {
+            "type": "string"
+          },
+          "decisionId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "reviewer": {
+            "$ref": "#/components/schemas/UserRefDto"
+          },
+          "assignees": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/UserRefDto"
+            }
+          },
+          "sampledAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "outcome": {
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SpotCheckOutcome"
+              }
+            ]
+          },
+          "reason": {
+            "type": "string",
+            "nullable": true
+          },
+          "anchors": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "decidedBy": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/UserRefDto"
+              }
+            ]
+          },
+          "decidedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "canDecide": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "slug",
+          "title",
+          "targetPath",
+          "pageTitle",
+          "versionLabel",
+          "decisionId",
+          "reviewer",
+          "assignees",
+          "sampledAt",
+          "outcome",
+          "reason",
+          "anchors",
+          "decidedBy",
+          "decidedAt",
+          "canDecide"
+        ]
+      },
+      "EscalationCanDto": {
+        "type": "object",
+        "properties": {
+          "escalate": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "escalate"
+        ]
+      },
+      "EscalationStateDto": {
+        "type": "object",
+        "properties": {
+          "slug": {
+            "type": "string"
+          },
+          "bundleHash": {
+            "type": "string"
+          },
+          "state": {
+            "type": "string"
+          },
+          "firing": {
+            "description": "Mandatory triggers firing now (an agent approval would be refused)",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FiredTriggerDto"
+            }
+          },
+          "evaluatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "pageAuthors": {
+            "$ref": "#/components/schemas/PageAuthorsDto"
+          },
+          "escalations": {
+            "description": "Newest first",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/EscalationDto"
+            }
+          },
+          "agentReviews": {
+            "description": "Newest first, at most 10",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AgentReviewDto"
+            }
+          },
+          "agentRuns": {
+            "description": "agent_review jobs, newest first, ≤ 10",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AgentRunDto"
+            }
+          },
+          "spotCheck": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SpotCheckDto"
+              }
+            ]
+          },
+          "can": {
+            "$ref": "#/components/schemas/EscalationCanDto"
+          }
+        },
+        "required": [
+          "slug",
+          "bundleHash",
+          "state",
+          "firing",
+          "evaluatedAt",
+          "pageAuthors",
+          "escalations",
+          "agentReviews",
+          "agentRuns",
+          "spotCheck",
+          "can"
+        ]
+      },
+      "InboxKind": {
+        "type": "string",
+        "enum": [
+          "review",
+          "rereview",
+          "discussion",
+          "spot_check",
+          "mention",
+          "check"
+        ]
+      },
+      "InboxItemTab": {
+        "type": "string",
+        "enum": [
+          "decide",
+          "check",
+          "spot",
+          "mentions"
+        ]
+      },
+      "InboxProposalDto": {
+        "type": "object",
+        "properties": {
+          "slug": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "state": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "slug",
+          "title",
+          "state"
+        ]
+      },
+      "InboxAction": {
+        "type": "string",
+        "enum": [
+          "decide",
+          "discuss",
+          "spot_check",
+          "reply",
+          "open"
+        ]
+      },
+      "InboxItemDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "`<kind>:<row id>`"
+          },
+          "kind": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/InboxKind"
+              }
+            ]
+          },
+          "tab": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/InboxItemTab"
+              }
+            ]
+          },
+          "done": {
+            "type": "boolean"
+          },
+          "title": {
+            "type": "string"
+          },
+          "path": {
+            "type": "string"
+          },
+          "pageTitle": {
+            "type": "string"
+          },
+          "anchor": {
+            "type": "string",
+            "nullable": true
+          },
+          "proposal": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/InboxProposalDto"
+              }
+            ]
+          },
+          "topicId": {
+            "type": "string",
+            "nullable": true,
+            "format": "uuid"
+          },
+          "spotCheckId": {
+            "type": "string",
+            "nullable": true,
+            "format": "uuid"
+          },
+          "why": {
+            "type": "string",
+            "description": "Why the item is here"
+          },
+          "triggers": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "agentNotes": {
+            "type": "string",
+            "nullable": true,
+            "description": "The agent’s notes (AI)"
+          },
+          "from": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/UserRefDto"
+              }
+            ]
+          },
+          "at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "reminders": {
+            "type": "integer"
+          },
+          "action": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/InboxAction"
+              }
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "tab",
+          "done",
+          "title",
+          "path",
+          "pageTitle",
+          "anchor",
+          "proposal",
+          "topicId",
+          "spotCheckId",
+          "why",
+          "triggers",
+          "agentNotes",
+          "from",
+          "at",
+          "reminders",
+          "action"
+        ]
+      },
+      "InboxCountsDto": {
+        "type": "object",
+        "properties": {
+          "all": {
+            "type": "integer"
+          },
+          "decide": {
+            "type": "integer"
+          },
+          "check": {
+            "type": "integer"
+          },
+          "spot": {
+            "type": "integer"
+          },
+          "mentions": {
+            "type": "integer"
+          },
+          "done": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "all",
+          "decide",
+          "check",
+          "spot",
+          "mentions",
+          "done"
+        ]
+      },
+      "InboxDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/InboxItemDto"
+            }
+          },
+          "nextCursor": {
+            "type": "string",
+            "nullable": true
+          },
+          "counts": {
+            "$ref": "#/components/schemas/InboxCountsDto"
+          }
+        },
+        "required": [
+          "items",
+          "nextCursor",
+          "counts"
+        ]
+      },
+      "ReviewModel": {
+        "type": "string",
+        "enum": [
+          "self_managed",
+          "human"
+        ]
+      },
+      "AgentStatusDto": {
+        "type": "object",
+        "properties": {
+          "user": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/UserRefDto"
+              }
+            ]
+          },
+          "available": {
+            "type": "boolean",
+            "description": "Enabled with a live review token"
+          },
+          "tokenConfigured": {
+            "type": "boolean",
+            "description": "REVIEWER_AGENT_TOKEN is set"
+          },
+          "paused": {
+            "type": "boolean"
+          },
+          "pausedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "pausedBy": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/UserRefDto"
+              }
+            ]
+          },
+          "pauseReason": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "user",
+          "available",
+          "tokenConfigured",
+          "paused",
+          "pausedAt",
+          "pausedBy",
+          "pauseReason"
+        ]
+      },
+      "TriggerSource": {
+        "type": "string",
+        "enum": [
+          "default",
+          "custom"
+        ]
+      },
+      "CustomTriggerKind": {
+        "type": "string",
+        "enum": [
+          "path",
+          "term"
+        ]
+      },
+      "TriggerMatchDto": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CustomTriggerKind"
+              }
+            ]
+          },
+          "value": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "value"
+        ]
+      },
+      "TriggerSettingDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "source": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/TriggerSource"
+              }
+            ]
+          },
+          "enabled": {
+            "type": "boolean"
+          },
+          "optional": {
+            "type": "boolean",
+            "description": "The owner may turn it off"
+          },
+          "match": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/TriggerMatchDto"
+              }
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "description",
+          "source",
+          "enabled",
+          "optional",
+          "match"
+        ]
+      },
+      "OwnersFileDto": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string"
+          },
+          "versionLabel": {
+            "type": "string",
+            "nullable": true
+          },
+          "rules": {
+            "type": "integer"
+          },
+          "warnings": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "path",
+          "versionLabel",
+          "rules",
+          "warnings"
+        ]
+      },
+      "PageAuthorSettingsDto": {
+        "type": "object",
+        "properties": {
+          "order": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PageAuthorSource"
+            }
+          },
+          "ownersFile": {
+            "$ref": "#/components/schemas/OwnersFileDto"
+          }
+        },
+        "required": [
+          "order",
+          "ownersFile"
+        ]
+      },
+      "QualitySettingDto": {
+        "type": "object",
+        "properties": {
+          "onSubmit": {
+            "type": "boolean"
+          },
+          "rulesPath": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "onSubmit",
+          "rulesPath"
+        ]
+      },
+      "ReviewSettingsDto": {
+        "type": "object",
+        "properties": {
+          "reviewModel": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ReviewModel"
+              }
+            ]
+          },
+          "autoPublish": {
+            "type": "boolean",
+            "description": "AUTO_PUBLISH from the environment (read-only)"
+          },
+          "agent": {
+            "$ref": "#/components/schemas/AgentStatusDto"
+          },
+          "triggers": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TriggerSettingDto"
+            }
+          },
+          "pageAuthors": {
+            "$ref": "#/components/schemas/PageAuthorSettingsDto"
+          },
+          "spotCheckRate": {
+            "type": "number"
+          },
+          "reminderDays": {
+            "type": "integer"
+          },
+          "qualityCheck": {
+            "$ref": "#/components/schemas/QualitySettingDto"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "updatedBy": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/UserRefDto"
+              }
+            ]
+          }
+        },
+        "required": [
+          "reviewModel",
+          "autoPublish",
+          "agent",
+          "triggers",
+          "pageAuthors",
+          "spotCheckRate",
+          "reminderDays",
+          "qualityCheck",
+          "updatedAt",
+          "updatedBy"
+        ]
+      },
+      "EscalatedCountsDto": {
+        "type": "object",
+        "properties": {
+          "rereview": {
+            "type": "integer"
+          },
+          "discussion": {
+            "type": "integer"
+          },
+          "total": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "rereview",
+          "discussion",
+          "total"
+        ]
+      },
+      "TriggerCountDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "n": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "n"
+        ]
+      },
+      "SpotCheckCountsDto": {
+        "type": "object",
+        "properties": {
+          "sampled": {
+            "type": "integer"
+          },
+          "passed": {
+            "type": "integer"
+          },
+          "failed": {
+            "type": "integer"
+          },
+          "open": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "sampled",
+          "passed",
+          "failed",
+          "open"
+        ]
+      },
+      "AgentMetricsDto": {
+        "type": "object",
+        "properties": {
+          "days": {
+            "type": "integer"
+          },
+          "since": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "until": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "paused": {
+            "type": "boolean"
+          },
+          "reviews": {
+            "type": "integer",
+            "description": "Succeeded agent_review runs"
+          },
+          "decided": {
+            "type": "integer",
+            "description": "Decisions by the agent"
+          },
+          "approved": {
+            "type": "integer"
+          },
+          "autoPublished": {
+            "type": "integer"
+          },
+          "sentBack": {
+            "type": "integer",
+            "description": "Rejections by the agent"
+          },
+          "escalated": {
+            "$ref": "#/components/schemas/EscalatedCountsDto"
+          },
+          "refusedByTriggers": {
+            "type": "integer",
+            "description": "Approvals refused by mandatory triggers"
+          },
+          "byTrigger": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TriggerCountDto"
+            }
+          },
+          "leftPending": {
+            "type": "integer"
+          },
+          "failed": {
+            "type": "integer",
+            "description": "Failed agent_review jobs"
+          },
+          "spotChecks": {
+            "$ref": "#/components/schemas/SpotCheckCountsDto"
+          },
+          "reverts": {
+            "type": "integer",
+            "description": "Agent-approved publications later restored to their base by another publication"
+          },
+          "approvalErrorRate": {
+            "type": "number",
+            "nullable": true,
+            "description": "failed / decided spot checks; null without decided ones"
+          }
+        },
+        "required": [
+          "days",
+          "since",
+          "until",
+          "paused",
+          "reviews",
+          "decided",
+          "approved",
+          "autoPublished",
+          "sentBack",
+          "escalated",
+          "refusedByTriggers",
+          "byTrigger",
+          "leftPending",
+          "failed",
+          "spotChecks",
+          "reverts",
+          "approvalErrorRate"
         ]
       }
     }

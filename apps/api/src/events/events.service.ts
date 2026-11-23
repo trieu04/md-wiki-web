@@ -8,6 +8,7 @@ export const EVENT_TYPES = [
   'page.changed',
   'discussion.changed',
   'quality.changed',
+  'inbox.changed',
   'ping',
 ] as const;
 export type EventType = (typeof EVENT_TYPES)[number];
@@ -107,6 +108,17 @@ export class EventsService implements OnModuleDestroy {
         audience: event.proposal.participants,
       }),
     });
+  }
+
+  /** The viewers' inboxes changed (§7.8.8): only those users see it. */
+  inbox(userIds: readonly string[]) {
+    const [first, ...rest] = [...new Set(userIds)];
+    if (first) this.emit({ type: 'inbox.changed', submitterId: first, audience: rest, private: true });
+  }
+
+  /** Committed changes for in-process consumers (the reviewer agent's scheduler, §7.8.6). */
+  changes(): Observable<WireEvent> {
+    return this.subject.asObservable();
   }
 
   visibleTo(event: Published, viewer: EventViewer): boolean {

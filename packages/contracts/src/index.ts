@@ -7,5 +7,7 @@ export type { PingOutput } from './jobs/ping.output.js';
 export type { JobResult } from './jobs/result.js';
 export type { QualityCheckInput } from './jobs/quality_check.input.js';
 export type { QualityCheckOutput } from './jobs/quality_check.output.js';
+export type { AgentReviewInput } from './jobs/agent_review.input.js';
+export type { AgentReviewOutput } from './jobs/agent_review.output.js';
 
 export const contractsPlaceholder = 'md-wiki-contracts';

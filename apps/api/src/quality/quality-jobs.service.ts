@@ -4,6 +4,7 @@ import { can, currentRun, isActiveRun, qualitySummary, type QualitySummary } fro
 import type { AiJob, Prisma } from '@prisma/client';
 import type { Identity } from '../auth/auth.service.js';
 import { audit } from '../auth/credentials.js';
+import { inProposalAudience } from '../agent/agent-facts.js';
 import { AppError } from '../common/app-error.js';
 import { logger } from '../common/request-id.middleware.js';
 import { API_CONFIG, type ApiConfig } from '../config/env.js';
@@ -348,7 +349,13 @@ export class QualityJobs {
   async proposalReport(identity: Identity, slug: string) {
     const p = await this.db.proposal.findUnique({ where: { slug } });
     const reviewer = identity.user.roles.some((r) => REVIEW_ROLES.has(r));
-    if (!p || (p.submitterId !== identity.user.id && !reviewer)) throw new AppError('NOT_FOUND');
+    if (
+      !p ||
+      (p.submitterId !== identity.user.id &&
+        !reviewer &&
+        !(await inProposalAudience(this.db, p.id, identity.user.id)))
+    )
+      throw new AppError('NOT_FOUND');
     return this.report(
       { kind: 'proposal', id: p.id, slug: p.slug, submitterId: p.submitterId },
       { proposalId: p.id },
@@ -465,8 +472,8 @@ export class QualityJobs {
     const page = rows.slice(0, limit);
     const last = page.at(-1);
     const present = await this.db.aiJob.groupBy({ by: ['kind'], _count: { _all: true } });
-    const kinds = (['quality_check', 'ping'] as const).filter(
-      (k) => k === 'quality_check' || present.some((p) => p.kind === k),
+    const kinds = (['quality_check', 'agent_review', 'ping'] as const).filter(
+      (k) => k !== 'ping' || present.some((p) => p.kind === k),
     );
     const since = new Date(Date.now() - 24 * 3600_000);
     return {

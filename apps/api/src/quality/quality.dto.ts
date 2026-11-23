@@ -14,8 +14,10 @@ const nullableTimestamp = { type: String, format: 'date-time', nullable: true } 
 const nullableString = { type: String, nullable: true } as const;
 const nullableInt = { type: 'integer', nullable: true } as const;
 export const TRIGGERS = ['submit', 'rerun', 'self_check'] as const;
-export const JOB_TRIGGERS = ['dev', ...TRIGGERS] as const;
-export const JOB_KINDS = ['ping', 'quality_check'] as const;
+// Phase 8 adds the agent_review kind and its triggers (system-logic §7.8.6).
+export const AGENT_TRIGGERS = ['after_check', 'returned', 'resumed'] as const;
+export const JOB_TRIGGERS = ['dev', ...TRIGGERS, ...AGENT_TRIGGERS] as const;
+export const JOB_KINDS = ['ping', 'quality_check', 'agent_review'] as const;
 type RunStatus = (typeof RUN_STATUSES)[number];
 
 const integer = ({ value }: TransformFnParams): unknown =>

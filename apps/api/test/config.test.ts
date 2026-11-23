@@ -14,6 +14,8 @@ it('reports all missing API keys in one boot error', () => {
         'WIKI_NAME',
         'WIKI_DESCRIPTION',
         'QUALITY_RULES_PATH',
+        'REVIEWER_AGENT_EMAIL',
+        'REVIEWER_AGENT_TOKEN',
       ].includes(key),
   );
   for (const key of required) expect(() => parseConfig({})).toThrow(key);

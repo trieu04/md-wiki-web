@@ -13,6 +13,7 @@ from pydantic import BaseModel, ConfigDict, Field
 class JobKind(StrEnum):
     ping = "ping"
     quality_check = "quality_check"
+    agent_review = "agent_review"
 
 
 class JobEnvelope(BaseModel):

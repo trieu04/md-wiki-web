@@ -427,6 +427,23 @@ The user delegated all UI questions and any non-critical question to the orchest
 | P7-06 → D-151 | F-14 *Models* tab (owner, read-only, D-140) from `/admin/models` + `/admin/rules`: one row per job kind (*Quality check*: value = model, note = provider · max tokens · timeout · attempts · set for this job / default model + "Last used <model> · <prompt>, <date>." or "Not used yet."), *Local model* (OpenAI-compatible base URL · models of jobs using `openai_compat`, or "Not configured" + how to set it), *Quality rules* (locked mono value = path, a list "title · id" per rule, note "N rules · version <sha6> · <size> bytes" or "Not usable: <error>…"). The frame's *Reviewer agent* row is Phase 8 → not rendered. No edit controls | Models are env-only (D-140); rules come from the file |
 | P7-06 → D-152 | F-13 *Background jobs* card (drawn) from `GET /ops/jobs`: one row per `kinds[]` entry — Job (kind, mono), Last run (finish time · duration of the latest finished run, "—" without), Result (dot + *OK* / *Failed: <words>* / *No runs yet*, "· N failed in 24 h" turns an OK dot amber), Queue (*N waiting · M running* / *0*); a footer link *All AI jobs*. Health card *Worker queue* = queued + running across kinds, note "Oldest <age>" of the oldest queued run on the first page. *Model provider*, *API and storage*, *Backups* cards, *Reviewer agent · last 7 days* and *Pause the reviewer agent* have no data → not rendered. **AI jobs page** (derived, D-16; design-system §6 item 7) at `/work/ops/jobs`: F-13 header with *Operations /* crumb, *Job* and *Status* selects, Card + Table (When, Job, Trigger, Subject = proposal link or "Private draft", Result, Model · prompt, Tokens, Took), *Load more* by cursor; metadata only (D-141) | Frame F-13 draws the jobs table; AI jobs page is listed as not designed |
 
+| P8 → D-200 | Reviewer agent = seeded user (`REVIEWER_AGENT_EMAIL`, kind agent, role reviewer); token from `REVIEWER_AGENT_TOKEN` stored hashed, scopes read/discuss/review; a new value revokes the old | One agent identity, no secrets in the DB |
+| P8 → D-201 | Self-managed model assigns the available agent; else the human rule (D-75) | Agent by default, human fallback |
+| P8 → D-202 | Review settings PATCH cannot remove or weaken default triggers; only `agent_edits_human_pages` toggles | Safety floor |
+| P8 → D-203 | Triggers evaluated in the decision transaction after the row lock, agents only | Facts at commit time, not at read |
+| P8 → D-204 | Default trigger set (§7.8.3) + owner path/term triggers (≤ 20); `judgement` for the agent's own doubt | md-wiki escalation rules |
+| P8 → D-205 | Refusals audited separately as `agent.refused` after rollback | Countable in Operations |
+| P8 → D-206 | Page authors: last matching `wiki-meta/owners.md` row → human publishers → owner; minus submitter/requester | CODEOWNERS convention |
+| P8 → D-207 | Escalation kinds rereview (assign authors) and discussion (thread); one open per kind | Two md-wiki escalation paths |
+| P8 → D-208 | A page author holding an escalation gets reviewer rights on that proposal only | Authors decide without a role change |
+| P8 → D-209 | Agent run due per round (after_check, returned, resumed) when it holds the assignment and no check is active; reconciled on events and boot | No duplicate runs, none lost |
+| P8 → D-210 | The agent result's claims are verified against the rows before the AgentReview is stored | Worker cannot forge the record |
+| P8 → D-211 | Stop switch: paused agent gated in decide/escalate; active runs fail `paused`; resume reconciles; AUTO_PUBLISH change audited | Owner can halt the agent instantly |
+| P8 → D-212 | Reminders every `reminderDays`, hourly sweep, never decide | Escalations do not stall silently |
+| P8 → D-213 | After publish: digest to page authors; deterministic spot-check sampling by decision id | Reproducible sampling |
+| P8 → D-214 | Failed spot check = confirmed error on sections in the same transaction (Phase 9 consumes it) | Errors feed credibility |
+| P8 → D-215 | Inbox tabs decide/check/spot/mentions + done (30 days); offset cursor; SSE `inbox.changed` | F-08 |
+| P8 → D-216 | Ops agent metrics over 1–90 days incl. reverts and approval error rate (failed / decided spot checks) | Owner sees agent quality |
 Future non-critical questions are decided the same way and appended to this table.
 
 ## 7. Open questions (need a human)

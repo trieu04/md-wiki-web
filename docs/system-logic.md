@@ -1035,6 +1035,46 @@ interface JobListDto { kinds: JobKindSummaryDto[] /* quality_check always; ping 
 - **Dataset line**: `{ "id": string, "targetPath"?: string, "title"?: string, "reason": string, "base": string | null, "proposed": string, "sources"?: [{ "path", "text" }], "expected": string[] /* rule ids */ }` or, instead of `expected`, `"class": <E3 class name>` mapped by `E3_CLASS_RULES` (clean classes → `[]`, `real_reverted` → bad with no specific rule). Blank lines are skipped; a bad line stops the run with its line number.
 - **Report** (JSON to `--out`, table to stdout): per rule `tp, fp, fn, precision, recall` (a rule is *predicted* for an item when a kept finding cites it; `null` when undefined); per item `{ id, expected, predicted, bad, flagged, dropped, error }`; overall `items: { bad, clean, caught, falseAlarms, detection, falseAlarmRate }` (an item with any expected rule or a bad class counts as bad; flagged by any finding = caught; a clean item with any finding = false alarm), dropped counts by reason, provider, model, prompt version, rules sha. Items whose call fails are counted under `errors` and excluded from P/R and detection.
 
+### 7.8 Phase 8 — Self-managed review (full contract) [D-200 … D-216]
+
+The reviewer agent reviews proposals by default; people only see what the agent escalates, what a mandatory trigger forces back to them, and sampled spot checks of agent approvals. The agent acts through the **public** API with its own token; every guard of §7.4 applies to it, plus the mandatory triggers. The internal API only receives the record of what it did.
+
+#### 7.8.1 Data
+
+`ReviewSettings` (singleton `id = 1`): `reviewModel self_managed|human` (default `self_managed`), `reviewerAgentId`, `agentPaused`, `pausedAt/ById/Reason`, `agentEditsHumanPages` (default true), `customTriggers` (JSON, ≤ 20), `spotCheckRate` (0…1, steps 0.01, default 0.1), `reminderDays` (1…30, default 2), `autoPublishSeen`. `Escalation` (`kind rereview|discussion`, `triggers[]`, `notes`, `requestedById`, `bundleHash`, `assigneeIds[]`, `topicId?`, `resolvedAt?`, `resolution?`, `reminders`, `lastRemindedAt?`; identity columns immutable, resolved once). `AgentReview` (1:1 with its `agent_review` job; append-only). `SpotCheck` (one per sampled publication; outcome decided once). `PublishFollowUp` (PK = publication id; makes the after-publish step idempotent). `AiJobKind` gains `agent_review`; `AiJobTrigger` gains `after_check | returned | resumed`.
+
+#### 7.8.2 The reviewer agent (D-200, D-201)
+
+Boot seeds a user `kind agent`, role `reviewer`, email `REVIEWER_AGENT_EMAIL` (refused if it belongs to a human) and, when `REVIEWER_AGENT_TOKEN` (`mwt_<8>_<32>`) is set, its token (scopes `read, discuss, review`, stored as a hash; a new value revokes the old seeded token). The agent is **available** when enabled and holding a live `review` token. Assignment of a new proposal (§7.4.2): under `self_managed` with the agent available and not the submitter → the agent; otherwise the human rule (D-75).
+
+#### 7.8.3 Mandatory triggers (D-203, D-204)
+
+Evaluated in the decision transaction after the proposal row lock, **only for agent actors**. Any firing trigger refuses an agent **approval** (a rejection sends work back and is allowed) with `409 ESCALATION_REQUIRED`, `fields[] = { path: "triggers", code: <trigger id>, message: <detail> }`. Defaults (cannot be removed): `quality_missing` (no succeeded run for the bundle), `quality_blocking`, `dispute_or_report`, `sourced_meaning` (a sentence with a citation changed meaning), `dropped_hedge`, `checked_section`, `source_problem`, `contradiction`, `wiki_meta` (paths under `wiki-meta/`), `agent_edits_human_pages` (agent submitter on a page with human authors; the only default the owner may turn off). Owner-added triggers: `{ id, kind: path|term, value, reason }`. `judgement` is the id the agent cites for its own doubt. A cosmetic change (equal after NFC, case folding, dropping emphasis markers and punctuation, collapsing whitespace) does not fire `agent_edits_human_pages`.
+
+#### 7.8.4 Refusals (D-205)
+
+A refused agent decision rolls back; the refusal is then audited on its own as `agent.refused { triggers, code }` so Operations can count it.
+
+#### 7.8.5 Escalations (D-206, D-207, D-208)
+
+`POST /proposals/{slug}/escalations { kind, reason, bundleHash, triggers? }` → 201 `EscalationStateDto`; `GET /proposals/{slug}/escalation`. Allowed for the assignee (agent or human) or the owner; order: paused gate → pending (`PRECONDITION_FAILED`) → bundle hash (`PRECONDITION_FAILED`) → `SELF_REVIEW` → `NOT_ASSIGNED` → one open escalation per kind (`ALREADY_EXISTS`) → unknown trigger ids (`VALIDATION_FAILED`, field code `UNKNOWN_TRIGGER`). Firing triggers are added to the cited ones; none → `["judgement"]`. **Page authors** (D-206): the last matching row of `wiki-meta/owners.md` (CODEOWNERS order), else humans who published the page, else the owner; never the submitter or the requester. `rereview` closes the agent's (and requester's) assignment and assigns every page author (reason `escalation`); any one decides. `discussion` opens a thread on the proposal addressed to them. A page author holding an escalation gets reviewer rights on that proposal only (decide, record disputes, close the thread) (D-208). A decision or withdrawal resolves open escalations; a closed thread resolves the discussion escalation.
+
+#### 7.8.6 Agent runs (D-209, D-210)
+
+`agent_review` input `{ proposal: { id, slug, bundleHash, targetPath }, trigger, round }`; output `{ promptVersion, provider, model, usage, outcome approved|rejected|escalated|left_pending, verdict, decisionId, escalationId, notes, claims[], refusals[] }`. A run is due when the agent holds the open assignment, the proposal is pending, no quality check is queued/running, and no run exists for the current round (round = since assignment or the last return/resubmit: `after_check`, `returned`, `resumed`). Events and boot reconcile; queued jobs are re-sent on boot. The worker reads proposal, diff and findings with the agent token, asks the model for `{ verdict, reason, escalation, claims }` on fenced data, then calls `decisions` or `escalations`; an `ESCALATION_REQUIRED` refusal becomes a `rereview` escalation citing the fired triggers. The stored result is checked against the rows (a claimed decision must be the agent's for that proposal; a claimed escalation must be the agent's) (D-210). Without a token the run fails `agent_unavailable`.
+
+#### 7.8.7 After publish and spot checks (D-213, D-214)
+
+After a publication is `done`, once per publication: page authors are told it was published (digest), and when an agent approved it, it is sampled with `sha256("md-wiki:spot\0" + decisionId)` first 32 bits / 2³² < `spotCheckRate`. A sampled publication gets a `SpotCheck` assigned to the page authors. `GET /spot-checks/{id}`; `POST /spot-checks/{id}/outcome { outcome passed|failed, reason, anchors? }` (200) by an assignee or the owner, never an agent (`FORBIDDEN`) or the reviewer (`SELF_REVIEW`); decided once (`PRECONDITION_FAILED`); unknown anchors `VALIDATION_FAILED`. `failed` records a confirmed error on the sections (default the proposal's section, else every published section) in the same transaction.
+
+#### 7.8.8 Inbox (D-215)
+
+`GET /inbox?tab=decide|check|spot|mentions&limit&cursor` → `{ items[], nextCursor, counts { all, decide, check, spot, mentions, done } }`. Items: open assignments (`decide`), escalations (with the agent's notes and triggers), spot checks (`spot`), discussion mentions (`mentions`), check items (Phase 9). Items done in the last 30 days are listed as `done`. Live updates: SSE `inbox.changed` to the affected users.
+
+#### 7.8.9 Settings, stop switch, metrics (D-202, D-211, D-212, D-216)
+
+`GET/PATCH /admin/review-settings` (`admin.settings`): `reviewModel`, `spotCheckRate`, `reminderDays`, `agentEditsHumanPages`, `customTriggers` (replace); defaults cannot be weakened (D-202). `POST /admin/agent/pause { paused, reason? }` (200): while paused the agent records no decision or escalation (`PRECONDITION_FAILED`), queued/running runs end failed `paused`; resuming reconciles every pending proposal (D-211). An `AUTO_PUBLISH` change between boots is audited. Reminders: an open escalation is reminded every `reminderDays` (hourly sweep); reminders never decide (D-212). `GET /ops/agent?days=1..90` (`admin.jobs`): reviews, decided, approved, autoPublished, sentBack, escalated by kind, refusals, by trigger, leftPending, failed, spot checks, reverts, approval error rate (D-216).
+
 ## 8. State machines
 
 ### 8.1 Proposal

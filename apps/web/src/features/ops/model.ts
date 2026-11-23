@@ -95,6 +95,9 @@ const TRIGGER_TEXT: Record<JobListItemDto['trigger'], string> = {
   submit: 'On submit',
   rerun: 'Re-run',
   self_check: 'Self-check',
+  after_check: 'Agent review',
+  returned: 'Agent re-review',
+  resumed: 'Agent resumed',
 };
 
 /** Derived *AI jobs* rows (D-16, D-152): metadata only; drafts stay private (D-141). */

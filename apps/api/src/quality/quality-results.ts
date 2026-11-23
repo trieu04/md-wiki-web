@@ -58,6 +58,10 @@ export class QualityResults {
       ]);
     const { findings, dropped } = verifyOutput(job, output);
     const stored = await this.db.$transaction(async (tx) => {
+      // A result and a decision serialize on the proposal row (§7.8.3): a blocking finding that
+      // lands while an agent approves either commits first (the trigger fires) or after it.
+      if (job.proposalId)
+        await tx.$queryRaw`SELECT id FROM "Proposal" WHERE id = ${job.proposalId}::uuid FOR SHARE`;
       const updated = await tx.aiJob.updateMany({
         where: { id: job.id, status: { in: ['queued', 'running'] } },
         data: {

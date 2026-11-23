@@ -247,7 +247,9 @@ beforeAll(async () => {
       },
     })
     .overrideProvider(ESCALATION_TRIGGERS)
-    .useValue({ firing: () => Promise.resolve(triggers.firing) })
+    .useValue({
+      firing: () => Promise.resolve(triggers.firing.map((id) => ({ id, detail: id }))),
+    })
     .compile();
   app = module.createNestApplication();
   configureHttp(app, { public: true });

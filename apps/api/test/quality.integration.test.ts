@@ -656,8 +656,8 @@ describe('admin and operations (§7.6.7)', () => {
     );
     expect((next.items[0]?.createdAt ?? '') <= (all.items[1]?.createdAt ?? '')).toBe(true);
     const kinds = all.kinds.map((k) => k.kind);
-    expect(kinds).toEqual(['quality_check']);
-    const qc = all.kinds[0];
+    expect(kinds).toContain('quality_check');
+    const qc = all.kinds.find((k) => k.kind === 'quality_check');
     expect(qc?.queued).toBeGreaterThan(0);
     expect(qc?.failed24h).toBeGreaterThan(0);
     expect(qc?.last?.status).toMatch(/succeeded|failed/);

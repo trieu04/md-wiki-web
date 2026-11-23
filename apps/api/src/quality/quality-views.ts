@@ -77,7 +77,10 @@ export function runDto(
   const titles = ctx.withFindings ? ruleTitles(row.input) : new Map<string, string>();
   return {
     id: row.id,
-    trigger: row.trigger === 'dev' ? 'rerun' : row.trigger,
+    trigger:
+      row.trigger === 'dev'
+        ? 'rerun'
+        : (row.trigger as Exclude<typeof row.trigger, 'dev' | 'after_check' | 'returned' | 'resumed'>),
     status: row.status,
     bundleHash: row.bundleHash ?? '',
     current: row.bundleHash === ctx.hash,

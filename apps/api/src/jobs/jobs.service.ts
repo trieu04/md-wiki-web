@@ -4,8 +4,11 @@ import type { AiJob } from '@prisma/client';
 import type { JobResult } from '@md-wiki/contracts';
 import { AppError } from '../common/app-error.js';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { AgentResults } from '../agent/agent-results.js';
 import { QualityResults } from '../quality/quality-results.js';
 import {
+  readAgentInput,
+  readAgentOutput,
   readJobError,
   readJobResult,
   readPingInput,
@@ -22,6 +25,7 @@ export class JobsService {
   constructor(
     @Inject(PrismaService) private readonly prisma: PrismaService,
     @Optional() @Inject(QualityResults) private readonly quality?: QualityResults,
+    @Optional() @Inject(AgentResults) private readonly agent?: AgentResults,
   ) {}
 
   async createPing(body: unknown) {
@@ -60,7 +64,12 @@ export class JobsService {
     if (row.status !== 'queued' && row.status !== 'running') {
       throw new AppError('PRECONDITION_FAILED');
     }
-    const input = row.kind === 'ping' ? readPingInput(row.input) : readQualityInput(row.input);
+    const input =
+      row.kind === 'ping'
+        ? readPingInput(row.input)
+        : row.kind === 'agent_review'
+          ? readAgentInput(row.input)
+          : readQualityInput(row.input);
     return { jobId: row.id, kind: row.kind, input };
   }
 
@@ -73,6 +82,10 @@ export class JobsService {
     const result: JobResult = readJobResult(body);
     if (row.kind === 'quality_check') {
       await this.qualityResult(row, result, body);
+      return;
+    }
+    if (row.kind === 'agent_review') {
+      await this.agentResult(row, result, body);
       return;
     }
     if (
@@ -117,6 +130,21 @@ export class JobsService {
     });
     if (updated.count === 0) this.checkReplay(await this.getJob(row.id), body);
     else await this.quality.announce(row);
+  }
+
+  /** §7.8.6: validate the output, check its claims against the rows, store the AgentReview. */
+  private async agentResult(row: AiJob, result: JobResult, body: unknown): Promise<void> {
+    if (!this.agent) throw new Error('AgentResults is not provided');
+    if (result.status === 'ok') {
+      if (!(await this.agent.store(row, readAgentOutput(result.output))))
+        this.checkReplay(await this.getJob(row.id), body);
+      return;
+    }
+    const updated = await this.prisma.aiJob.updateMany({
+      where: { id: row.id, status: { in: [...active] } },
+      data: { status: 'failed', error: { ...result.error }, finishedAt: new Date() },
+    });
+    if (updated.count === 0) this.checkReplay(await this.getJob(row.id), body);
   }
 
   private checkReplay(row: AiJob, body: unknown): void {

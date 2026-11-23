@@ -1,0 +1,87 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "AgentReviewOutput",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "promptVersion",
+    "provider",
+    "model",
+    "usage",
+    "outcome",
+    "verdict",
+    "decisionId",
+    "escalationId",
+    "notes",
+    "claims",
+    "refusals"
+  ],
+  "properties": {
+    "promptVersion": { "type": "string", "minLength": 1, "maxLength": 40 },
+    "provider": {
+      "anyOf": [{ "type": "string", "minLength": 1, "maxLength": 40 }, { "type": "null" }]
+    },
+    "model": {
+      "anyOf": [{ "type": "string", "minLength": 1, "maxLength": 200 }, { "type": "null" }]
+    },
+    "usage": {
+      "title": "AgentReviewUsage",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["inputTokens", "outputTokens"],
+      "properties": {
+        "inputTokens": { "type": "integer", "minimum": 0 },
+        "outputTokens": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "outcome": {
+      "title": "AgentReviewOutcome",
+      "type": "string",
+      "enum": ["approved", "rejected", "escalated", "left_pending"]
+    },
+    "verdict": {
+      "anyOf": [
+        { "title": "AgentVerdict", "type": "string", "enum": ["approve", "reject", "escalate"] },
+        { "type": "null" }
+      ]
+    },
+    "decisionId": { "anyOf": [{ "type": "string", "format": "uuid" }, { "type": "null" }] },
+    "escalationId": { "anyOf": [{ "type": "string", "format": "uuid" }, { "type": "null" }] },
+    "notes": { "type": "string", "minLength": 1, "maxLength": 4000 },
+    "claims": {
+      "type": "array",
+      "maxItems": 50,
+      "items": {
+        "title": "AgentClaim",
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["claim", "source", "supported"],
+        "properties": {
+          "claim": { "type": "string", "minLength": 1, "maxLength": 500 },
+          "source": {
+            "anyOf": [{ "type": "string", "minLength": 1, "maxLength": 300 }, { "type": "null" }]
+          },
+          "supported": { "type": "boolean" }
+        }
+      }
+    },
+    "refusals": {
+      "type": "array",
+      "maxItems": 10,
+      "items": {
+        "title": "AgentRefusal",
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["code", "triggers"],
+        "properties": {
+          "code": { "type": "string", "minLength": 1, "maxLength": 64, "pattern": "^[A-Z_]+$" },
+          "triggers": {
+            "type": "array",
+            "maxItems": 20,
+            "items": { "type": "string", "minLength": 1, "maxLength": 64 }
+          }
+        }
+      }
+    }
+  }
+}

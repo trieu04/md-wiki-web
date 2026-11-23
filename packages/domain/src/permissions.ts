@@ -49,7 +49,12 @@ export interface PermissionContext {
   isOwnProposal?: boolean;
   autoPublish?: boolean;
   isPageAuthor?: boolean;
+  /** A human page author holding an escalation of this proposal (D-208). */
+  isEscalationAssignee?: boolean;
 }
+
+/** Actions a page author may take on a proposal escalated to them, whatever their role (D-208). */
+const ESCALATED_ACTIONS = new Set(['proposal.read', 'proposal.decide', 'dispute.write']);
 
 export type PermissionDecision = { ok: true } | { ok: false; code: ErrorCode };
 const forbidden = { ok: false, code: 'FORBIDDEN' } as const;
@@ -66,7 +71,12 @@ export function can(
       : action;
   if (!Object.hasOwn(policies, key)) return forbidden;
   const [role, scope] = policies[key as keyof typeof policies];
-  if (!actor.roles.some((r) => rank[r] >= rank[role])) return forbidden;
+  const escalated =
+    ctx.isEscalationAssignee === true &&
+    actor.kind === 'human' &&
+    actor.roles.length > 0 &&
+    ESCALATED_ACTIONS.has(key);
+  if (!escalated && !actor.roles.some((r) => rank[r] >= rank[role])) return forbidden;
   if (actor.auth.kind === 'token' && (scope === null || !actor.auth.scopes.includes(scope)))
     return forbidden;
 

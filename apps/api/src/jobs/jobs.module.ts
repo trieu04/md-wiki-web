@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { EventsService } from '../events/events.service.js';
 import { PrismaModule } from '../prisma/prisma.module.js';
+import { AgentResults } from '../agent/agent-results.js';
 import { QualityResults } from '../quality/quality-results.js';
 import { DevPingController } from './dev-ping.controller.js';
 import { JobsController } from './jobs.controller.js';
@@ -15,7 +16,7 @@ export class QueueModule {}
 // the public SSE streams through the process bus (§7.6.7).
 @Module({
   imports: [PrismaModule],
-  providers: [JobsService, QualityResults, EventsService],
+  providers: [JobsService, QualityResults, AgentResults, EventsService],
   exports: [JobsService],
 })
 class JobsModule {}

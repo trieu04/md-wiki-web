@@ -4,6 +4,22 @@
  */
 
 export interface paths {
+    "/api/v1/admin/agent/pause": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["ReviewAdminController_pause"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/models": {
         parameters: {
             query?: never;
@@ -34,6 +50,22 @@ export interface paths {
         options?: never;
         head?: never;
         patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/review-settings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ReviewAdminController_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: operations["ReviewAdminController_update"];
         trace?: never;
     };
     "/api/v1/admin/rules": {
@@ -452,6 +484,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/inbox": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["InboxController_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/me/suggestions": {
         parameters: {
             query?: never;
@@ -476,6 +524,22 @@ export interface paths {
             cookie?: never;
         };
         get: operations["MetaController_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/ops/agent": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["AgentOpsController_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -644,6 +708,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/proposals/{slug}/escalation": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["EscalationsController_state"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/proposals/{slug}/escalations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["EscalationsController_escalate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/proposals/{slug}/findings": {
         parameters: {
             query?: never;
@@ -718,6 +814,38 @@ export interface paths {
         get: operations["WikiReadController_search"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/spot-checks/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["SpotChecksController_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/spot-checks/{id}/outcome": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["SpotChecksController_decide"];
         delete?: never;
         options?: never;
         head?: never;
@@ -923,6 +1051,90 @@ export interface components {
         AddSourceInput: {
             path: string;
         };
+        AgentClaimDto: {
+            claim: string;
+            source: string | null;
+            supported: boolean;
+        };
+        AgentMetricsDto: {
+            /** @description failed / decided spot checks; null without decided ones */
+            approvalErrorRate: number | null;
+            approved: number;
+            autoPublished: number;
+            byTrigger: components["schemas"]["TriggerCountDto"][];
+            days: number;
+            /** @description Decisions by the agent */
+            decided: number;
+            escalated: components["schemas"]["EscalatedCountsDto"];
+            /** @description Failed agent_review jobs */
+            failed: number;
+            leftPending: number;
+            paused: boolean;
+            /** @description Approvals refused by mandatory triggers */
+            refusedByTriggers: number;
+            /** @description Agent-approved publications later restored to their base by another publication */
+            reverts: number;
+            /** @description Succeeded agent_review runs */
+            reviews: number;
+            /** @description Rejections by the agent */
+            sentBack: number;
+            /** Format: date-time */
+            since: string;
+            spotChecks: components["schemas"]["SpotCheckCountsDto"];
+            /** Format: date-time */
+            until: string;
+        };
+        /** @enum {string} */
+        AgentOutcome: "approved" | "rejected" | "escalated" | "left_pending";
+        AgentRefusalDto: {
+            code: string;
+            triggers: string[];
+        };
+        AgentReviewDto: {
+            claims: components["schemas"]["AgentClaimDto"][];
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: uuid */
+            decisionId: string | null;
+            /** Format: uuid */
+            escalationId: string | null;
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            jobId: string;
+            model: string | null;
+            notes: string;
+            outcome: components["schemas"]["AgentOutcome"];
+            promptVersion: string;
+            provider: string | null;
+            refusals: components["schemas"]["AgentRefusalDto"][];
+            verdict: components["schemas"]["AgentVerdict"] | null;
+        };
+        AgentRunDto: {
+            /** Format: date-time */
+            createdAt: string;
+            errorCode: string | null;
+            /** Format: uuid */
+            jobId: string;
+            status: components["schemas"]["JobStatus"];
+            trigger: components["schemas"]["AgentRunTrigger"];
+        };
+        /** @enum {string} */
+        AgentRunTrigger: "after_check" | "returned" | "resumed";
+        AgentStatusDto: {
+            /** @description Enabled with a live review token */
+            available: boolean;
+            paused: boolean;
+            /** Format: date-time */
+            pausedAt: string | null;
+            pausedBy: components["schemas"]["UserRefDto"] | null;
+            pauseReason: string | null;
+            /** @description REVIEWER_AGENT_TOKEN is set */
+            tokenConfigured: boolean;
+            user: components["schemas"]["UserRefDto"] | null;
+        };
+        /** @enum {string} */
+        AgentVerdict: "approve" | "reject" | "escalate";
         ApiTokenDto: {
             /** Format: date-time */
             createdAt: string;
@@ -1157,6 +1369,8 @@ export interface components {
             /** Format: uuid */
             teamId: string | null;
         };
+        /** @enum {string} */
+        CustomTriggerKind: "path" | "term";
         DecisionDto: {
             approve: boolean;
             artifactHash: string;
@@ -1307,6 +1521,56 @@ export interface components {
         };
         /** @enum {string} */
         ErrorCode: "VALIDATION_FAILED" | "INVALID_PATH" | "UNAUTHENTICATED" | "INVALID_CREDENTIALS" | "CSRF_INVALID" | "FORBIDDEN" | "ACCOUNT_DISABLED" | "NOT_FOUND" | "ALREADY_EXISTS" | "PRECONDITION_FAILED" | "SELF_REVIEW" | "NOT_ASSIGNED" | "DISPUTED" | "DECISION_BINDING_MISMATCH" | "DISCUSSION_CHANGED" | "SOURCE_CHANGED" | "TARGET_BLOCKED" | "ESCALATION_REQUIRED" | "SECTION_CHANGED" | "STALE_BASE" | "EMAIL_TAKEN" | "LAST_OWNER" | "PAYLOAD_TOO_LARGE" | "RATE_LIMITED" | "STORAGE_ERROR" | "VERIFY_FAILED" | "INTERNAL";
+        EscalatedCountsDto: {
+            discussion: number;
+            rereview: number;
+            total: number;
+        };
+        EscalationCanDto: {
+            escalate: boolean;
+        };
+        EscalationDto: {
+            assignees: components["schemas"]["UserRefDto"][];
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: uuid */
+            id: string;
+            kind: components["schemas"]["EscalationKind"];
+            /** Format: date-time */
+            lastRemindedAt: string | null;
+            /** @description The requester’s notes (the agent’s notes, AI) */
+            notes: string;
+            reminders: number;
+            requestedBy: components["schemas"]["UserRefDto"];
+            resolution: components["schemas"]["EscalationResolution"] | null;
+            /** Format: date-time */
+            resolvedAt: string | null;
+            /** Format: uuid */
+            topicId: string | null;
+            triggers: string[];
+        };
+        /** @enum {string} */
+        EscalationKind: "rereview" | "discussion";
+        /** @enum {string} */
+        EscalationResolution: "decided" | "withdrawn" | "discussion_closed";
+        EscalationStateDto: {
+            /** @description Newest first, at most 10 */
+            agentReviews: components["schemas"]["AgentReviewDto"][];
+            /** @description agent_review jobs, newest first, ≤ 10 */
+            agentRuns: components["schemas"]["AgentRunDto"][];
+            bundleHash: string;
+            can: components["schemas"]["EscalationCanDto"];
+            /** @description Newest first */
+            escalations: components["schemas"]["EscalationDto"][];
+            /** Format: date-time */
+            evaluatedAt: string;
+            /** @description Mandatory triggers firing now (an agent approval would be refused) */
+            firing: components["schemas"]["FiredTriggerDto"][];
+            pageAuthors: components["schemas"]["PageAuthorsDto"];
+            slug: string;
+            spotCheck: components["schemas"]["SpotCheckDto"] | null;
+            state: string;
+        };
         EventDto: {
             /** Format: date-time */
             at: string;
@@ -1322,7 +1586,7 @@ export interface components {
             version?: number;
         };
         /** @enum {string} */
-        EventType: "proposal.changed" | "publication.changed" | "page.changed" | "discussion.changed" | "quality.changed" | "ping";
+        EventType: "proposal.changed" | "publication.changed" | "page.changed" | "discussion.changed" | "quality.changed" | "inbox.changed" | "ping";
         FieldProblemDto: {
             code: string;
             message: string;
@@ -1351,6 +1615,11 @@ export interface components {
         FindingOrigin: "model" | "rule";
         /** @enum {string} */
         FindingSeverity: "info" | "warning" | "blocking";
+        FiredTriggerDto: {
+            detail: string;
+            id: string;
+            title: string;
+        };
         HealthDto: {
             /** @enum {string} */
             db: "ok" | "down";
@@ -1370,12 +1639,62 @@ export interface components {
             /** @description The `.contribution.md` v3 file text */
             file: string;
         };
+        /** @enum {string} */
+        InboxAction: "decide" | "discuss" | "spot_check" | "reply" | "open";
+        InboxCountsDto: {
+            all: number;
+            check: number;
+            decide: number;
+            done: number;
+            mentions: number;
+            spot: number;
+        };
+        InboxDto: {
+            counts: components["schemas"]["InboxCountsDto"];
+            items: components["schemas"]["InboxItemDto"][];
+            nextCursor: string | null;
+        };
+        InboxItemDto: {
+            action: components["schemas"]["InboxAction"];
+            /** @description The agent’s notes (AI) */
+            agentNotes: string | null;
+            anchor: string | null;
+            /** Format: date-time */
+            at: string;
+            done: boolean;
+            from: components["schemas"]["UserRefDto"] | null;
+            /** @description `<kind>:<row id>` */
+            id: string;
+            kind: components["schemas"]["InboxKind"];
+            pageTitle: string;
+            path: string;
+            proposal: components["schemas"]["InboxProposalDto"] | null;
+            reminders: number;
+            /** Format: uuid */
+            spotCheckId: string | null;
+            tab: components["schemas"]["InboxItemTab"];
+            title: string;
+            /** Format: uuid */
+            topicId: string | null;
+            triggers: string[];
+            /** @description Why the item is here */
+            why: string;
+        };
+        /** @enum {string} */
+        InboxItemTab: "decide" | "check" | "spot" | "mentions";
+        /** @enum {string} */
+        InboxKind: "review" | "rereview" | "discussion" | "spot_check" | "mention" | "check";
+        InboxProposalDto: {
+            slug: string;
+            state: string;
+            title: string;
+        };
         JobErrorDto: {
             code: string;
             message: string;
         };
         /** @enum {string} */
-        JobKind: "ping" | "quality_check";
+        JobKind: "ping" | "quality_check" | "agent_review";
         JobKindSummaryDto: {
             failed24h: number;
             kind: components["schemas"]["JobKind"];
@@ -1422,7 +1741,7 @@ export interface components {
             title: string | null;
         };
         /** @enum {string} */
-        JobTrigger: "dev" | "submit" | "rerun" | "self_check";
+        JobTrigger: "dev" | "submit" | "rerun" | "self_check" | "after_check" | "returned" | "resumed";
         LabelDto: {
             /** @enum {string} */
             label: "checked" | "reviewed" | "not_reviewed" | "recheck" | "error";
@@ -1498,6 +1817,22 @@ export interface components {
             /** @description scheme://host:port only */
             baseUrl: string | null;
         };
+        OwnersFileDto: {
+            path: string;
+            rules: number;
+            versionLabel: string | null;
+            warnings: string[];
+        };
+        PageAuthorsDto: {
+            source: components["schemas"]["PageAuthorSource"];
+            users: components["schemas"]["UserRefDto"][];
+        };
+        PageAuthorSettingsDto: {
+            order: components["schemas"]["PageAuthorSource"][];
+            ownersFile: components["schemas"]["OwnersFileDto"];
+        };
+        /** @enum {string} */
+        PageAuthorSource: "owners_file" | "published_authors" | "owner";
         PageDto: {
             changedOutsideReview: boolean;
             maintainers: components["schemas"]["MaintainerDto"][];
@@ -1765,6 +2100,10 @@ export interface components {
             tokensOut: number | null;
             trigger: components["schemas"]["QualityTrigger"];
         };
+        QualitySettingDto: {
+            onSubmit: boolean;
+            rulesPath: string;
+        };
         /** @enum {string} */
         QualityStatus: "none" | "queued" | "running" | "succeeded" | "failed";
         QualitySubjectDto: {
@@ -1842,6 +2181,22 @@ export interface components {
             evidence: string;
             /** @enum {string} */
             outcome: "written" | "not_written";
+        };
+        /** @enum {string} */
+        ReviewModel: "self_managed" | "human";
+        ReviewSettingsDto: {
+            agent: components["schemas"]["AgentStatusDto"];
+            /** @description AUTO_PUBLISH from the environment (read-only) */
+            autoPublish: boolean;
+            pageAuthors: components["schemas"]["PageAuthorSettingsDto"];
+            qualityCheck: components["schemas"]["QualitySettingDto"];
+            reminderDays: number;
+            reviewModel: components["schemas"]["ReviewModel"];
+            spotCheckRate: number;
+            triggers: components["schemas"]["TriggerSettingDto"][];
+            /** Format: date-time */
+            updatedAt: string | null;
+            updatedBy: components["schemas"]["UserRefDto"] | null;
         };
         RuleDto: {
             body: string;
@@ -1932,6 +2287,36 @@ export interface components {
             before: string;
             hit: string;
         };
+        SpotCheckCountsDto: {
+            failed: number;
+            open: number;
+            passed: number;
+            sampled: number;
+        };
+        SpotCheckDto: {
+            anchors: string[];
+            assignees: components["schemas"]["UserRefDto"][];
+            canDecide: boolean;
+            /** Format: date-time */
+            decidedAt: string | null;
+            decidedBy: components["schemas"]["UserRefDto"] | null;
+            /** Format: uuid */
+            decisionId: string;
+            /** Format: uuid */
+            id: string;
+            outcome: components["schemas"]["SpotCheckOutcome"] | null;
+            pageTitle: string;
+            reason: string | null;
+            reviewer: components["schemas"]["UserRefDto"];
+            /** Format: date-time */
+            sampledAt: string;
+            slug: string;
+            targetPath: string;
+            title: string;
+            versionLabel: string;
+        };
+        /** @enum {string} */
+        SpotCheckOutcome: "passed" | "failed";
         SubmitterDto: {
             /** Format: uuid */
             id: string;
@@ -2136,6 +2521,26 @@ export interface components {
             pageCount: number;
             pages: components["schemas"]["PageSummaryDto"][];
         };
+        TriggerCountDto: {
+            id: string;
+            n: number;
+        };
+        TriggerMatchDto: {
+            kind: components["schemas"]["CustomTriggerKind"];
+            value: string;
+        };
+        TriggerSettingDto: {
+            description: string;
+            enabled: boolean;
+            id: string;
+            match: components["schemas"]["TriggerMatchDto"] | null;
+            /** @description The owner may turn it off */
+            optional: boolean;
+            source: components["schemas"]["TriggerSource"];
+            title: string;
+        };
+        /** @enum {string} */
+        TriggerSource: "default" | "custom";
         UpdateDraftInput: {
             appliesTo?: components["schemas"]["AppliesToInput"][];
             content?: string;
@@ -2220,6 +2625,52 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    ReviewAdminController_pause: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReviewSettingsDto"];
+                };
+            };
+            /** @description VALIDATION_FAILED */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description UNAUTHENTICATED */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description FORBIDDEN | ACCOUNT_DISABLED | CSRF_INVALID */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+        };
+    };
     QualityAdminController_models: {
         parameters: {
             query?: never;
@@ -2272,6 +2723,89 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ReindexDto"];
+                };
+            };
+            /** @description VALIDATION_FAILED */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description UNAUTHENTICATED */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description FORBIDDEN | ACCOUNT_DISABLED | CSRF_INVALID */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+        };
+    };
+    ReviewAdminController_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReviewSettingsDto"];
+                };
+            };
+            /** @description UNAUTHENTICATED */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description FORBIDDEN | ACCOUNT_DISABLED | CSRF_INVALID */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+        };
+    };
+    ReviewAdminController_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReviewSettingsDto"];
                 };
             };
             /** @description VALIDATION_FAILED */
@@ -4188,6 +4722,56 @@ export interface operations {
             };
         };
     };
+    InboxController_list: {
+        parameters: {
+            query?: {
+                cursor?: string;
+                limit?: number;
+                tab?: "all" | "decide" | "check" | "spot" | "mentions" | "done";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InboxDto"];
+                };
+            };
+            /** @description VALIDATION_FAILED */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description UNAUTHENTICATED */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description FORBIDDEN | ACCOUNT_DISABLED */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+        };
+    };
     ContributionsController_suggestions: {
         parameters: {
             query?: {
@@ -4252,6 +4836,54 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["MetaDto"];
+                };
+            };
+        };
+    };
+    AgentOpsController_get: {
+        parameters: {
+            query?: {
+                days?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AgentMetricsDto"];
+                };
+            };
+            /** @description VALIDATION_FAILED */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description UNAUTHENTICATED */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description FORBIDDEN | ACCOUNT_DISABLED */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
                 };
             };
         };
@@ -4376,7 +5008,7 @@ export interface operations {
         parameters: {
             query?: {
                 cursor?: string;
-                kind?: "ping" | "quality_check";
+                kind?: "ping" | "quality_check" | "agent_review";
                 limit?: number;
                 status?: "queued" | "running" | "succeeded" | "failed";
             };
@@ -5013,6 +5645,129 @@ export interface operations {
             };
         };
     };
+    EscalationsController_state: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EscalationStateDto"];
+                };
+            };
+            /** @description VALIDATION_FAILED */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description UNAUTHENTICATED */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description FORBIDDEN | ACCOUNT_DISABLED | CSRF_INVALID */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description NOT_FOUND */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+        };
+    };
+    EscalationsController_escalate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EscalationStateDto"];
+                };
+            };
+            /** @description VALIDATION_FAILED */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description UNAUTHENTICATED */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description FORBIDDEN | ACCOUNT_DISABLED | CSRF_INVALID */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description NOT_FOUND */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description NOT_ASSIGNED | SELF_REVIEW | PRECONDITION_FAILED | ALREADY_EXISTS */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+        };
+    };
     QualityController_findings: {
         parameters: {
             query?: never;
@@ -5337,6 +6092,129 @@ export interface operations {
             };
             /** @description FORBIDDEN | ACCOUNT_DISABLED */
             403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+        };
+    };
+    SpotChecksController_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SpotCheckDto"];
+                };
+            };
+            /** @description VALIDATION_FAILED */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description UNAUTHENTICATED */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description FORBIDDEN | ACCOUNT_DISABLED | CSRF_INVALID */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description NOT_FOUND */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+        };
+    };
+    SpotChecksController_decide: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SpotCheckDto"];
+                };
+            };
+            /** @description VALIDATION_FAILED */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description UNAUTHENTICATED */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description FORBIDDEN | ACCOUNT_DISABLED | CSRF_INVALID */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description NOT_FOUND */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description NOT_ASSIGNED | SELF_REVIEW | PRECONDITION_FAILED */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };

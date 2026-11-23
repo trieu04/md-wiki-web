@@ -42,6 +42,16 @@ const schema = z.object({
   AI_JOBS__QUALITY_CHECK__TIMEOUT_S: z.string().optional(),
   AI_JOBS__QUALITY_CHECK__MAX_ATTEMPTS: z.string().optional(),
   OPENAI_COMPAT_BASE_URL: z.string().optional(),
+  // Reviewer agent (system-logic §7.8.2, D-200): seeded user; its API token is shared with the
+  // worker through the environment. Without a token the agent is unavailable (D-75 applies).
+  REVIEWER_AGENT_EMAIL: z.email().default('reviewer-agent@agents.md-wiki.local'),
+  REVIEWER_AGENT_TOKEN: z.preprocess(
+    (value) => (value === '' ? undefined : value),
+    z
+      .string()
+      .regex(/^mwt_[A-Za-z0-9]{8}_[A-Za-z0-9]{32}$/)
+      .optional(),
+  ),
 });
 
 export type ApiConfig = z.infer<typeof schema>;

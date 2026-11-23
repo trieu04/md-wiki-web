@@ -1,9 +1,14 @@
-import { pickAssignee } from '@md-wiki/domain';
+import { pickReviewer } from '@md-wiki/domain';
 import type { Prisma } from '@prisma/client';
+import { agentFacts } from '../agent/agent-facts.js';
 import { audit } from '../auth/credentials.js';
 
-/** The assignment rule until Phase 8 (system-logic §7.4.2, D-75). */
+/**
+ * Who reviews a proposal (system-logic §7.8.2, D-201): the available reviewer agent under the
+ * self-managed model, else the human rule of §7.4.2 (D-75).
+ */
 export async function chooseAssignee(tx: Prisma.TransactionClient, submitterId: string) {
+  const { model, agent } = await agentFacts(tx);
   const candidates = await tx.user.findMany({
     where: {
       kind: 'human',
@@ -12,7 +17,9 @@ export async function chooseAssignee(tx: Prisma.TransactionClient, submitterId: 
     },
     select: { id: true, kind: true, roles: true, disabledAt: true, createdAt: true },
   });
-  return pickAssignee(
+  return pickReviewer(
+    model,
+    agent,
     candidates.map((u) => ({
       id: u.id,
       kind: u.kind,
@@ -42,7 +49,20 @@ export async function openAssignment(
   return row;
 }
 
-export function closeAssignments(tx: Prisma.TransactionClient, proposalId: string, now: Date) {
+/**
+ * The proposal left `pending` (decision, withdrawal, conflict resolution): every open assignment
+ * closes and every open escalation is resolved (§7.8.5).
+ */
+export async function closeAssignments(
+  tx: Prisma.TransactionClient,
+  proposalId: string,
+  now: Date,
+  resolution: 'decided' | 'withdrawn' = 'decided',
+) {
+  await tx.escalation.updateMany({
+    where: { proposalId, resolvedAt: null },
+    data: { resolvedAt: now, resolution },
+  });
   return tx.assignment.updateMany({
     where: { proposalId, closedAt: null },
     data: { closedAt: now },

@@ -13,13 +13,14 @@ import {
   type TopicAction,
   type TopicStatus,
 } from '@md-wiki/domain';
-import { Prisma, type User } from '@prisma/client';
+import { Prisma, type Proposal, type User } from '@prisma/client';
 import type { Identity } from '../auth/auth.service.js';
 import { audit } from '../auth/credentials.js';
 import { AppError } from '../common/app-error.js';
 import { decodeCursor, encodeCursor, invalid } from '../contributions/pins.js';
 import { EventsService } from '../events/events.service.js';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { holdsEscalation, inProposalAudience } from '../agent/agent-facts.js';
 import { chooseAssignee } from '../review/assignments.js';
 import { parseManifest } from '../contributions/views.js';
 import { actorOf, mayRead, userRef } from '../review/views.js';
@@ -52,7 +53,7 @@ const topicInclude = {
   proposal: { select: { id: true, slug: true, title: true, state: true, submitterId: true } },
   _count: { select: { entries: { where: { kind: { in: ['comment', 'agreement'] } } } } },
 } satisfies Prisma.TopicInclude;
-type TopicRow = Prisma.TopicGetPayload<{ include: typeof topicInclude }>;
+export type TopicRow = Prisma.TopicGetPayload<{ include: typeof topicInclude }>;
 const ACTIVE: TopicStatus[] = ['open', 'on_hold'];
 const CLOSED: TopicStatus[] = ['resolved', 'rejected'];
 const REVIEW_ROLES = new Set(['reviewer', 'publisher', 'owner']);
@@ -101,7 +102,12 @@ export class DiscussionsService {
   }
   private async visibleProposal(identity: Identity, slug: string) {
     const p = await this.db.proposal.findUnique({ where: { slug } });
-    if (!p || (p.submitterId !== identity.user.id && !mayRead(identity)))
+    if (
+      !p ||
+      (p.submitterId !== identity.user.id &&
+        !mayRead(identity) &&
+        !(await inProposalAudience(this.db, p.id, identity.user.id)))
+    )
       throw new AppError('NOT_FOUND');
     return p;
   }
@@ -494,7 +500,7 @@ export class DiscussionsService {
   async close(identity: Identity, id: string, input: TopicCloseInput) {
     this.require(identity, 'topic.open');
     return this.write(identity, id, async (tx, topic, proposal) => {
-      this.guardCloser(identity, topic, proposal);
+      await this.guardCloser(tx, identity, topic, proposal);
       const status = this.guardVersioned(topic, proposal, input.version, {
         kind: 'close',
         outcome: input.outcome,
@@ -525,7 +531,7 @@ export class DiscussionsService {
   async reopen(identity: Identity, id: string, input: TopicReopenInput) {
     this.require(identity, 'topic.open');
     return this.write(identity, id, async (tx, topic, proposal) => {
-      this.guardCloser(identity, topic, proposal);
+      await this.guardCloser(tx, identity, topic, proposal);
       const status = this.guardVersioned(topic, proposal, input.version, { kind: 'reopen' });
       await this.append(tx, topic, identity.user, {
         kind: 'reopen',
@@ -545,15 +551,27 @@ export class DiscussionsService {
     });
   }
 
-  private guardCloser(
+  private async guardCloser(
+    tx: Tx,
     identity: Identity,
     topic: TopicRow,
-    proposal: { submitterId: string } | null,
+    proposal: { id: string; submitterId: string } | null,
   ) {
+    // Page authors of an open discussion escalation close it like reviewers (D-208).
+    const escalated =
+      proposal !== null &&
+      (await tx.escalation.count({
+        where: {
+          proposalId: proposal.id,
+          kind: 'discussion',
+          resolvedAt: null,
+          assigneeIds: { has: identity.user.id },
+        },
+      })) > 0;
     const code = mayCloseTopic({
       isProposalTopic: proposal !== null,
       isAuthor: topic.authorId === identity.user.id,
-      isReviewer: this.isReviewer(identity),
+      isReviewer: this.isReviewer(identity) || escalated,
       isSubmitter: proposal?.submitterId === identity.user.id,
     });
     if (code) throw new AppError(code);
@@ -646,6 +664,84 @@ export class DiscussionsService {
       discussionVersion: state.discussionVersion,
       disputeVersion: state.disputeVersion,
     });
+  }
+
+  /**
+   * The discussion of an escalation (system-logic §7.8.5), inside the caller's transaction that
+   * already holds the proposal row lock: opens the proposal topic, or comments on the active one,
+   * or reopens a closed one — always mentioning the page authors. Returns the topic for events.
+   */
+  async escalationThread(
+    tx: Tx,
+    proposal: Pick<
+      Proposal,
+      'id' | 'slug' | 'title' | 'targetPath' | 'section' | 'bundleHash' | 'manifest'
+    >,
+    user: Pick<User, 'id' | 'kind'>,
+    body: string,
+    mentions: string[],
+  ): Promise<TopicRow> {
+    const existing = await tx.topic.findUnique({ where: { proposalId: proposal.id } });
+    if (!existing) {
+      const baseVersion = parseManifest(proposal).context.target.version;
+      const topic = await tx.topic.create({
+        data: {
+          path: proposal.targetPath,
+          anchor: proposal.section,
+          versionLabel: baseVersion,
+          title: `Escalated: ${proposal.title}`.slice(0, TITLE_LIMIT),
+          authorId: user.id,
+          proposalId: proposal.id,
+          bundleHash: proposal.bundleHash,
+          participantIds: [...new Set([user.id, ...mentions])],
+          entries: {
+            create: {
+              seq: 1,
+              kind: 'open',
+              authorId: user.id,
+              body,
+              mentions,
+              bundleHash: proposal.bundleHash,
+            },
+          },
+        },
+        include: topicInclude,
+      });
+      await audit(tx, user, 'topic.opened', 'topic', topic.id, {
+        path: proposal.targetPath,
+        anchor: proposal.section,
+        proposalSlug: proposal.slug,
+      });
+      await audit(tx, user, 'proposal.discussion_opened', 'proposal', proposal.id, {
+        topicId: topic.id,
+        discussionVersion: 1,
+      });
+      return topic;
+    }
+    await tx.$queryRaw`SELECT id FROM "Topic" WHERE id = ${existing.id}::uuid FOR UPDATE`;
+    const topic = await tx.topic.findUniqueOrThrow({
+      where: { id: existing.id },
+      include: topicInclude,
+    });
+    if (isActive(topic.status)) {
+      await this.append(tx, topic, user, { kind: 'comment', body, mentions, status: topic.status });
+    } else {
+      await this.append(tx, topic, user, { kind: 'reopen', body, mentions, status: 'open', closed: null });
+      await audit(tx, user, 'topic.reopened', 'topic', topic.id, {
+        reason: body,
+        version: topic.version + 1,
+      });
+      await audit(tx, user, 'proposal.discussion_reopened', 'proposal', proposal.id, {
+        topicId: topic.id,
+        discussionVersion: topic.version + 1,
+      });
+    }
+    return tx.topic.findUniqueOrThrow({ where: { id: topic.id }, include: topicInclude });
+  }
+
+  /** Emit the events of a topic written by `escalationThread` (after commit). */
+  announceTopic(topic: TopicRow) {
+    this.emitTopic(topic);
   }
 
   // ---- proposal discussion ------------------------------------------------------------------
@@ -776,7 +872,13 @@ export class DiscussionsService {
   }
 
   async recordDispute(identity: Identity, slug: string, input: DisputeInput) {
-    this.require(identity, 'dispute.write');
+    if (!this.allowed(identity, 'dispute.write')) {
+      // A page author holding an escalation records disputes like a reviewer (D-208).
+      const p = await this.db.proposal.findUnique({ where: { slug }, select: { id: true } });
+      const escalated = p !== null && (await holdsEscalation(this.db, p.id, identity.user.id));
+      if (!can(actorOf(identity), 'dispute.write', { isEscalationAssignee: escalated }).ok)
+        throw new AppError('FORBIDDEN');
+    }
     const seen = await this.visibleProposal(identity, slug);
     const user = identity.user;
     const participants = await this.db.$transaction(async (tx) => {

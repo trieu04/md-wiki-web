@@ -1,4 +1,4 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, Optional } from '@nestjs/common';
 import {
   classifyWriteFailure,
   OPEN_PHASES,
@@ -23,7 +23,7 @@ import {
   type WriteReceipt,
 } from '../wiki/storage/wiki-storage.js';
 import { WIKI_STORAGE } from '../wiki/wiki.module.js';
-import { PUBLISH_HOOKS, type PublishHooks } from './ports.js';
+import { AFTER_PUBLISH, PUBLISH_HOOKS, type AfterPublish, type PublishHooks } from './ports.js';
 
 export type Actor = Pick<User, 'id' | 'kind'>;
 /** Who asked: a publisher (manual), the outbox (auto-publish), or boot recovery. */
@@ -54,6 +54,7 @@ export class PublishService {
     @Inject(API_CONFIG) private readonly config: ApiConfig,
     @Inject(EventsService) private readonly events: EventsService,
     @Inject(PUBLISH_HOOKS) private readonly hooks: PublishHooks,
+    @Optional() @Inject(AFTER_PUBLISH) private readonly after?: AfterPublish,
   ) {}
 
   get autoPublish() {
@@ -214,6 +215,10 @@ export class PublishService {
         this.events.publication(pub.proposal.slug, pub.proposal.submitterId, 'done');
         this.events.proposal(pub.proposal.slug, pub.proposal.submitterId, 'published', 'done');
         this.events.page(path.path);
+        // Digest and spot-check sampling (§7.8.7); never undoes or delays the publication.
+        this.after?.published(pub.proposalId).catch((error: unknown) => {
+          logger.warn({ err: error, proposalId: pub.proposalId }, 'after-publish follow-up failed');
+        });
       }
       return 'published';
     });

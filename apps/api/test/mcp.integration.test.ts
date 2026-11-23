@@ -16,6 +16,7 @@ import { configureHttp } from '../src/config/http.js';
 import type { ProposalDto } from '../src/contributions/contributions.dto.js';
 import type { ProposalDiscussionDto, TopicDetailDto } from '../src/discussions/discussions.dto.js';
 import { PrismaService } from '../src/prisma/prisma.service.js';
+import { ESCALATION_TRIGGERS, NoTriggers } from '../src/review/ports.js';
 import type { ProposalDetailDto } from '../src/review/review.dto.js';
 import { WikiIndexer } from '../src/wiki/indexer/wiki-indexer.js';
 import { FixtureStorage } from '../src/wiki/storage/fixture-storage.js';
@@ -106,6 +107,9 @@ beforeAll(async () => {
     .useValue(NO_QUEUE.value)
     .overrideProvider(WIKI_STORAGE)
     .useValue(storage)
+    // MCP parity with REST is under test here; the mandatory triggers have their own suite.
+    .overrideProvider(ESCALATION_TRIGGERS)
+    .useClass(NoTriggers)
     .compile();
   app = module.createNestApplication();
   configureHttp(app, { public: true });

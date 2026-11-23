@@ -23,7 +23,8 @@
         "output": {
           "oneOf": [
             { "$ref": "ping.output.schema.json" },
-            { "$ref": "quality_check.output.schema.json" }
+            { "$ref": "quality_check.output.schema.json" },
+            { "$ref": "agent_review.output.schema.json" }
           ]
         }
       }

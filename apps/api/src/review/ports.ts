@@ -19,13 +19,18 @@ export interface DiscussionFacts {
 }
 export const DISCUSSION_STATE = Symbol('DISCUSSION_STATE');
 
-/** Phase 8 port: mandatory escalation triggers that refuse an agent approval (none yet). */
+/**
+ * Mandatory escalation triggers that refuse an agent approval (system-logic §7.8.3). `firing`
+ * runs in the decision transaction; `gate` refuses any decision while the actor is a paused
+ * reviewer agent (D-211). Phase 8 provides `MandatoryTriggers` (apps/api/src/agent).
+ */
 export interface EscalationTriggers {
   firing(
     tx: Prisma.TransactionClient,
     proposal: Proposal,
     actor: { id: string; kind: 'human' | 'agent' },
-  ): Promise<string[]>;
+  ): Promise<{ id: string; detail: string }[]>;
+  gate?(tx: Prisma.TransactionClient, actor: { id: string }): Promise<string | null>;
 }
 export const ESCALATION_TRIGGERS = Symbol('ESCALATION_TRIGGERS');
 export class NoTriggers implements EscalationTriggers {
@@ -33,6 +38,12 @@ export class NoTriggers implements EscalationTriggers {
     return Promise.resolve([]);
   }
 }
+
+/** After a publication reached `done` (Phase 8: digest to page authors, spot-check sampling). */
+export interface AfterPublish {
+  published(proposalId: string): Promise<void>;
+}
+export const AFTER_PUBLISH = Symbol('AFTER_PUBLISH');
 
 /**
  * Crash points of the publish flow (system-logic §7.4.5). Production hooks do nothing; fault

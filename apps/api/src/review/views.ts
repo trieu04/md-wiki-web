@@ -229,6 +229,9 @@ export class ReviewViews {
     return can(actorOf(identity), 'proposal.decide', {
       hasOpenAssignment: assigned,
       isOwnProposal: row.submitterId === user.id,
+      isEscalationAssignee: row.assignments.some(
+        (a) => a.assigneeId === user.id && a.reason === 'escalation',
+      ),
     }).ok;
   }
 

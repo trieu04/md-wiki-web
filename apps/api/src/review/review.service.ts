@@ -23,6 +23,7 @@ import {
   type WikiStorage,
 } from '../wiki/storage/wiki-storage.js';
 import { WIKI_STORAGE } from '../wiki/wiki.module.js';
+import { holdsEscalation, inProposalAudience } from '../agent/agent-facts.js';
 import { chooseAssignee, closeAssignments } from './assignments.js';
 import {
   DISCUSSION_STATE,
@@ -134,7 +135,12 @@ export class ReviewService {
   /** Visible to the submitter and to roles ≥ reviewer (D-63, D-86); else indistinguishable from absent. */
   async visible(identity: Identity, slug: string): Promise<DetailRow> {
     const row = await this.views.load({ slug });
-    if (!row || (row.submitterId !== identity.user.id && !mayRead(identity)))
+    if (
+      !row ||
+      (row.submitterId !== identity.user.id &&
+        !mayRead(identity) &&
+        !(await inProposalAudience(this.db, row.id, identity.user.id)))
+    )
       throw new AppError('NOT_FOUND');
     return row;
   }
@@ -196,9 +202,20 @@ export class ReviewService {
     const user = identity.user;
     const actor = actorOf(identity);
     // Step 1: role and token scope only; the assignment and self checks come in order below.
-    if (!can(actor, 'proposal.decide', { hasOpenAssignment: true, isOwnProposal: false }).ok)
-      throw new AppError('FORBIDDEN');
+    // A page author holding an escalation decides with reviewer rights (D-208).
+    const roleOnly = { hasOpenAssignment: true, isOwnProposal: false };
     const found = await this.db.proposal.findUnique({ where: { slug }, select: { id: true } });
+    if (
+      !can(actor, 'proposal.decide', roleOnly).ok &&
+      !(
+        found &&
+        can(actor, 'proposal.decide', {
+          ...roleOnly,
+          isEscalationAssignee: await holdsEscalation(this.db, found.id, user.id),
+        }).ok
+      )
+    )
+      throw new AppError('FORBIDDEN');
     if (!found) throw new AppError('NOT_FOUND');
     const id = decisionId(found.id, user.id, input.previewAt);
     // Step 3: replay of the same binding changes nothing.
@@ -213,6 +230,7 @@ export class ReviewService {
       throw new AppError('PRECONDITION_FAILED', 'This preview was already decided differently');
     }
 
+    const refused: { triggers: { id: string; detail: string }[] } = { triggers: [] };
     const committed = await this.storage.withRootLock(async () => {
       const proposal = await this.db.proposal.findUniqueOrThrow({
         where: { id: found.id },
@@ -242,6 +260,8 @@ export class ReviewService {
         return await this.db.$transaction(async (tx) => {
           await tx.$queryRaw`SELECT id FROM "Proposal" WHERE id = ${proposal.id}::uuid FOR UPDATE`;
           const p = await tx.proposal.findUniqueOrThrow({ where: { id: proposal.id } });
+          const gated = (await this.triggers.gate?.(tx, user)) ?? null;
+          if (gated) throw new AppError('PRECONDITION_FAILED', gated);
           let assigned =
             (await tx.assignment.count({
               where: { proposalId: p.id, assigneeId: user.id, closedAt: null },
@@ -285,13 +305,19 @@ export class ReviewService {
             sourcesFresh: changed.length === 0,
             targetBlocked: blocked,
             isAgent: user.kind === 'agent',
-            firingTriggers: firing,
+            firingTriggers: firing.map((t) => t.id),
           });
           if (code === 'SOURCE_CHANGED') throw sourceChanged(changed);
           if (code === 'STALE_BASE')
             throw new AppError('STALE_BASE', 'The page changed since the proposal was made');
-          if (code === 'ESCALATION_REQUIRED')
-            throw new AppError(code, `Escalation required: ${firing.join(', ')}`);
+          if (code === 'ESCALATION_REQUIRED') {
+            refused.triggers = firing;
+            throw new AppError(
+              code,
+              `Escalation required: ${firing.map((t) => t.id).join(', ')}`,
+              firing.map((t) => ({ path: 'triggers', code: t.id, message: t.detail })),
+            );
+          }
           if (code) throw new AppError(code);
 
           const now = new Date();
@@ -344,6 +370,14 @@ export class ReviewService {
           throw new AppError('PRECONDITION_FAILED', 'The proposal was decided concurrently');
         throw error;
       }
+    }).catch(async (error: unknown) => {
+      // The refusal rolled back with the transaction; it is recorded on its own (D-205).
+      if (refused.triggers.length)
+        await audit(this.db, user, 'agent.refused', 'proposal', found.id, {
+          triggers: refused.triggers.map((t) => t.id),
+          previewAt: input.previewAt,
+        });
+      throw error;
     });
     this.events.proposal(slug, committed.proposal.submitterId, committed.state);
     await this.hooks.at('approved', committed.proposal.id);
@@ -383,7 +417,7 @@ export class ReviewService {
         where: { id: p.id },
         data: { state: 'rejected', updatedAt: now },
       });
-      await closeAssignments(tx, p.id, now);
+      await closeAssignments(tx, p.id, now, 'withdrawn');
       await tx.publishOutbox.updateMany({
         where: { proposalId: p.id, processedAt: null },
         data: { processedAt: now, lastError: 'withdrawn' },

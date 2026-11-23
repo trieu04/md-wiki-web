@@ -3,10 +3,12 @@
 export type JobResult = JobResultOk | JobResultFailed;
 export type FindingSeverity = "info" | "warning" | "blocking";
 export type FindingOrigin = "model" | "rule";
+export type AgentReviewOutcome = "approved" | "rejected" | "escalated" | "left_pending";
+export type AgentVerdict = "approve" | "reject" | "escalate";
 
 export interface JobResultOk {
   status: "ok";
-  output: PingOutput | QualityCheckOutput;
+  output: PingOutput | QualityCheckOutput | AgentReviewOutput;
 }
 export interface PingOutput {
   /**
@@ -48,6 +50,205 @@ export interface QualityDropped {
   unknownBlock: number;
   emptyQuote: number;
   quoteNotFound: number;
+}
+export interface AgentReviewOutput {
+  promptVersion: string;
+  provider: string | null;
+  model: string | null;
+  usage: AgentReviewUsage;
+  outcome: AgentReviewOutcome;
+  verdict: AgentVerdict | null;
+  decisionId: string | null;
+  escalationId: string | null;
+  notes: string;
+  /**
+   * @maxItems 50
+   */
+  claims: AgentClaim[];
+  /**
+   * @maxItems 10
+   */
+  refusals:
+    | []
+    | [AgentRefusal]
+    | [AgentRefusal, AgentRefusal]
+    | [AgentRefusal, AgentRefusal, AgentRefusal]
+    | [AgentRefusal, AgentRefusal, AgentRefusal, AgentRefusal]
+    | [AgentRefusal, AgentRefusal, AgentRefusal, AgentRefusal, AgentRefusal]
+    | [AgentRefusal, AgentRefusal, AgentRefusal, AgentRefusal, AgentRefusal, AgentRefusal]
+    | [AgentRefusal, AgentRefusal, AgentRefusal, AgentRefusal, AgentRefusal, AgentRefusal, AgentRefusal]
+    | [AgentRefusal, AgentRefusal, AgentRefusal, AgentRefusal, AgentRefusal, AgentRefusal, AgentRefusal, AgentRefusal]
+    | [
+        AgentRefusal,
+        AgentRefusal,
+        AgentRefusal,
+        AgentRefusal,
+        AgentRefusal,
+        AgentRefusal,
+        AgentRefusal,
+        AgentRefusal,
+        AgentRefusal
+      ]
+    | [
+        AgentRefusal,
+        AgentRefusal,
+        AgentRefusal,
+        AgentRefusal,
+        AgentRefusal,
+        AgentRefusal,
+        AgentRefusal,
+        AgentRefusal,
+        AgentRefusal,
+        AgentRefusal
+      ];
+}
+export interface AgentReviewUsage {
+  inputTokens: number;
+  outputTokens: number;
+}
+export interface AgentClaim {
+  claim: string;
+  source: string | null;
+  supported: boolean;
+}
+export interface AgentRefusal {
+  code: string;
+  /**
+   * @maxItems 20
+   */
+  triggers:
+    | []
+    | [string]
+    | [string, string]
+    | [string, string, string]
+    | [string, string, string, string]
+    | [string, string, string, string, string]
+    | [string, string, string, string, string, string]
+    | [string, string, string, string, string, string, string]
+    | [string, string, string, string, string, string, string, string]
+    | [string, string, string, string, string, string, string, string, string]
+    | [string, string, string, string, string, string, string, string, string, string]
+    | [string, string, string, string, string, string, string, string, string, string, string]
+    | [string, string, string, string, string, string, string, string, string, string, string, string]
+    | [string, string, string, string, string, string, string, string, string, string, string, string, string]
+    | [string, string, string, string, string, string, string, string, string, string, string, string, string, string]
+    | [
+        string,
+        string,
+        string,
+        string,
+        string,
+        string,
+        string,
+        string,
+        string,
+        string,
+        string,
+        string,
+        string,
+        string,
+        string
+      ]
+    | [
+        string,
+        string,
+        string,
+        string,
+        string,
+        string,
+        string,
+        string,
+        string,
+        string,
+        string,
+        string,
+        string,
+        string,
+        string,
+        string
+      ]
+    | [
+        string,
+        string,
+        string,
+        string,
+        string,
+        string,
+        string,
+        string,
+        string,
+        string,
+        string,
+        string,
+        string,
+        string,
+        string,
+        string,
+        string
+      ]
+    | [
+        string,
+        string,
+        string,
+        string,
+        string,
+        string,
+        string,
+        string,
+        string,
+        string,
+        string,
+        string,
+        string,
+        string,
+        string,
+        string,
+        string,
+        string
+      ]
+    | [
+        string,
+        string,
+        string,
+        string,
+        string,
+        string,
+        string,
+        string,
+        string,
+        string,
+        string,
+        string,
+        string,
+        string,
+        string,
+        string,
+        string,
+        string,
+        string
+      ]
+    | [
+        string,
+        string,
+        string,
+        string,
+        string,
+        string,
+        string,
+        string,
+        string,
+        string,
+        string,
+        string,
+        string,
+        string,
+        string,
+        string,
+        string,
+        string,
+        string,
+        string
+      ];
 }
 export interface JobResultFailed {
   status: "failed";

@@ -20,3 +20,6 @@ export * from './contribution-file.js';
 export * from './review.js';
 export * from './discussions.js';
 export * from './quality.js';
+export * from './page-authors.js';
+export * from './escalation-triggers.js';
+export * from './agent-review.js';

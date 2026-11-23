@@ -12,6 +12,8 @@ from bullmq import Job, Worker  # type: ignore[import-untyped]
 from pydantic import SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+from .agent.review import KIND as AGENT_REVIEW
+from .agent.review import process_agent_review
 from .ping import QUEUE_NAME, process_ping
 from .providers import AiSettings, ModelConfig, Provider, make_provider
 from .quality.job import KIND as QUALITY_CHECK
@@ -26,6 +28,9 @@ class Settings(BaseSettings):
     redis_url: str
     internal_api_url: str
     service_token: SecretStr
+    # The reviewer agent acts through the public API with its own token (system-logic §7.8.6).
+    public_api_url: str = "http://127.0.0.1:3000/api/v1/"
+    reviewer_agent_token: SecretStr | None = None
 
 
 def _redact_url(url: str) -> str:
@@ -48,10 +53,23 @@ def quality_provider() -> tuple[Provider, ModelConfig]:
     return make_provider(QUALITY_CHECK, AiSettings())
 
 
-async def dispatch(api: httpx.AsyncClient, name: str, job_id: str | None, data: object) -> None:
+def agent_provider() -> tuple[Provider, ModelConfig]:
+    """The provider for ``agent_review`` (``AI_JOBS__AGENT_REVIEW__*`` overrides)."""
+    return make_provider(AGENT_REVIEW, AiSettings())
+
+
+async def dispatch(
+    api: httpx.AsyncClient,
+    name: str,
+    job_id: str | None,
+    data: object,
+    public: httpx.AsyncClient | None = None,
+) -> None:
     """Route a job by its BullMQ name (= envelope kind) to its handler."""
     if name == QUALITY_CHECK:
         await process_quality_check(api, name, job_id, data, quality_provider)
+    elif name == AGENT_REVIEW:
+        await process_agent_review(api, public, name, job_id, data, agent_provider)
     else:
         await process_ping(api, name, job_id, data)
 
@@ -64,6 +82,16 @@ async def serve(settings: Settings) -> None:
     for signum in signals:
         loop.add_signal_handler(signum, stopping.set)
 
+    token = settings.reviewer_agent_token
+    public = (
+        httpx.AsyncClient(
+            base_url=settings.public_api_url,
+            headers={"Authorization": f"Bearer {token.get_secret_value()}"},
+            timeout=60,
+        )
+        if token is not None and token.get_secret_value()
+        else None
+    )
     try:
         async with httpx.AsyncClient(
             base_url=settings.internal_api_url,
@@ -71,7 +99,7 @@ async def serve(settings: Settings) -> None:
         ) as api:
 
             async def process(job: Job, _token: str) -> None:
-                await dispatch(api, job.name, job.id, job.data)
+                await dispatch(api, job.name, job.id, job.data, public)
 
             worker = Worker(
                 QUEUE_NAME, process, {"connection": settings.redis_url, "autorun": False}
@@ -85,6 +113,8 @@ async def serve(settings: Settings) -> None:
                 await worker.close()
                 await work
     finally:
+        if public is not None:
+            await public.aclose()
         for signum in signals:
             loop.remove_signal_handler(signum)
 

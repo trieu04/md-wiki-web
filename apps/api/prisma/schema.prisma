@@ -167,6 +167,7 @@ model AuditEvent {
 enum AiJobKind {
   ping
   quality_check
+  agent_review
 }
 
 enum AiJobStatus {
@@ -182,6 +183,9 @@ enum AiJobTrigger {
   submit
   rerun
   self_check
+  after_check
+  returned
+  resumed
 }
 
 enum FindingSeverity {
@@ -220,6 +224,7 @@ model AiJob {
   tokensOut     Int?
   dropped       Json?
   findings      Finding[]
+  agentReview   AgentReview?
 
   @@index([proposalId, createdAt])
   @@index([draftId, createdAt])
@@ -325,6 +330,9 @@ model Proposal {
   disputes       DisputeEvent[]
   aiJobs         AiJob[]
   findings       Finding[]
+  escalations    Escalation[]
+  agentReviews   AgentReview[]
+  spotCheck      SpotCheck?
 
   @@index([submitterId, createdAt])
   @@index([targetPath, state])
@@ -592,4 +600,129 @@ model DisputeEvent {
   createdAt      DateTime      @default(now()) @db.Timestamptz(3)
 
   @@unique([proposalId, seq])
+}
+
+// ---- Phase 8: self-managed review (system-logic §7.8.1) ----------------------------------------
+// User references are plain uuid columns (users are disabled, never deleted).
+
+enum ReviewModel {
+  self_managed
+  human
+}
+
+enum EscalationKind {
+  rereview
+  discussion
+}
+
+enum EscalationResolution {
+  decided
+  withdrawn
+  discussion_closed
+}
+
+enum AgentOutcome {
+  approved
+  rejected
+  escalated
+  left_pending
+}
+
+enum SpotCheckOutcome {
+  passed
+  failed
+}
+
+/// Singleton (id = 1): Settings › Review and the stop switch (D-202, D-211).
+model ReviewSettings {
+  id                   Int         @id @default(1)
+  reviewModel          ReviewModel @default(self_managed)
+  reviewerAgentId      String?     @db.Uuid
+  agentPaused          Boolean     @default(false)
+  pausedAt             DateTime?   @db.Timestamptz(3)
+  pausedById           String?     @db.Uuid
+  pauseReason          String?
+  agentEditsHumanPages Boolean     @default(true)
+  customTriggers       Json        @default("[]")
+  spotCheckRate        Float       @default(0.1)
+  reminderDays         Int         @default(2)
+  autoPublishSeen      Boolean?
+  updatedAt            DateTime?   @db.Timestamptz(3)
+  updatedById          String?     @db.Uuid
+}
+
+model Escalation {
+  id             String                @id @default(uuid(7)) @db.Uuid
+  proposalId     String                @db.Uuid
+  proposal       Proposal              @relation(fields: [proposalId], references: [id], onDelete: Restrict)
+  kind           EscalationKind
+  triggers       String[]
+  notes          String
+  requestedById  String                @db.Uuid
+  bundleHash     String
+  assigneeIds    String[]              @db.Uuid
+  topicId        String?               @db.Uuid
+  createdAt      DateTime              @default(now()) @db.Timestamptz(3)
+  resolvedAt     DateTime?             @db.Timestamptz(3)
+  resolution     EscalationResolution?
+  reminders      Int                   @default(0)
+  lastRemindedAt DateTime?             @db.Timestamptz(3)
+
+  @@index([proposalId, createdAt])
+  @@index([resolvedAt])
+}
+
+/// One row per succeeded agent_review job (append-only).
+model AgentReview {
+  id            String       @id @default(uuid(7)) @db.Uuid
+  jobId         String       @unique @db.Uuid
+  job           AiJob        @relation(fields: [jobId], references: [id], onDelete: Restrict)
+  proposalId    String       @db.Uuid
+  proposal      Proposal     @relation(fields: [proposalId], references: [id], onDelete: Restrict)
+  bundleHash    String
+  outcome       AgentOutcome
+  verdict       String?
+  notes         String
+  claims        Json
+  refusals      Json
+  decisionId    String?      @db.Uuid
+  escalationId  String?      @db.Uuid
+  provider      String?
+  model         String?
+  promptVersion String
+  createdAt     DateTime     @default(now()) @db.Timestamptz(3)
+
+  @@index([proposalId, createdAt])
+  @@index([createdAt])
+}
+
+/// A sampled agent approval checked after publication (D-213, D-214); decided once.
+model SpotCheck {
+  id            String            @id @default(uuid(7)) @db.Uuid
+  proposalId    String            @unique @db.Uuid
+  proposal      Proposal          @relation(fields: [proposalId], references: [id], onDelete: Restrict)
+  decisionId    String            @unique @db.Uuid
+  publicationId String            @db.Uuid
+  path          String
+  versionLabel  String
+  reviewerId    String            @db.Uuid
+  assigneeIds   String[]          @db.Uuid
+  sampledAt     DateTime          @default(now()) @db.Timestamptz(3)
+  outcome       SpotCheckOutcome?
+  reason        String?
+  anchors       String[]
+  decidedById   String?           @db.Uuid
+  decidedAt     DateTime?         @db.Timestamptz(3)
+
+  @@index([sampledAt])
+}
+
+/// After-publication work done once per publication: digest and sampling (append-only).
+model PublishFollowUp {
+  publicationId String   @id @db.Uuid
+  proposalId    String   @db.Uuid
+  sampled       Boolean
+  spotCheckId   String?  @db.Uuid
+  notified      String[] @db.Uuid
+  createdAt     DateTime @default(now()) @db.Timestamptz(3)
 }

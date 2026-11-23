@@ -7,7 +7,11 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, RootModel, StrictStr
 
-from . import ping_output_schema, quality_check_output_schema
+from . import (
+    agent_review_output_schema,
+    ping_output_schema,
+    quality_check_output_schema,
+)
 
 
 class JobError(BaseModel):
@@ -24,7 +28,9 @@ class JobResultOk(BaseModel):
     )
     status: Literal["ok"]
     output: (
-        ping_output_schema.PingOutput | quality_check_output_schema.QualityCheckOutput
+        ping_output_schema.PingOutput
+        | quality_check_output_schema.QualityCheckOutput
+        | agent_review_output_schema.AgentReviewOutput
     )
 
 

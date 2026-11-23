@@ -1,4 +1,6 @@
 import type {
+  AgentReviewInput,
+  AgentReviewOutput,
   JobResult,
   PingInput,
   PingOutput,
@@ -9,6 +11,8 @@ import inputSchema from '@md-wiki/contracts/jobs/ping.input.schema.json' with { 
 import outputSchema from '@md-wiki/contracts/jobs/ping.output.schema.json' with { type: 'json' };
 import qualityInputSchema from '@md-wiki/contracts/jobs/quality_check.input.schema.json' with { type: 'json' };
 import qualityOutputSchema from '@md-wiki/contracts/jobs/quality_check.output.schema.json' with { type: 'json' };
+import agentInputSchema from '@md-wiki/contracts/jobs/agent_review.input.schema.json' with { type: 'json' };
+import agentOutputSchema from '@md-wiki/contracts/jobs/agent_review.output.schema.json' with { type: 'json' };
 import resultSchema from '@md-wiki/contracts/jobs/result.schema.json' with { type: 'json' };
 import { Ajv2020 } from 'ajv/dist/2020.js';
 import type { ValidateFunction } from 'ajv';
@@ -27,15 +31,18 @@ const validator = new Ajv2020({
 });
 validator.addSchema(outputSchema, 'ping.output.schema.json');
 validator.addSchema(qualityOutputSchema, 'quality_check.output.schema.json');
+validator.addSchema(agentOutputSchema, 'agent_review.output.schema.json');
 const pingInput = validator.compile<PingInput>(inputSchema);
 const pingOutput = validator.getSchema<PingOutput>('ping.output.schema.json');
 const qualityInput = validator.compile<QualityCheckInput>(qualityInputSchema);
 const qualityOutput = validator.getSchema<QualityCheckOutput>('quality_check.output.schema.json');
+const agentInput = validator.compile<AgentReviewInput>(agentInputSchema);
+const agentOutput = validator.getSchema<AgentReviewOutput>('agent_review.output.schema.json');
 const jobResult = validator.compile<JobResult>(resultSchema);
 const jobError = validator.compile<Extract<JobResult, { status: 'failed' }>['error']>(
   resultSchema.$defs.JobError,
 );
-if (!pingOutput || !qualityOutput) throw new Error('job output schemas did not compile');
+if (!pingOutput || !qualityOutput || !agentOutput) throw new Error('job output schemas did not compile');
 
 function read<T>(validate: ValidateFunction<T>, body: unknown, prefix = ''): T {
   if (validate(body)) return body;
@@ -55,6 +62,9 @@ export const readPingOutput = (body: unknown): PingOutput => read(pingOutput, bo
 export const readQualityInput = (body: unknown): QualityCheckInput => read(qualityInput, body);
 export const readQualityOutput = (body: unknown): QualityCheckOutput =>
   read(qualityOutput, body, 'output.');
+export const readAgentInput = (body: unknown): AgentReviewInput => read(agentInput, body);
+export const readAgentOutput = (body: unknown): AgentReviewOutput =>
+  read(agentOutput, body, 'output.');
 export const readJobResult = (body: unknown): JobResult => read(jobResult, body);
 export const readJobError = (body: unknown) => read(jobError, body);
 

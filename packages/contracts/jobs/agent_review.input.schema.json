@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "AgentReviewInput",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["proposal", "trigger", "round"],
+  "properties": {
+    "proposal": {
+      "title": "AgentReviewSubject",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "slug", "bundleHash", "targetPath"],
+      "properties": {
+        "id": { "type": "string", "format": "uuid" },
+        "slug": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "bundleHash": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+        "targetPath": { "type": "string", "minLength": 1, "maxLength": 200 }
+      }
+    },
+    "trigger": {
+      "title": "AgentReviewTrigger",
+      "type": "string",
+      "enum": ["after_check", "returned", "resumed"]
+    },
+    "round": { "type": "integer", "minimum": 1 }
+  }
+}
