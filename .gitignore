@@ -5,8 +5,10 @@ coverage/
 build/
 
 .env
-design/runtime/
+design/runtime/*
+!design/runtime/support.js
 design/reference/
+/design/reference.tmp-*/
 visual/report/
 .orchestrate/
 .pi-sessions/

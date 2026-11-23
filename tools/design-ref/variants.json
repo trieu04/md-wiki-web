@@ -1,0 +1,334 @@
+{
+  "Main": {
+    "mine": {},
+    "all": { "clicks": [["button", "^All pages$", "aria-pressed"]] }
+  },
+  "Search": {
+    "relevance": {},
+    "trust": { "clicks": [["button", "^Most checked first$", "aria-pressed"]] },
+    "recent": { "clicks": [["button", "^Newest$", "aria-pressed"]] },
+    "without-checked": {
+      "clicks": [["checkbox", "^Checked against source", "aria-checked", "false"]]
+    },
+    "without-reviewed": { "clicks": [["checkbox", "^Reviewed", "aria-checked", "false"]] },
+    "without-not-reviewed": { "clicks": [["checkbox", "^Not reviewed", "aria-checked", "false"]] },
+    "without-error": { "clicks": [["checkbox", "^Confirmed error", "aria-checked", "false"]] },
+    "all-filters-off": {
+      "clicks": [
+        ["checkbox", "^Checked against source", "aria-checked", "false"],
+        ["checkbox", "^Reviewed", "aria-checked", "false"],
+        ["checkbox", "^Not reviewed", "aria-checked", "false"],
+        ["checkbox", "^Confirmed error", "aria-checked", "false"]
+      ]
+    }
+  },
+  "Page": {
+    "principle": {},
+    "overview": { "clicks": [["button", "^Overview$", "aria-current", "location"]] },
+    "resolution": { "clicks": [["button", "^Resolution$", "aria-current", "location"]] },
+    "detectors": { "clicks": [["button", "^Detectors$", "aria-current", "location"]] },
+    "history": { "clicks": [["button", "^History$", "aria-current", "location"]] },
+    "not-following": {
+      "clicks": [["button", "^Following$"]],
+      "expect": "button[aria-pressed=false]:has-text('Follow')"
+    },
+    "helped-yes": { "clicks": [["button", "^Yes$", "aria-pressed"]] },
+    "helped-partly": { "clicks": [["button", "^Partly$", "aria-pressed"]] },
+    "helped-no": { "clicks": [["button", "^No$", "aria-pressed"]] },
+    "revealed": { "clicks": [["button", "^Show anyway$"]], "expect": "button:has-text('Hide')" }
+  },
+  "Trust": {
+    "why": {
+      "props": { "mode": "why" },
+      "expect": "[role=tab][aria-selected=true]:has-text('Why this label')"
+    },
+    "check": {
+      "props": { "mode": "check" },
+      "expect": "[role=tab][aria-selected=true]:has-text('I checked a source')"
+    },
+    "check-partly": {
+      "props": { "mode": "check" },
+      "clicks": [["radio", "^Partly", "aria-checked"]]
+    },
+    "check-contradicts": {
+      "props": { "mode": "check" },
+      "clicks": [["radio", "^It contradicts the text", "aria-checked"]]
+    },
+    "check-cant": {
+      "props": { "mode": "check" },
+      "clicks": [["radio", "^I couldn’t check", "aria-checked"]]
+    },
+    "check-done": {
+      "props": { "mode": "check" },
+      "clicks": [["button", "^Save source check$"]],
+      "expect": "[role=status]:has-text('Source check saved')"
+    },
+    "check-contradicts-done": {
+      "props": { "mode": "check" },
+      "clicks": [
+        ["radio", "^It contradicts the text", "aria-checked"],
+        ["button", "^Save check and send report$"]
+      ],
+      "expect": "[role=status]:has-text('the page authors got a report too')"
+    },
+    "use": {
+      "props": { "mode": "use" },
+      "expect": "[role=tab][aria-selected=true]:has-text('I used it')"
+    },
+    "use-changes": {
+      "props": { "mode": "use" },
+      "clicks": [["button", "^With changes$", "aria-pressed"]]
+    },
+    "use-no": { "props": { "mode": "use" }, "clicks": [["button", "^No$", "aria-pressed"]] },
+    "use-done": {
+      "props": { "mode": "use" },
+      "clicks": [["button", "^Save$"]],
+      "expect": "[role=status]:has-text('Thanks, saved for your team')"
+    },
+    "report": {
+      "props": { "mode": "report" },
+      "expect": "[role=tab][aria-selected=true]:has-text('Report a problem')"
+    },
+    "report-outdated": {
+      "props": { "mode": "report" },
+      "clicks": [["button", "^Outdated$", "aria-pressed"]]
+    },
+    "report-unclear": {
+      "props": { "mode": "report" },
+      "clicks": [["button", "^Unclear$", "aria-pressed"]]
+    },
+    "report-source": {
+      "props": { "mode": "report" },
+      "clicks": [["button", "^Missing or weak source$", "aria-pressed"]]
+    },
+    "report-other": {
+      "props": { "mode": "report" },
+      "clicks": [["button", "^Something else$", "aria-pressed"]]
+    },
+    "report-done": {
+      "props": { "mode": "report" },
+      "clicks": [["button", "^Send report$"]],
+      "expect": "[role=status]:has-text('Report sent')"
+    }
+  },
+  "You": {
+    "following": {},
+    "trust": { "clicks": [["tab", "^Your checks and reports", "aria-selected"]] },
+    "suggestions": { "clicks": [["tab", "^Your suggestions", "aria-selected"]] },
+    "pref-recheck-off": {
+      "clicks": [["switch", "^A section I used goes under re-check$", "aria-checked", "false"]]
+    },
+    "pref-changed-off": {
+      "clicks": [["switch", "^A section I checked is edited$", "aria-checked", "false"]]
+    },
+    "pref-report-off": {
+      "clicks": [
+        ["switch", "^My report is confirmed, dismissed or fixed$", "aria-checked", "false"]
+      ]
+    },
+    "pref-digest-on": {
+      "clicks": [["switch", "^Weekly summary of followed pages$", "aria-checked"]]
+    }
+  },
+  "Editor": {
+    "write": {},
+    "preview": { "clicks": [["tab", "^Preview$", "aria-selected"]] },
+    "diff": { "clicks": [["tab", "^Changes$", "aria-selected"]] },
+    "base-changed": {
+      "props": { "baseChanged": true },
+      "expect": "[role=alert]:has-text('The page changed since you started')"
+    },
+    "base-changed-preview": {
+      "props": { "baseChanged": true },
+      "clicks": [["tab", "^Preview$", "aria-selected"]],
+      "expect": "[role=alert]"
+    },
+    "base-changed-diff": {
+      "props": { "baseChanged": true },
+      "clicks": [["tab", "^Changes$", "aria-selected"]],
+      "expect": "[role=alert]"
+    }
+  },
+  "Conflict": {
+    "merge": {},
+    "mine": { "clicks": [["radio", "^Replace with mine", "aria-checked"]] },
+    "drop": { "clicks": [["radio", "^Drop my change", "aria-checked"]] }
+  },
+  "Inbox": {
+    "all": {},
+    "decide": { "clicks": [["tab", "^Decide", "aria-selected"]] },
+    "check": { "clicks": [["tab", "^Check", "aria-selected"]] },
+    "spot": { "clicks": [["tab", "^Spot checks", "aria-selected"]] },
+    "mentions": { "clicks": [["tab", "^Mentions", "aria-selected"]] },
+    "done": { "clicks": [["tab", "^Done", "aria-selected"]] },
+    "selected-discussion": {
+      "clicks": [["button", "Lateral FWHM differs between two pages", "aria-pressed"]]
+    },
+    "selected-retraction": {
+      "clicks": [["button", "A cited article was retracted", "aria-pressed"]]
+    },
+    "selected-report": { "clicks": [["button", "Reported as outdated", "aria-pressed"]] },
+    "selected-spot-check": { "clicks": [["button", "Check an agent approval", "aria-pressed"]] }
+  },
+  "Proposals": {
+    "open": {},
+    "stale": { "clicks": [["tab", "^Stale", "aria-selected"]] },
+    "blocked": { "clicks": [["tab", "^Blocked", "aria-selected"]] },
+    "published": { "clicks": [["tab", "^Published", "aria-selected"]] },
+    "rejected": { "clicks": [["tab", "^Rejected", "aria-selected"]] },
+    "all": { "clicks": [["tab", "^All", "aria-selected"]] }
+  },
+  "Review": {
+    "escalated": { "props": { "scenario": "escalated" }, "expect": "text='Assigned to you.'" },
+    "disputed": { "props": { "scenario": "disputed" }, "expect": "text='Held by a dispute.'" },
+    "locked": { "props": { "scenario": "locked" }, "expect": "text='Reread before deciding'" },
+    "publishing": {
+      "props": { "scenario": "publishing" },
+      "expect": "text='Publishing automatically.'"
+    },
+    "blocked": { "props": { "scenario": "blocked" }, "expect": "text='Publish outcome unknown.'" },
+    "final": { "clicks": [["tab", "^Final page$", "aria-selected"]] },
+    "base": { "clicks": [["tab", "^Current page$", "aria-selected"]] },
+    "discussion": { "clicks": [["tab", "^Discussion \\(1\\)$", "aria-selected"]] },
+    "history": { "clicks": [["tab", "^History \\(6\\)$", "aria-selected"]] },
+    "request-changes": { "clicks": [["radio", "^Request changes", "aria-checked"]] },
+    "hold": { "clicks": [["radio", "^Hold for discussion", "aria-checked"]] },
+    "disputed-request-changes": {
+      "props": { "scenario": "disputed" },
+      "clicks": [["radio", "^Request changes", "aria-checked"]],
+      "expect": "button:enabled:has-text('Send back with reason')"
+    }
+  },
+  "Discussions": {
+    "open": {},
+    "mine": { "clicks": [["button", "^Mine 2$", "aria-pressed"]] },
+    "closed": { "clicks": [["button", "^Closed 41$", "aria-pressed"]] },
+    "all": { "clicks": [["button", "^All$", "aria-pressed"]] },
+    "selected-dispute": { "clicks": [["button", "Is the claim general\\?", "aria-pressed"]] },
+    "selected-report": { "clicks": [["button", "Pinhole wording outdated", "aria-pressed"]] }
+  },
+  "Credibility": {
+    "queue": {},
+    "coverage": { "clicks": [["tab", "^Pages", "aria-selected"]] },
+    "sources": { "clicks": [["tab", "^Sources", "aria-selected"]] },
+    "retraction-error": {
+      "clicks": [["radio", "^Wrong: mark as confirmed error", "aria-checked"]]
+    },
+    "retraction-recheck": { "clicks": [["radio", "^Keep under re-check", "aria-checked"]] },
+    "selected-report": { "clicks": [["button", "^New report: wrong", "aria-pressed"]] },
+    "report-confirm-and-fix": {
+      "clicks": [
+        ["button", "^New report: wrong", "aria-pressed"],
+        ["radio", "^Confirm and fix now", "aria-checked"]
+      ]
+    },
+    "report-dismiss": {
+      "clicks": [
+        ["button", "^New report: wrong", "aria-pressed"],
+        ["radio", "^Dismiss with a reason", "aria-checked"]
+      ]
+    },
+    "selected-copy": { "clicks": [["button", "^Possible copy", "aria-pressed"]] },
+    "copy-independent": {
+      "clicks": [
+        ["button", "^Possible copy", "aria-pressed"],
+        ["radio", "^No, written independently", "aria-checked"]
+      ]
+    },
+    "copy-ask": {
+      "clicks": [
+        ["button", "^Possible copy", "aria-pressed"],
+        ["radio", "^Not sure, ask the authors", "aria-checked"]
+      ]
+    },
+    "selected-contradiction": { "clicks": [["button", "^Possible contradiction", "aria-pressed"]] },
+    "contradiction-no": {
+      "clicks": [
+        ["button", "^Possible contradiction", "aria-pressed"],
+        ["radio", "^No, they say different things", "aria-checked"]
+      ]
+    },
+    "contradiction-discussion": {
+      "clicks": [
+        ["button", "^Possible contradiction", "aria-pressed"],
+        ["radio", "^Leave to the discussion", "aria-checked"]
+      ]
+    },
+    "selected-confirmed": {
+      "clicks": [["button", "^Report confirmed, fix in review", "aria-pressed"]]
+    },
+    "confirmed-close": {
+      "clicks": [
+        ["button", "^Report confirmed, fix in review", "aria-pressed"],
+        ["radio", "^Close: the text is fine after all", "aria-checked"]
+      ]
+    },
+    "confirmed-error": {
+      "clicks": [
+        ["button", "^Report confirmed, fix in review", "aria-pressed"],
+        ["radio", "^Mark as confirmed error", "aria-checked"]
+      ]
+    }
+  },
+  "Ops": { "default": {} },
+  "Settings": {
+    "trust": {},
+    "review": { "clicks": [["tab", "^Review and publishing$", "aria-selected"]] },
+    "people": { "clicks": [["tab", "^People and teams$", "aria-selected"]] },
+    "agents": { "clicks": [["tab", "^Agents and tokens$", "aria-selected"]] },
+    "models": { "clicks": [["tab", "^Models$", "aria-selected"]] },
+    "storage": { "clicks": [["tab", "^Storage$", "aria-selected"]] }
+  },
+  "TopBar": {
+    "home": {
+      "props": { "active": "home", "role": "page author", "query": "" },
+      "expect": "nav[aria-label=Wiki] a[aria-current=page]:has-text('Home')"
+    },
+    "browse": {
+      "props": { "active": "browse" },
+      "expect": "nav[aria-label=Wiki] a[aria-current=page]:has-text('Browse')"
+    },
+    "recent": {
+      "props": { "active": "recent" },
+      "expect": "nav[aria-label=Wiki] a[aria-current=page]:has-text('Recent changes')"
+    },
+    "search": {
+      "props": { "active": "search", "query": "pinhole size" },
+      "expect": "input[type=search][value='pinhole size']"
+    },
+    "you": { "props": { "active": "you" }, "expect": "a[href='You.dc.html'][aria-current=page]" },
+    "workspace": {
+      "props": { "active": "workspace" },
+      "expect": "a[href='Inbox.dc.html'][aria-current=page]"
+    },
+    "none": { "props": { "active": "none" }, "expect": "header:not(:has(a[aria-current=page]))" },
+    "reader": {
+      "props": { "active": "home", "role": "reader" },
+      "expect": "header:not(:has(a[href='Inbox.dc.html'])) a[href='You.dc.html']:has-text('LT')"
+    }
+  },
+  "WorkNav": {
+    "inbox": {
+      "props": { "active": "inbox" },
+      "expect": "a[href='Inbox.dc.html'][aria-current=page]"
+    },
+    "proposals": {
+      "props": { "active": "proposals" },
+      "expect": "a[href='Proposals.dc.html'][aria-current=page]"
+    },
+    "discussions": {
+      "props": { "active": "discussions" },
+      "expect": "a[href='Discussions.dc.html'][aria-current=page]"
+    },
+    "recheck": {
+      "props": { "active": "recheck" },
+      "expect": "a[href='Credibility.dc.html'][aria-current=page]"
+    },
+    "mine": { "props": { "active": "mine" }, "expect": "nav:not(:has(a[aria-current=page]))" },
+    "ops": { "props": { "active": "ops" }, "expect": "a[href='Ops.dc.html'][aria-current=page]" },
+    "settings": {
+      "props": { "active": "settings" },
+      "expect": "a[href='Settings.dc.html'][aria-current=page]"
+    }
+  }
+}
