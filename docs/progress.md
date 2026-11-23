@@ -15,11 +15,11 @@ Live tracker for [implementation-plan.md](implementation-plan.md). Updated by th
 | P0-G | OPUS | — | **done** | 0 | merges P0-10 (CI). Clean clone: make up, install, build, make check, contracts:check, design:shots all PASS; references byte-identical across clones; ping round trip succeeded at /__dev/ping (69 ms); launcher SIGTERM leaves no processes. Found + fixed: tunnel socket path too long |
 | P1-A | astra | sol | **done** | 1 | a1 BLOCKED (status-block warning, line base, boundary tests) → D-33; a2 PASS, 74 tests |
 | P1-B | astra | sol | **done** | 1 | a1 BLOCKED (label metadata, empty page) → D-34; a2 review: ordering test gap → OPUS added test; PASS |
-| P1-C | astra | sol | running (attempt 2) | 1 | a1 BLOCKED (fault semantics, publication lookup) → D-36; merges P1-07,P1-08,P1-10; worktree |
-| P1-D | astra | sol | pending | 0 | merges P1-09,P1-13 |
+| P1-C | astra | sol | **done** | 2 | a1 BLOCKED → D-36; a2: raw-byte precondition (real), gate tunnel/env (tooling); a3 PASS. Deviation: `prisma migrate reset` not run — Prisma requires user consent; fresh-schema deploy test is the evidence (P1-G asks user) |
+| P1-D | astra | sol | running (attempt 1) | 0 | merges P1-09,P1-13 |
 | P1-E | sol | astra | pending | 0 | merges P1-11,P1-12,P1-15 |
 | P2-A | sol | astra | **done** | 1 | a1 BLOCKED → D-32; a2 no-run (worktree .orchestrate missing); a3 PASS, 152 crops 0 mismatch; terra pass; OPUS unified `Label` type with P1-B on landing |
-| P2-B | sol | terra | pending | 0 | merges P2-04,P2-05 |
+| P2-B | sol | terra | running (attempt 2) | 1 | a1 BLOCKED → D-37; merges P2-04,P2-05 |
 | P2-C | sol | terra | pending | 0 | merges P2-06,P2-07,P2-08 |
 | P3-A | sol | astra | pending | 0 | merges P1-14,P3-01,P3-05 |
 | P3-B | sol | terra+astra | pending | 0 | merges P3-02,P3-03 |
