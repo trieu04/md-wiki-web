@@ -11,8 +11,8 @@ Live tracker for [implementation-plan.md](implementation-plan.md). Updated by th
 | P0-05 | astra | sol | **done** | 1 | a1 review: body-parser 413 → 500, internal bind hardcoded; a2 PASS (12 tests) |
 | P0-06 | sol | astra | **done** | 2 | merged with P0-07 (D-30). a1 BLOCKED → D-31; a2: verify filter + problem bodies; a3 gate PASS; astra's internal-API OpenAPI body finding overruled as minor (worker types come from job JSON schemas, §7.1) → follow-up |
 | P0-08 | sol | astra | **done** | 1 | a1 review: runtime not in clean clone (D-24), non-atomic publish, tests not in pnpm test; a2 PASS, 504/504 deterministic. Minor carried to P0-09: assert state-only variants independent of variants.json |
-| P0-09 | sol | astra | retry (attempt 2, worktree) | 1 | a1 review: Search fixture missing total/pageCount |
-| P0-G | OPUS | — | pending | 0 | merges P0-10 (CI) + gate |
+| P0-09 | sol | astra | **done** | 1 | worktree (D-29). a1: Search fixture totals; a2: hand-written wire types → OPUS fix; astra PASS; rebased twice (lockfile regenerated) |
+| P0-G | OPUS | — | running | 0 | merges P0-10 (CI) + gate |
 | P1-A | astra | sol | pending | 0 | merges P1-01,P1-02,P1-03,P1-04 |
 | P1-B | astra | sol | pending | 0 | merges P1-05,P1-06 |
 | P1-C | astra | sol | pending | 0 | merges P1-07,P1-08,P1-10 |
