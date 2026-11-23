@@ -9,12 +9,10 @@ OUT=.orchestrate/briefs/$ID-$ATT.md
   cat tools/orchestrate/preamble.md
   echo "# Task $ID (attempt $ATT)"
   if [ -f docs/tasks/$ID.md ]; then cat docs/tasks/$ID.md
-  else awk -v id="$ID" '
-      $0 ~ "^#### "id" " {p=1; print; next}
-      p && /^#{2,4} / {exit}
-      p {print}' docs/implementation-plan.md
+  else python3 -I tools/orchestrate/brief-spec.py "$ID"
   fi
-  if [ -f docs/tasks/$ID.verify.sh ]; then echo; echo "## Verify (the gate runs exactly this)"; echo '```bash'; cat docs/tasks/$ID.verify.sh; echo '```'; fi
+  V=$(tools/orchestrate/verify-path.sh "$ID")
+  if [ -n "$V" ]; then echo; echo "## Verify (the gate runs exactly this)"; echo '```bash'; cat "$V"; echo '```'; fi
   if [ -n "$EXTRA" ]; then echo; echo "## Context from previous attempts — fix these"; cat "$EXTRA"; fi
 } > "$OUT"
 echo "$OUT"

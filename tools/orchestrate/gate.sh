@@ -17,7 +17,7 @@ fi
 if [ -f services/worker/pyproject.toml ] && [ -n "$(git status --porcelain services/worker)" ]; then
   step "cd services/worker && uv sync -q && uv run ruff check . && uv run mypy src && uv run pytest -q"
 fi
-if [ -f docs/tasks/$ID.verify.sh ]; then step "bash docs/tasks/$ID.verify.sh"; fi
+V=$(tools/orchestrate/verify-path.sh "$ID"); if [ -n "$V" ]; then step "bash $V"; fi
 grep -E '^(PASS|FAIL):' "$OUT"
 [ $FAIL -eq 0 ] && echo "GATE PASS" || { echo "GATE FAIL (details: $OUT)"; }
 exit $FAIL

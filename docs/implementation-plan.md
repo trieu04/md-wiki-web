@@ -32,6 +32,8 @@ Escalation ladder: `sol → astra → OPUS` (luna removed, D-26). Two retries pe
 
 ## 3. Task table
 
+**D-30 (user, 2026-11-23): "Giảm phân mảnh task" — tasks merged into larger slices.** Phases 0–5 went from 51 to 26 tasks. Each merged task's brief contains the original specs of its parts (`docs/tasks/merges.tsv`, `tools/orchestrate/brief-spec.py`); §4 keeps the original per-part specs. Parallel groups C/E/F run in git worktrees (D-29).
+
 Status lives in progress.md. `H-n` are human gates. Parallel groups (‖) touch disjoint files.
 
 | ID | Task | Model | Review | Depends on | ‖ group |
@@ -42,70 +44,41 @@ Status lives in progress.md. `H-n` are human gates. Parallel groups (‖) touch 
 | P0-03 | Infra: docker compose (postgres, redis), `.env.example`, Makefile | luna | sol | P0-01 | A |
 | P0-04 | Domain error codes + `Result` type | luna | sol | P0-01 | B |
 | P0-05 | API base: config, health, problem+json filter, request id, logging, Prisma module | astra | sol | P0-03, P0-04 | |
-| P0-06 | Contracts pipeline: OpenAPI → TS client; job JSON schemas → pydantic; drift check | sol | astra | P0-05, P0-02 | |
-| P0-07 | Ping round trip (BullMQ → worker → internal API → DB → web dev page) | sol | astra | P0-06 | |
+| P0-06 | Contracts pipeline + ping round trip (job contract system-logic §7.1) *(merges P0-06, P0-07)* | sol | astra | P0-05,P0-02 |  |
 | P0-08 | Design reference renderer (`pnpm design:shots`) | sol | terra | P0-01 | B |
 | P0-09 | App visual harness (`pnpm visual:shots`, pixel diff report) | sol | terra | P0-08 | |
-| P0-10 | CI workflow | sol (was luna, D-26) | astra | P0-07 | |
-| P0-G | Phase gate: clean-clone `make dev`, full checks, ping visible | OPUS | — | all P0 | |
+| P0-G | CI workflow + phase gate *(merges P0-10, P0-G)* | OPUS | — | all P0 |  |
 | **Phase 1 — Core logic: read side** ||||||
-| P1-01 | `domain/paths` | sol | astra | P0-G | C |
-| P1-02 | `domain/status-block` | sol | astra | P0-G | C |
-| P1-03 | `domain/sections` (split, anchors, hash, title) | astra | sol | P1-02 | |
-| P1-04 | `domain/snapshot-label` + `domain/time` | sol (was luna, D-26) | astra | P0-G | C |
-| P1-05 | `domain/permissions` | astra | sol | P0-G | C |
-| P1-06 | `domain/labels` (`computeSectionLabel`, page label + spread) | astra | sol | P0-G | C |
-| P1-07 | `LocalFolderStorage` + `FixtureStorage` | astra | sol | P1-01 | |
-| P1-08 | Prisma schema P1 + append-only triggers | sol | astra | P0-G | |
-| P1-09 | Auth: passwords, sessions, CSRF, tokens, guards, owner seed | astra | sol | P1-05, P1-08 | |
-| P1-10 | Indexer + snapshots + topics + out-of-band flag | sol | astra | P1-03, P1-04, P1-07, P1-08 | |
-| P1-11 | Wiki read endpoints (tree, page, history, version, recent, context) | sol | astra | P1-06, P1-09, P1-10 | |
-| P1-12 | Section search | sol | astra | P1-10 | |
-| P1-13 | Admin: users, teams, tokens, reindex | sol | astra | P1-09 | |
-| P1-14 | Web data layer: client, session, CSRF, error copy, query keys | sol | astra | P1-11 | |
-| P1-15 | API e2e suite on fixture wiki | sol (was luna, D-26) | astra | P1-11..13 | |
+| P1-A | Domain text rules: paths, status block, sections, snapshot labels, time *(merges P1-01, P1-02, P1-03, P1-04)* | astra | sol | P0-G | C |
+| P1-B | Domain permissions + labels *(merges P1-05, P1-06)* | astra | sol | P0-G | C |
+| P1-C | Storage adapters, Prisma schema P1 + triggers, indexer/snapshots/topics *(merges P1-07, P1-08, P1-10)* | astra | sol | P1-A |  |
+| P1-D | Auth (passwords, sessions, CSRF, tokens, guards, owner seed) + admin endpoints *(merges P1-09, P1-13)* | astra | sol | P1-B,P1-C |  |
+| P1-E | Wiki read endpoints + section search + API e2e suite *(merges P1-11, P1-12, P1-15)* | sol | astra | P1-B,P1-C,P1-D |  |
 | P1-G | Phase gate | OPUS | — | all P1 | |
 | **Phase 2 — Design system** (may run beside Phase 1 after H-1) ||||||
 | H-1 | Human: approve states addendum (design-system.md §6.1) and answer Q-UI-1..5 | human | — | — | |
-| P2-01 | Tokens: Tailwind theme, CSS variables, fonts | sol (was luna, D-26) | terra | P0-09, H-1 | |
-| P2-02 | `TrustIcon`, `TrustBadge`, `SpreadBar`, label meta | sol | terra | P2-01 | D |
-| P2-03 | Action primitives: Button, PillToggle, Chip, CountBadge, AITag, Mono, Mark | sol | terra | P2-01 | D |
-| P2-04 | Form primitives: SearchInput, TextInput, Textarea, Select, Checkbox, Radio, RadioCards, Switch | sol | terra | P2-01 | D |
-| P2-05 | Containers: Card, Tabs, Table, Callout, Drawer | sol | terra | P2-01 | D |
-| P2-06 | `TopBar` (C-TopBar) | sol | terra | P2-02..05 | |
-| P2-07 | `WorkNav` (C-WorkNav) | sol | terra | P2-03 | |
-| P2-08 | Layouts, router skeleton, `/__gallery` | sol | terra | P2-06, P2-07 | |
+| P2-A | Tokens + trust components + action primitives *(merges P2-01, P2-02, P2-03)* | sol | terra | P0-09 |  |
+| P2-B | Form primitives + containers *(merges P2-04, P2-05)* | sol | terra | P2-A |  |
+| P2-C | TopBar + WorkNav + layouts, router skeleton, /__gallery *(merges P2-06, P2-07, P2-08)* | sol | terra | P2-A,P2-B |  |
 | P2-G | Phase gate: gallery at 4 widths vs reference | OPUS + terra | — | all P2 | |
 | **Phase 3 — Reading screens** ||||||
-| P3-01 | Markdown render pipeline (sanitized, sections from API) | sol | astra | P1-G, P2-G | |
-| P3-02 | Home (F-01) | sol | terra + astra | P3-01 | E |
-| P3-03 | Search (F-02) | sol | terra + astra | P1-12, P2-G | E |
-| P3-04 | Page reading view (F-03, Phase-1 parts) | sol | terra + astra | P3-01 | |
-| P3-05 | Login — derived screen (D-16) | sol | terra | P2-G | |
-| P3-06 | Page history — derived screen (D-16) | sol | terra | P3-04 | |
-| P3-07 | Settings › People and teams, Agents and tokens (F-14) | sol | terra + astra | P1-13, P2-08 | |
-| P3-08 | Playwright reader flow | sol (was luna, D-26) | astra | P3-02..04 | |
+| P3-A | Web data layer + markdown pipeline + Login *(merges P1-14, P3-01, P3-05)* | sol | astra | P1-G,P2-G |  |
+| P3-B | Home + Search screens *(merges P3-02, P3-03)* | sol | terra+astra | P3-A | E |
+| P3-C | Page reading view + History *(merges P3-04, P3-06)* | sol | terra+astra | P3-A | E |
+| P3-D | Settings (people, tokens) + Playwright reader flow *(merges P3-07, P3-08)* | sol | terra+astra | P3-B,P3-C |  |
 | P3-G | Phase gate | OPUS + terra | — | all P3 | |
 | **Phase 4 — Contribute** (plan.md Phase 2) ||||||
 | P4-00 | Spec expansion: contracts + full task briefs | OPUS | — | P3-G | |
-| P4-01 | `domain/bundle` validation (port `bundle.py` cases) | astra | sol | P4-00 | |
-| P4-02 | Drafts API (autosave, pins, rebase) | sol | astra | P4-01 | |
-| P4-03 | Submit: freeze to bundle, freshness | astra | sol | P4-02 | |
-| P4-04 | Agent contributions + `.contribution.md` v3 import | sol | astra | P4-03 | |
-| P4-05 | Editor (F-06) incl. `baseChanged` banner | sol | terra + astra | P4-03 | |
-| P4-06 | You › Your suggestions (F-05 tab) | sol | terra + astra | P4-03 | |
+| P4-A | Bundle validation + drafts API + submit *(merges P4-01, P4-02, P4-03)* | astra | sol | P4-00 |  |
+| P4-B | Agent contributions + .contribution.md v3 import *(merges P4-04)* | sol | astra | P4-A | F |
+| P4-C | Editor + You › Your suggestions *(merges P4-05, P4-06)* | sol | terra+astra | P4-A | F |
 | P4-G | Gate: human + agent submit identical bundle structure | OPUS | — | | |
 | **Phase 5 — Review and publish** (plan.md Phase 3) ||||||
 | P5-00 | Spec expansion | OPUS | — | P4-G | |
-| P5-01 | Assignments + decision guards (§8.1 order) | astra | sol | P5-00 | |
-| P5-02 | Publish flow, outbox, recovery, fault injection | astra | **OPUS** | P5-01 | |
-| P5-03 | Conflicts (v1/v2/proposal, three outcomes) | astra | sol | P5-02 | |
-| P5-04 | Audit, history, SSE events | sol | astra | P5-02 | |
-| P5-05 | Workspace shell + Proposals (F-09) | sol | terra + astra | P5-04 | |
-| P5-06 | Review (F-10: escalated/disputed/locked/publishing/blocked; Changes + History tabs) | sol | terra + astra | P5-05 | |
-| P5-07 | Conflict screen (F-07) | sol | terra + astra | P5-03 | |
-| P5-08 | Ops › Blocked publish (F-13 section) | sol | terra + astra | P5-02 | |
-| P5-09 | Playwright: edit → approve → auto-publish → label; forced timeout → blocked → recovery | sol (was luna, D-26) | astra | P5-06..08 | |
+| P5-A | Assignments, decision guards, publish flow, outbox, recovery *(merges P5-01, P5-02)* | astra | OPUS | P5-00 |  |
+| P5-B | Conflicts + audit, history, SSE *(merges P5-03, P5-04)* | astra | sol | P5-A |  |
+| P5-C | Workspace shell + Proposals + Review screens *(merges P5-05, P5-06)* | sol | terra+astra | P5-B |  |
+| P5-D | Conflict screen + Ops blocked + Playwright publish flow *(merges P5-07, P5-08, P5-09)* | sol | terra+astra | P5-B,P5-C |  |
 | P5-G | Gate | OPUS | — | | |
 | **Phase 6 — Discussions and MCP** (plan.md 4) | P6-00 spec (OPUS) · P6-01 topics/comments/holds/dispute log (astra) · P6-02 MCP server (sol) · P6-03 agent skill rewrite (sol) · P6-04 Discussions F-11 (sol) · P6-05 *Ask a question* entry points (sol) · P6-06 Review › Discussion tab (derived, D-16) · P6-G |||||
 | **Phase 7 — Quality check** (plan.md 5) | P7-00 spec · P7-01 provider interface (astra) · P7-02 `quality_check` job, fencing, quote verification (astra) · P7-03 findings API + re-run (sol) · P7-04 eval command (sol) · P7-05 Quality card in F-10 and self-check in F-06 (sol) · P7-06 Settings › Models (F-14) (sol) · P7-G |||||
@@ -154,7 +127,7 @@ Every brief sent to Pi = the common preamble (`tools/orchestrate/preamble.md`) +
 - **Acceptance**: `pnpm contracts:gen` is deterministic (two runs, no diff); `contracts:check` fails when a DTO changes without regen (test by script).
 
 #### P0-07 Ping round trip — sol
-- **Spec**: `POST /api/v1/dev/ping` (only when `NODE_ENV!=='production'`) creates `AiJob(kind='ping')` row (add model to Prisma) and enqueues BullMQ job; worker consumes, calls `POST /internal/v1/jobs/{id}/result {status:'ok', echo}`; API stores result; `GET /api/v1/dev/ping/{id}`. Web dev route `/__dev/ping` (unstyled, excluded from design, dev only) shows the round trip.
+- **Spec**: `POST /api/v1/dev/ping` (only when `NODE_ENV!=='production'`) creates `AiJob(kind='ping')` row (add model to Prisma) and enqueues BullMQ job; worker consumes the `JobEnvelope`, fetches `GET /internal/v1/jobs/{id}/input`, posts `JobResult` to `POST /internal/v1/jobs/{id}/result`; API validates and stores it — **wire shapes, statuses, idempotency and dev endpoints exactly as system-logic.md §7.1**; `GET /api/v1/dev/ping/{id}`. Web dev route `/__dev/ping` (unstyled, excluded from design, dev only) shows the round trip.
 - **Acceptance**: an integration test with compose up runs the full loop in < 10 s; worker unit test with a fake internal API.
 
 #### P0-08 Design reference renderer — sol
@@ -309,6 +282,8 @@ Reversible; each is used as written until a human changes it.
 | D-27 | **User instruction (2026-11-23), resolves Q-P-1:** commit after each task passes its gate and review — one commit per task, message `<type>(<ID>): <title>` with implementer/reviewer in the body, only that task's files (+ the orchestrator's progress/decision notes). No pushes | user |
 | D-28 | **User instruction (2026-11-23):** reviewers must not fail tasks over small issues. Review rubric: blocker/major only for unmet acceptance criteria/verify, contract drift, wrong/misplaced rule, missing required test, invented design, security hole reachable in normal use, or a bug breaking normal use. Edge cases outside the spec, hardening, style → minor (max 3), never a retry. Retry reviews check only prior findings + regressions. Minors are logged as follow-ups in progress.md, not sent back | user |
 | D-29 | Parallel tasks that share only root `package.json`/lockfile run in separate git worktrees (`../md-wiki-web-wt-<ID>`, branch `task/<ID>`); after review the branch is rebased onto main (lockfile regenerated with `pnpm install` on conflict), gated again and fast-forwarded, then the worktree is removed | orchestrator |
+| D-30 | **User instruction (2026-11-23): reduce task fragmentation.** Tasks merged into coherent slices (one module or one producer/consumer pair per task): Phases 0–5 from 51 to 26 tasks, map in `docs/tasks/merges.tsv`. Every `-00` spec task for Phases 6–10 must likewise produce ≤ 5 implementation tasks per phase. Merged briefs keep every part's spec, acceptance and verify | user |
+| D-31 | Job wire contract defined (system-logic.md §7.1: queue `mw-jobs`, `JobEnvelope {v, jobId, kind}`, inputs via internal API, `JobResult` ok/failed, idempotent result post, ping input/output) — answers P0-06's BLOCKED question | orchestrator (OPUS) |
 | D-13 | Before Phase 9, Home/Page regions whose data does not exist are not rendered (no placeholders) | §4 Phase 3 |
 
 ### 6.1 Decisions on former open questions (2026-11-23, by the orchestrator under the user's delegation)
