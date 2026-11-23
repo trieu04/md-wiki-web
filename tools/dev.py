@@ -22,6 +22,7 @@ APP_KEYS = (
     "WIKI_ROOT",
     "AUTO_PUBLISH",
     "WEB_PORT",
+    "WEB_HOST",
     "INTERNAL_API_URL",
     "WIKI_NAME",
     "WIKI_DESCRIPTION",

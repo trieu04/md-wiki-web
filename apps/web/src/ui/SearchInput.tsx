@@ -5,6 +5,9 @@ import { canvasControlState, controlState } from './FormField';
 type SearchInputProps = Omit<ComponentProps<'input'>, 'size' | 'type'> & {
   size: 'topbar' | 'home';
   label: string;
+  /** Render the top-bar field as a GET search form with this destination. */
+  action?: string;
+  formLabel?: string;
 };
 
 export function SearchInput({
@@ -13,6 +16,8 @@ export function SearchInput({
   size,
   className = '',
   disabled,
+  action,
+  formLabel,
   ...props
 }: SearchInputProps) {
   const uid = useId();
@@ -37,8 +42,12 @@ export function SearchInput({
   );
   if (size === 'home') return field;
 
+  const Wrapper = action ? 'form' : 'div';
   return (
-    <div
+    <Wrapper
+      action={action}
+      role={action ? 'search' : undefined}
+      aria-label={action ? formLabel : undefined}
       className={`flex h-topbar-search min-w-0 max-w-search-max flex-auto basis-search-basis items-center gap-8px rounded-9 border border-control bg-canvas px-10px ${className}`}
     >
       <svg
@@ -55,6 +64,6 @@ export function SearchInput({
       <span className="text-12 leading-control text-muted" aria-hidden="true">
         ⌘K
       </span>
-    </div>
+    </Wrapper>
   );
 }

@@ -1,18 +1,21 @@
 import '@testing-library/jest-dom/vitest';
+import { createMemoryHistory } from '@tanstack/react-router';
 import { cleanup, render, screen, within } from '@testing-library/react';
-import { afterEach, expect, it } from 'vitest';
+import { afterEach, expect, it, vi } from 'vitest';
 import { crops } from '../../../tools/design-ref/variants.json';
 import { App } from '../src/App';
+import { createAppRouter } from '../src/router';
 import { themeTokens } from '../src/ui/theme-tokens';
 
 afterEach(() => {
   cleanup();
-  window.history.replaceState({}, '', '/');
+  vi.restoreAllMocks();
 });
 
 it('serves the dev gallery with stable, unique wrappers and separates undrawn examples', async () => {
-  window.history.replaceState({}, '', '/__gallery');
-  render(<App />);
+  vi.spyOn(window, 'scrollTo').mockImplementation(() => {});
+  const router = createAppRouter(createMemoryHistory({ initialEntries: ['/__gallery'] }));
+  render(<App router={router} />);
   const gallery = await screen.findByRole('main');
   const tokens = within(gallery).getByRole('region', { name: 'Tokens' });
   const undrawn = within(gallery).getByRole('region', { name: 'Not in frames (§6.1)' });

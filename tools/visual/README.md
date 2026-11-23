@@ -39,6 +39,13 @@ available width of a wrapping row. Only the gallery host is sized; the element
 itself lays out naturally. The reference renderer publishes the full frames and
 crops atomically, with separate checksum manifests.
 
+Layout crops can use `structure: [firstColumn, secondColumn]`. The two selectors
+are relative to the crop in both the reference and the gallery. These probes
+hide the screen content and paint each column a distinct color. Reference
+heights substitute for the unimplemented screen content; widths, placement and
+wrapping remain intrinsic. The F-01 and F-08 structure crops start below the
+TopBar, so no additional 56px mask is needed on those crops.
+
 Use `/__gallery` in the dev server for Tokens and examples under
 **Not in frames (§6.1)**. Review their hover, pressed, disabled and busy states
 against §6.1, not a reference crop. Only drawn states get pixel comparisons.

@@ -332,6 +332,55 @@
     }
   },
   "crops": {
+    "TopBar/home": { "frame": "TopBar", "variant": "home", "selector": "header" },
+    "TopBar/browse": { "frame": "TopBar", "variant": "browse", "selector": "header" },
+    "TopBar/recent": { "frame": "TopBar", "variant": "recent", "selector": "header" },
+    "TopBar/search": { "frame": "TopBar", "variant": "search", "selector": "header" },
+    "TopBar/you": { "frame": "TopBar", "variant": "you", "selector": "header" },
+    "TopBar/workspace": { "frame": "TopBar", "variant": "workspace", "selector": "header" },
+    "TopBar/none": { "frame": "TopBar", "variant": "none", "selector": "header" },
+    "TopBar/reader": { "frame": "TopBar", "variant": "reader", "selector": "header" },
+    "WorkNav/inbox": { "frame": "WorkNav", "variant": "inbox", "selector": "nav", "part": "nav" },
+    "WorkNav/proposals": {
+      "frame": "WorkNav",
+      "variant": "proposals",
+      "selector": "nav",
+      "part": "nav"
+    },
+    "WorkNav/discussions": {
+      "frame": "WorkNav",
+      "variant": "discussions",
+      "selector": "nav",
+      "part": "nav"
+    },
+    "WorkNav/recheck": {
+      "frame": "WorkNav",
+      "variant": "recheck",
+      "selector": "nav",
+      "part": "nav"
+    },
+    "WorkNav/mine": { "frame": "WorkNav", "variant": "mine", "selector": "nav", "part": "nav" },
+    "WorkNav/ops": { "frame": "WorkNav", "variant": "ops", "selector": "nav", "part": "nav" },
+    "WorkNav/settings": {
+      "frame": "WorkNav",
+      "variant": "settings",
+      "selector": "nav",
+      "part": "nav"
+    },
+    "ReadingLayout/home": {
+      "frame": "Main",
+      "variant": "mine",
+      "selector": "main > div:has(> aside)",
+      "part": "div:has(> aside)",
+      "structure": [":scope > div", ":scope > aside"]
+    },
+    "WorkspaceLayout/inbox": {
+      "frame": "Inbox",
+      "variant": "all",
+      "selector": "div:has(> main)",
+      "part": "> div > div:has(nav[aria-label^='Workspace'])",
+      "structure": [":scope > div:first-child", ":scope > :nth-child(2)"]
+    },
     "TrustIcon/12-checked": {
       "frame": "Page",
       "variant": "principle",

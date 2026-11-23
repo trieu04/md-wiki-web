@@ -16,6 +16,8 @@ import { themeTokens } from './theme-tokens';
 import { GalleryExample as Example } from './GalleryExample';
 import { FormExamples, UndrawnFormExamples } from './GalleryForms';
 import { ContainerExamples, UndrawnContainerExamples } from './GalleryContainers';
+import { NavigationExamples, UndrawnNavigationExamples } from './GalleryNavigation';
+import { ReadingLayout } from './ReadingLayout';
 
 const labels = Object.keys(labelMeta) as Label[];
 const iconSamples = ([12, 13, 14, 18] as const).flatMap((size) =>
@@ -108,9 +110,17 @@ function Tokens() {
 }
 
 export default function Gallery() {
+  return (
+    <ReadingLayout id="gallery" topBar={{ active: 'none' }}>
+      <GalleryContent />
+    </ReadingLayout>
+  );
+}
+
+function GalleryContent() {
   const [notice, setNotice] = useState('');
   return (
-    <main id="gallery" className="flex flex-col gap-16px bg-surface p-16px">
+    <div className="flex flex-col gap-16px bg-surface p-16px">
       <h1 className="text-24 font-bold">Component gallery</h1>
       <Tokens />
       <section aria-labelledby="gallery-trust" className="flex flex-col gap-12px">
@@ -231,6 +241,7 @@ export default function Gallery() {
       </section>
       <FormExamples />
       <ContainerExamples />
+      <NavigationExamples />
       <section aria-labelledby="gallery-not-drawn" className="flex flex-col gap-12px">
         <h2 id="gallery-not-drawn" className="text-20 font-semibold">
           Not in frames (§6.1)
@@ -266,7 +277,8 @@ export default function Gallery() {
         </Example>
         <UndrawnFormExamples />
         <UndrawnContainerExamples />
+        <UndrawnNavigationExamples />
       </section>
-    </main>
+    </div>
   );
 }

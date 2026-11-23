@@ -12,7 +12,7 @@ import { promisify } from 'node:util';
 import { chromium } from 'playwright';
 import canvas from '../../design/v4/canvas.json' with { type: 'json' };
 import variants from './variants.json' with { type: 'json' };
-import { cropPlan } from './crops.mjs';
+import { clearLayoutColumns, cropPlan, layoutProbeStyle, markLayoutColumns } from './crops.mjs';
 import { serve } from './serve.mjs';
 
 const widths = [390, 768, 1024, 1440];
@@ -191,7 +191,7 @@ async function shoot(context, server, stage, { frame, variant, width, height, co
     network.check();
     await writeFile(join(stage, frame, `${variant}@${width}.png`), png);
     const elements = [];
-    for (const { id, selector } of crops) {
+    for (const { id, selector, structure } of crops) {
       try {
         // A table cell can require scrolling its own container at narrow widths.
         // Do this after capturing the untouched full frame.
@@ -216,9 +216,16 @@ async function shoot(context, server, stage, { frame, variant, width, height, co
             parentWidth: element.parentElement.getBoundingClientRect().width,
           };
         });
-        const crop = await target.screenshot({ animations: 'disabled', caret: 'hide' });
+        const heights =
+          structure && (await target.evaluate(markLayoutColumns, { selectors: structure }));
+        const crop = await target.screenshot({
+          animations: 'disabled',
+          caret: 'hide',
+          ...(structure && { style: layoutProbeStyle }),
+        });
+        if (structure) await target.evaluate(clearLayoutColumns);
         await writeFile(join(stage, 'crops', `${id}@${width}.png`), crop);
-        elements.push({ id, frame, variant, width, geometry, sha256: hash(crop) });
+        elements.push({ id, frame, variant, width, geometry, heights, sha256: hash(crop) });
       } catch (error) {
         throw new Error(`${id} (${selector}): ${error.message}`, { cause: error });
       }

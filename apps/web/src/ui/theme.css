@@ -84,13 +84,14 @@
   --text-34: 34px;
   --text-36: 36px;
   --font-weight-normal: 400;
-  --font-weight-nav: 450;
+  --font-weight-nav: 500; /* D-46: frames request 450 but load Inter 400/500/600/700 only, so they render 500 */
   --font-weight-medium: 500;
   --font-weight-semibold: 600;
   --font-weight-bold: 700;
   --tracking-overline: 0.06em;
   --leading-base: 1.5;
   --leading-control: normal;
+  --leading-brand: 1.15;
 
   --radius-*: initial;
   --radius-mark: 2px;
@@ -107,6 +108,7 @@
   --radius-chip: 999px;
 
   --spacing-mark-x: 1px;
+  --spacing-work-nav-group-gap: 1px;
   --spacing-2px: 2px;
   --spacing-3px: 3px;
   --spacing-4px: 4px;
@@ -147,6 +149,13 @@
   --spacing-switch-track: 36px;
   --spacing-search-basis: 280px;
   --spacing-search-max: 560px;
+  --spacing-reading-content: 560px;
+  --spacing-reading-aside: 320px;
+  --spacing-workspace-content: 640px;
+  --spacing-workspace-nav: 220px;
+  --spacing-workspace-nav-height: 1000px;
+  --flex-reading-content: 999 1 var(--spacing-reading-content);
+  --flex-workspace-content: 999 1 var(--spacing-workspace-content);
   --spacing-home-search-max: 720px;
   --spacing-drawer-basis: 440px;
   --spacing-drawer-max: 520px;
@@ -169,11 +178,21 @@
   --stroke-trust-lg: 1.3;
   --stroke-checkbox: 1.6;
   --stroke-control-icon: 1.8;
+  --stroke-nav-icon: 1.7;
+  --stroke-brand-icon: 2;
   --stroke-success-icon: 2;
 }
 
 @utility border-choice {
   border-width: var(--border-width-choice);
+}
+
+@utility flex-reading-content {
+  flex: var(--flex-reading-content);
+}
+
+@utility flex-workspace-content {
+  flex: var(--flex-workspace-content);
 }
 
 @utility flex-trust-context {
@@ -200,7 +219,7 @@
     cursor: pointer;
   }
 
-  :is(a, button, input, textarea, select, [tabindex="0"]):focus-visible {
+  :is(a, button, input, textarea, select, [tabindex='0']):focus-visible {
     outline: var(--focus-width) solid var(--color-accent);
     outline-offset: var(--focus-offset);
   }

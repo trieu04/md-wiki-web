@@ -81,7 +81,7 @@ Implementers must open the cited frame for colours marked "frame-specific" and u
 | `font.mono` | `'JetBrains Mono', monospace` — paths, hashes, versions |
 | Base | 14px / line-height 1.5, colour `text.primary` |
 | Scale (px) | 11 [15] · 12 [84] · 12.5 [2] · 13 [94] · 14 [71] · 15 [11] · 16 [8] · 17 [3] · 17.5 [1, serif body] · 18 [3] · 19 · 20 · 22 [6] · 23 · 24 [10] · 30 · 34 (Home H1 serif) · 36 |
-| Weights | 400, 450 (WorkNav idle), 500, 600 (dominant), 700 |
+| Weights | 400, 450 → **renders 500** (WorkNav idle; D-46: the frames load Inter at 400/500/600/700 only, so CSS matching draws 450 as 500 — implement 500), 500, 600 (dominant), 700 |
 | Overline | 11px, 600, `letter-spacing: 0.06em`, uppercase, `text.muted` (WorkNav group titles) |
 
 Fonts: the frames load Google Fonts. **Deviation DV-1 (approved, D-17)**: self-host the same families via `@fontsource-variable/inter`, `@fontsource-variable/source-serif-4`, `@fontsource-variable/jetbrains-mono` to avoid a third-party request from an internal app. The local CSS family names have the ` Variable` suffix; Source Serif 4 includes the optical size axis.
@@ -109,6 +109,11 @@ Exact values that appear in a frame but were missing from §2.1–2.3 are added 
 | `size.spread-sm-width` / `size.spread-sm` / `radius.spread-sm` | 120px / 6px / 3px | F-03 page header spread bar |
 | `leading.control` | `normal` | F-01 scope pills, F-02 sort pills, F-03 section badge/link-style button, F-10 decision/secondary buttons, C-TopBar count badge |
 | `text.native-button` | `#000000` (native `ButtonText` in the light reference render) | F-10 secondary buttons |
+| `leading.brand` / `stroke.brand-icon` | 1.15 / 2 | C-TopBar brand |
+| `stroke.nav-icon` | 1.7 | C-TopBar Workspace link, C-WorkNav links |
+| `space.work-nav-group-gap` | 1px | C-WorkNav item groups |
+| `size.work-nav-height` | 1000px minimum | C-WorkNav, F-08 imported sidebar |
+| `size.workspace-content-basis` / `size.workspace-nav-basis` / `space.workspace-bottom` | 640px / 220px / 40px | F-08 workspace columns and main bottom padding |
 
 ## 3. Trust label system (exact, from every frame's `TL` table)
 

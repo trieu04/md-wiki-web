@@ -10,7 +10,7 @@ import { argv } from 'node:process';
 import { parseArgs } from 'node:util';
 import { fileURLToPath, pathToFileURL, URL } from 'node:url';
 import { chromium } from 'playwright';
-import { cropPlan } from '../design-ref/crops.mjs';
+import { cropPlan, layoutProbeStyle, markLayoutColumns } from '../design-ref/crops.mjs';
 import referenceConfig from '../design-ref/variants.json' with { type: 'json' };
 import canvas from '../../design/v4/canvas.json' with { type: 'json' };
 import { diffPng, maskRowsFor } from './diff.mjs';
@@ -173,7 +173,16 @@ async function capture(browser, origin, { path, ready, prepare, width, height, c
             y: Math.floor(position.y) + crop.y - position.y,
           },
         );
-        png = await element.screenshot(options);
+        if (crop.structure) {
+          await element.evaluate(markLayoutColumns, {
+            selectors: crop.structure,
+            heights: crop.heights,
+          });
+        }
+        png = await element.screenshot({
+          ...options,
+          ...(crop.structure && { style: layoutProbeStyle }),
+        });
       } else {
         png = await page.screenshot({ ...options, fullPage: true });
       }
@@ -277,10 +286,23 @@ async function runGallery() {
     const batches = await Promise.all(
       widths.map(async (width) => {
         const images = [];
-        for (const { id, frame, variant, gallery = id, part = '> :first-child', fit } of plan) {
+        for (const {
+          id,
+          frame,
+          variant,
+          gallery = id,
+          part = '> :first-child',
+          fit,
+          structure,
+        } of plan) {
           const label = `${id}@${width}`;
           const match = manifest.find((entry) => entry.id === id && entry.width === width);
-          if (!match?.geometry || match.frame !== frame || match.variant !== variant) {
+          if (
+            !match?.geometry ||
+            match.frame !== frame ||
+            match.variant !== variant ||
+            (structure && match.heights?.length !== structure.length)
+          ) {
             throw new Error(`${label}: missing or stale crop; run pnpm design:shots`);
           }
           const reference = await readFile(join(references, 'crops', `${label}.png`));
@@ -294,7 +316,12 @@ async function runGallery() {
               ready,
               width,
               height: canvas.boards[`${frame}.dc.html`].h,
-              crop: { selector: `${ready} ${part}`, ...match.geometry },
+              crop: {
+                selector: `${ready} ${part}`,
+                ...match.geometry,
+                structure,
+                heights: match.heights,
+              },
               async prepare(page) {
                 // Stretch examples need the same available width as their frame parent.
                 // Apply it to the host only so incorrect component sizing still diffs.
