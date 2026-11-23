@@ -72,6 +72,9 @@ function RecentTable({ rows }: { rows: ReturnType<typeof recentRows> }) {
             Page
           </th>
           <th scope="col" className="px-12px py-10px">
+            What changed
+          </th>
+          <th scope="col" className="px-12px py-10px">
             Trust now
           </th>
           <th scope="col" className="px-18px py-10px">
@@ -80,14 +83,16 @@ function RecentTable({ rows }: { rows: ReturnType<typeof recentRows> }) {
         </tr>
       </thead>
       <tbody>
-        {rows.map(({ key, path, pageTitle, label, timestamp, when }) => (
+        {rows.map(({ key, path, pageTitle, section, change, label, timestamp, when }) => (
           <tr key={key}>
             <td className="px-18px py-12px">
               <a href={wikiPageHref(path)} className="font-semibold no-underline">
                 {pageTitle}
               </a>
+              {section && <div className="text-12 text-muted">{section}</div>}
             </td>
-            <td className="px-12px py-12px">
+            <td className="p-12px text-secondary">{change}</td>
+            <td className="p-12px whitespace-nowrap">
               {label && <TrustBadge label={label} variant="inline" />}
             </td>
             <td className="px-18px py-12px whitespace-nowrap text-muted">

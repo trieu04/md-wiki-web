@@ -150,3 +150,13 @@ const SUGGEST_ROLES = new Set(['contributor', 'reviewer', 'publisher', 'owner'])
 export function canSuggest(roles: readonly string[] | undefined) {
   return !!roles?.some((role) => SUGGEST_ROLES.has(role));
 }
+
+/** F-03 *Changed outside review* (D-47, D-103): derived warn Callout, shown only when flagged. */
+export function changedOutsideReviewNote(page: Pick<PageDto, 'changedOutsideReview'>) {
+  return page.changedOutsideReview
+    ? {
+        title: 'Changed outside review',
+        text: 'This page was edited directly in the wiki folder after its last review. Sections that changed show Not reviewed until a reviewer approves them.',
+      }
+    : null;
+}

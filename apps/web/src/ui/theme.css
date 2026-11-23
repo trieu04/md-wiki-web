@@ -202,6 +202,22 @@
   --stroke-nav-icon: 1.7;
   --stroke-brand-icon: 2;
   --stroke-success-icon: 2;
+  /* Phase 5 frame values (F-09, F-10, F-07, F-13; design-system §2.4) */
+  --spacing-table-proposals: 980px;
+  --spacing-table-refs: 520px;
+  --spacing-table-audit: 760px;
+  --spacing-stat-min: 170px;
+  --spacing-filter-basis: 240px;
+  --spacing-filter-max: 320px;
+  --spacing-review-aside: 380px;
+  --spacing-review-aside-max: 480px;
+  --spacing-conflict-pane: 260px;
+  --spacing-conflict-choices: 360px;
+  --spacing-conflict-editor: 520px;
+  --spacing-conflict-editor-min: 170px;
+  --flex-filter: 1 1 var(--spacing-filter-basis);
+  --flex-conflict-editor: 2 1 var(--spacing-conflict-editor);
+  --flex-review-content: 999 1 var(--spacing-editor-content);
 }
 
 @utility border-choice {
@@ -218,6 +234,26 @@
 
 @utility flex-editor-content {
   flex: var(--flex-editor-content);
+}
+
+@utility flex-filter {
+  flex: var(--flex-filter);
+}
+
+@utility flex-conflict-editor {
+  flex: var(--flex-conflict-editor);
+}
+
+@utility flex-review-content {
+  flex: var(--flex-review-content);
+}
+
+@utility grid-cols-stats {
+  grid-template-columns: repeat(auto-fill, minmax(var(--spacing-stat-min), 1fr));
+}
+
+@utility grid-cols-panes {
+  grid-template-columns: repeat(auto-fit, minmax(var(--spacing-conflict-pane), 1fr));
 }
 
 @utility flex-trust-context {

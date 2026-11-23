@@ -51,13 +51,27 @@ export function homeTreeModel(tree: Tree) {
   };
 }
 
+/**
+ * F-01 *Recent changes* subline and *What changed* (D-48 follow-up, D-102): a reviewed version
+ * names its section (or the whole page) and the proposal title; an edit made outside review says so.
+ */
+export function recentChange(item: Recent['items'][number]) {
+  if (item.proposalSlug !== null)
+    return { section: item.sectionTitle ?? 'Whole page', change: item.summary ?? '' };
+  return {
+    section: '',
+    change: item.changedOutsideReview ? 'Changed outside review' : '',
+  };
+}
+
 export function recentRows(recent: Recent, labels: ReadonlyMap<string, Label>, now: Date) {
-  return recent.items.map(({ path, pageTitle, versionLabel, at }) => ({
-    path,
-    pageTitle,
-    key: JSON.stringify([path, versionLabel]),
-    label: labels.get(path),
-    timestamp: at,
-    when: formatRelative(new Date(at), now),
+  return recent.items.map((item) => ({
+    ...recentChange(item),
+    path: item.path,
+    pageTitle: item.pageTitle,
+    key: JSON.stringify([item.path, item.versionLabel]),
+    label: labels.get(item.path),
+    timestamp: item.at,
+    when: formatRelative(new Date(item.at), now),
   }));
 }

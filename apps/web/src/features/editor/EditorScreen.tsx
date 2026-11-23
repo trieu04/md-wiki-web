@@ -3,6 +3,7 @@ import { Link, useNavigate } from '@tanstack/react-router';
 import { useMemo, useRef, useState, type ReactNode } from 'react';
 import { ApiError, useApi } from '../../lib/api';
 import { errorCopy, messageForError } from '../../lib/error-copy';
+import { useSession } from '../../lib/session';
 import { Button } from '../../ui/Button';
 import { Callout } from '../../ui/Callout';
 import { Card } from '../../ui/Card';
@@ -549,7 +550,12 @@ export function EditorScreen({
   topBar: TopBarProps;
 }) {
   const api = useApi();
-  const open = useQuery({ ...openDraftQueryOptions(api, path, section), enabled: !!path });
+  // Opening a draft is a POST: wait for the session so the request carries its CSRF token.
+  const session = useSession();
+  const open = useQuery({
+    ...openDraftQueryOptions(api, path, section),
+    enabled: !!path && session.data !== undefined,
+  });
   const draft = useQuery({
     ...draftQueryOptions(api, open.data?.id ?? ''),
     enabled: !!open.data,

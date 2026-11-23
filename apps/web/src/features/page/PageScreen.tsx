@@ -17,6 +17,7 @@ import type { PageDto } from '../markdown/model';
 import { pageQueryOptions } from '../markdown/page-query';
 import {
   canSuggest,
+  changedOutsideReviewNote,
   historyModel,
   pageArticleModel,
   pageHeaderModel,
@@ -276,6 +277,7 @@ function ReadingPage({
   const header = useMemo(() => pageHeaderModel(page), [page]);
   const article = useMemo(() => (history ? null : pageArticleModel(page)), [history, page]);
   const selected = anchor || article?.defaultAnchor || '';
+  const outside = changedOutsideReviewNote(page);
   useEffect(() => {
     if (article && anchor) document.getElementById(anchor)?.scrollIntoView();
   }, [article, anchor]);
@@ -295,6 +297,11 @@ function ReadingPage({
         {article ? (
           <>
             <ReadingHeader model={header} selected={selected} />
+            {outside && (
+              <Callout tone="warn" title={outside.title}>
+                {outside.text}
+              </Callout>
+            )}
             {article.empty ? (
               <Card
                 title={header.title}

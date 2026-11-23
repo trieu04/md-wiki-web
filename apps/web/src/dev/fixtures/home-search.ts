@@ -24,15 +24,16 @@ function itemAt<T>(items: readonly T[], index: number): T {
 }
 
 export const visualRecent: Recent = {
-  items: frameSamples.Main.allRecent.map(({ page }, index) => ({
+  items: frameSamples.Main.allRecent.map(({ page, section, change }, index) => ({
     path: itemAt(paths, index),
     pageTitle: page,
     at: new Date(Date.parse(visualNow) - itemAt(ages, index) * 3_600_000).toISOString(),
     versionLabel: '20261123',
     changedOutsideReview: false,
-    proposalSlug: null,
-    sectionTitle: null,
-    summary: null,
+    // F-01 sublines and *What changed* come from the version's publication (D-102).
+    proposalSlug: `recent-${String(index + 1)}`,
+    sectionTitle: section,
+    summary: change,
   })),
   nextCursor: null,
 };

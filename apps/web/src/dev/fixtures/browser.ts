@@ -2,6 +2,13 @@ import { http, HttpResponse } from 'msw';
 import { setupWorker } from 'msw/browser';
 import { homeDescription, visualRecent, visualSearch, visualTree } from './home-search';
 import { visualDraft, visualSuggestions } from './contribute';
+import {
+  visualAudit,
+  visualBlocked,
+  visualDiff,
+  visualProposal,
+  visualProposalList,
+} from './review';
 import { frameSamples } from './samples';
 import { visualHistory, visualMeta, visualPage, visualPageTopic } from './reading';
 import { adminPage, visualOwnerSession, visualTeams, visualTokens, visualUsers } from './settings';
@@ -61,6 +68,21 @@ const worker = setupWorker(
   http.delete('/api/v1/drafts/:id/sources/:path', () => HttpResponse.json(draft())),
   http.delete('/api/v1/drafts/:id', () => new HttpResponse(null, { status: 204 })),
   http.get('/api/v1/me/suggestions', () => HttpResponse.json(visualSuggestions)),
+  // F-09/F-10/F-07/F-13 (P5-C/D). `?scenario=` on the page URL picks an F-10 scenario.
+  http.get('/api/v1/proposals', ({ request }) =>
+    HttpResponse.json(visualProposalList(new URL(request.url).searchParams.get('tab'))),
+  ),
+  http.get('/api/v1/proposals/:slug', ({ params }) =>
+    HttpResponse.json(
+      visualProposal(
+        String(params.slug),
+        new URLSearchParams(globalThis.location.search).get('scenario'),
+      ),
+    ),
+  ),
+  http.get('/api/v1/proposals/:slug/diff', () => HttpResponse.json(visualDiff())),
+  http.get('/api/v1/ops/blocked', () => HttpResponse.json(visualBlocked)),
+  http.get('/api/v1/audit', () => HttpResponse.json(visualAudit)),
   http.get('/__visual/fixtures/:frame', ({ params }) => {
     const { frame } = params;
     if (typeof frame !== 'string' || !Object.hasOwn(frameSamples, frame)) {

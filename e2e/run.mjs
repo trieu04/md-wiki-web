@@ -5,7 +5,7 @@
 import { spawn, spawnSync } from 'node:child_process';
 import { randomBytes, randomUUID } from 'node:crypto';
 import { existsSync, readFileSync } from 'node:fs';
-import { cp, mkdtemp, rm } from 'node:fs/promises';
+import { chmod, cp, mkdtemp, readdir, rm } from 'node:fs/promises';
 import { createServer } from 'node:net';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -26,6 +26,13 @@ function log(message) {
 function run(command, args, options = {}) {
   const result = spawnSync(command, args, { stdio: 'inherit', ...options });
   if (result.status !== 0) throw new Error(`${command} ${args.join(' ')} failed`);
+}
+
+/** Undo any read-only folder a failed blocked-flow test left behind, so cleanup can remove it. */
+async function chmodTree(dir) {
+  await chmod(dir, 0o755).catch(() => undefined);
+  const entries = await readdir(dir, { withFileTypes: true }).catch(() => []);
+  for (const entry of entries) if (entry.isDirectory()) await chmodTree(join(dir, entry.name));
 }
 
 function freePort() {
@@ -87,20 +94,14 @@ async function login(base, email, password) {
   return { cookie, csrfToken };
 }
 
-async function seedReader(base, owner, reader) {
+async function seedUser(base, owner, user, name, roles) {
   const { cookie, csrfToken } = await login(base, owner.email, owner.password);
   const response = await fetch(`${base}/api/v1/admin/users`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Cookie: cookie, 'X-CSRF-Token': csrfToken },
-    body: JSON.stringify({
-      email: reader.email,
-      name: 'E2E Reader',
-      roles: ['reader'],
-      teamId: null,
-      password: reader.password,
-    }),
+    body: JSON.stringify({ email: user.email, name, roles, teamId: null, password: user.password }),
   });
-  if (response.status !== 201) throw new Error(`seeding the reader failed: ${response.status}`);
+  if (response.status !== 201) throw new Error(`seeding ${name} failed: ${response.status}`);
 }
 
 async function main() {
@@ -132,6 +133,11 @@ async function main() {
     const [apiPort, internalPort, webPort] = [await freePort(), await freePort(), await freePort()];
     const owner = { email: 'e2e-owner@example.test', password: randomBytes(12).toString('hex') };
     const reader = { email: 'e2e-reader@example.test', password: randomBytes(12).toString('hex') };
+    // P5-D: a contributor proposes, the owner (the assignee, D-75) decides.
+    const contributor = {
+      email: 'e2e-contributor@example.test',
+      password: randomBytes(12).toString('hex'),
+    };
     const apiUrl = `http://127.0.0.1:${apiPort}`;
     const webUrl = `http://127.0.0.1:${webPort}`;
 
@@ -150,10 +156,12 @@ async function main() {
         WIKI_ROOT: wikiDir,
         WIKI_NAME: 'E2E wiki',
         NODE_ENV: 'production',
+        AUTO_PUBLISH: 'true',
       },
     });
     await waitFor(`${apiUrl}/api/v1/meta`, 'api');
-    await seedReader(apiUrl, owner, reader);
+    await seedUser(apiUrl, owner, reader, 'E2E Reader', ['reader']);
+    await seedUser(apiUrl, owner, contributor, 'E2E Contributor', ['contributor']);
 
     log(`starting web preview on ${webUrl}`);
     start(
@@ -178,6 +186,10 @@ async function main() {
           E2E_OWNER_PASSWORD: owner.password,
           E2E_READER_EMAIL: reader.email,
           E2E_READER_PASSWORD: reader.password,
+          E2E_CONTRIBUTOR_EMAIL: contributor.email,
+          E2E_CONTRIBUTOR_PASSWORD: contributor.password,
+          // The blocked-publish flow makes a page folder read-only (no API fault hook exists).
+          E2E_WIKI_ROOT: wikiDir,
         },
       },
     );
@@ -195,6 +207,7 @@ async function main() {
       input: `DROP SCHEMA IF EXISTS "${schema}" CASCADE;`,
       stdio: ['pipe', 'ignore', 'inherit'],
     });
+    await chmodTree(wikiDir);
     await rm(wikiDir, { recursive: true, force: true });
   }
   exit(status);

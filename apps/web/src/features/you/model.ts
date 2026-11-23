@@ -43,7 +43,10 @@ export function suggestionRow(item: SuggestionDto, now: Date): SuggestionRow {
       status: 'Needs your attention',
       detail: 'The page changed under it',
       action: 'Resolve',
-      href: item.kind === 'draft' ? edit : `/me/suggestions/${item.id}/resolve`,
+      href:
+        item.kind === 'draft'
+          ? edit
+          : `/me/suggestions/${encodeURIComponent(item.slug ?? item.id)}/resolve`,
     };
   if (item.kind === 'draft')
     return {

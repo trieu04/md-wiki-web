@@ -710,6 +710,20 @@ Every transition writes one `AuditEvent` in the transaction that makes it (subje
 | `page.changed` | `path` | `['page', path]`, `['tree']`, `['recent']`, `['search']`, `['history', path]` | everyone with `wiki.read` |
 | `ping` | `at` | — | everyone |
 
+#### 7.4.12 Web (F-07, F-09, F-10, F-13, Audit log; P5-C/P5-D) [D-95 … D-104]
+
+| Route | Screen | Data | Writes |
+| --- | --- | --- | --- |
+| `/work/proposals?tab=` | F-09 Proposals | `GET /proposals?tab&limit=50&cursor` (counts from the first page) | — |
+| `/work/proposals/:slug` | F-10 Review | `GET /proposals/{slug}`, `GET /proposals/{slug}/diff?against=base` | `POST …/decisions` (body = `preview.binding` + `approve` + `reason`), `POST …/publish` (`can.publish` only) |
+| `/me/suggestions/:id/resolve` (`:id` = slug) | F-07 Conflict | `GET /proposals/{slug}` (`conflict`) | `POST …/conflict`, `POST …/withdraw` (`can.withdraw` only) |
+| `/work/ops` | F-13 Operations | `GET /ops/blocked` | `POST /ops/blocked/{slug}/resolution` |
+| `/work/ops/audit` | Audit log (derived) | `GET /audit?limit=50&cursor` | — |
+
+- The web never re-derives permissions: decide/publish/withdraw controls follow `ProposalDetailDto.can`; the Workspace link and WorkNav counts follow D-95.
+- Query keys: `['proposals', {tab, limit}]`, `['proposal', slug]`, `['proposal', slug, 'diff', against]`, `['ops','blocked']`, `['ops','audit']`. Every write caches the returned detail and invalidates `['proposals']`, `['proposal', slug, 'diff']`, `['me.suggestions']`, `['ops','blocked']`. SSE events invalidate per D-96.
+- Decision errors: `DISCUSSION_CHANGED`/`DECISION_BINDING_MISMATCH` lock the form until *Reload* refetches the detail (new preview); every other code shows its `error-copy` text under the form. The reason survives both (sessionStorage, §10).
+
 ## 8. State machines
 
 ### 8.1 Proposal

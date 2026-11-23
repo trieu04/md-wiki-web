@@ -1,4 +1,4 @@
-import { QueryClientProvider } from '@tanstack/react-query';
+import { QueryClientProvider, useQuery } from '@tanstack/react-query';
 import { lazy, Suspense } from 'react';
 import {
   createBrowserHistory,
@@ -12,22 +12,29 @@ import {
   useRouter,
 } from '@tanstack/react-router';
 import type { RouterHistory } from '@tanstack/react-router';
+import { ConflictScreen } from './features/conflict/ConflictScreen';
 import { EditorScreen } from './features/editor/EditorScreen';
 import { HomeScreen } from './features/home/HomeScreen';
 import { LoginScreen } from './features/login/LoginScreen';
 import { pageQueryOptions } from './features/markdown/page-query';
+import { AuditScreen, OpsScreen } from './features/ops/OpsScreen';
 import { PageScreen } from './features/page/PageScreen';
+import { proposalTab } from './features/review/model';
+import { ProposalsScreen } from './features/review/ProposalsScreen';
+import { proposalCountsQueryOptions } from './features/review/queries';
+import { ReviewScreen } from './features/review/ReviewScreen';
 import { userInitials } from './features/navigation/model';
 import { SearchScreen } from './features/search/SearchScreen';
 import { settingsTab } from './features/settings/model';
 import { SettingsScreen } from './features/settings/SettingsScreen';
+import { hasWorkspace, workNavCounts } from './features/workspace/model';
 import { YouScreen } from './features/you/YouScreen';
-import { ApiContext, createWebData, safeNext, useWikiMeta } from './lib/api';
+import { ApiContext, createWebData, safeNext, useApi, useWikiMeta } from './lib/api';
+import { useServerEvents } from './lib/events';
 import { useSession } from './lib/session';
-import { ReadingLayout } from './ui/ReadingLayout';
 import type { TopBarActive } from './ui/TopBar';
 import { WorkspaceLayout } from './ui/WorkspaceLayout';
-import type { WorkNavActive } from './ui/WorkNav';
+import type { WorkNavActive, WorkNavProps } from './ui/WorkNav';
 
 const root = createRootRouteWithContext<ReturnType<typeof createWebData>>()({
   notFoundComponent: () => null,
@@ -36,12 +43,20 @@ const root = createRootRouteWithContext<ReturnType<typeof createWebData>>()({
     return (
       <QueryClientProvider client={queryClient}>
         <ApiContext.Provider value={api}>
+          <ServerEvents />
           <Outlet />
         </ApiContext.Provider>
       </QueryClientProvider>
     );
   },
 });
+
+/** SSE invalidation while signed in (D-96); the visual build has no event stream. */
+function ServerEvents() {
+  const { data } = useSession();
+  useServerEvents(!!data?.user && import.meta.env.MODE !== 'visual');
+  return null;
+}
 
 function useTopBar(active: TopBarActive, query = '') {
   const meta = useWikiMeta();
@@ -52,22 +67,25 @@ function useTopBar(active: TopBarActive, query = '') {
     wikiName: meta.data?.wikiName ?? 'Wiki',
     ...(import.meta.env.MODE === 'visual' && { browseHref: '/wiki/confocal-microscopy.md' }),
     initials: userInitials(data?.user?.name),
-    role: data?.user?.roles.some(
-      (role) => role === 'owner' || role === 'reviewer' || role === 'publisher',
-    )
-      ? ('page author' as const)
-      : ('reader' as const),
+    role: hasWorkspace(data?.user?.roles) ? ('page author' as const) : ('reader' as const),
   };
 }
 
-function readingScreen(active: TopBarActive) {
-  return function ReadingScreen() {
-    return <ReadingLayout topBar={useTopBar(active)} />;
-  };
+/** WorkNav with counts where data exists (D-95). */
+function useWorkNav(active: WorkNavActive): WorkNavProps {
+  const { data } = useSession();
+  const roles = data?.user?.roles;
+  const counts = useQuery({
+    ...proposalCountsQueryOptions(useApi()),
+    enabled: hasWorkspace(roles),
+  });
+  const navCounts = workNavCounts(counts.data, roles);
+  return { active, ...(navCounts && { counts: navCounts }) };
 }
+
 function workspaceScreen(active: WorkNavActive) {
   return function WorkspaceScreen() {
-    return <WorkspaceLayout topBar={useTopBar('workspace')} workNav={{ active }} />;
+    return <WorkspaceLayout topBar={useTopBar('workspace')} workNav={useWorkNav(active)} />;
   };
 }
 
@@ -151,10 +169,14 @@ const you = createRoute({
     return <YouScreen topBar={useTopBar('you')} />;
   },
 });
+// `:id` is the proposal slug (D-99).
 const conflict = createRoute({
   getParentRoute: () => root,
   path: '/me/suggestions/$id/resolve',
-  component: readingScreen('none'),
+  component: function Conflict() {
+    const { id } = conflict.useParams();
+    return <ConflictScreen key={id} slug={id} topBar={useTopBar('none')} />;
+  },
 });
 const inbox = createRoute({
   getParentRoute: () => root,
@@ -164,12 +186,34 @@ const inbox = createRoute({
 const proposals = createRoute({
   getParentRoute: () => root,
   path: '/work/proposals',
-  component: workspaceScreen('proposals'),
+  validateSearch: ({ tab }) => ({ tab: proposalTab(tab) }),
+  component: function Proposals() {
+    const { tab } = proposals.useSearch();
+    const navigate = proposals.useNavigate();
+    return (
+      <ProposalsScreen
+        tab={tab}
+        onTab={(next) => void navigate({ search: { tab: next }, replace: true })}
+        topBar={useTopBar('workspace')}
+        workNav={useWorkNav('proposals')}
+      />
+    );
+  },
 });
 const review = createRoute({
   getParentRoute: () => root,
   path: '/work/proposals/$slug',
-  component: workspaceScreen('proposals'),
+  component: function Review() {
+    const { slug } = review.useParams();
+    return (
+      <ReviewScreen
+        key={slug}
+        slug={slug}
+        topBar={useTopBar('workspace')}
+        workNav={useWorkNav('proposals')}
+      />
+    );
+  },
 });
 const discussions = createRoute({
   getParentRoute: () => root,
@@ -184,7 +228,16 @@ const credibility = createRoute({
 const ops = createRoute({
   getParentRoute: () => root,
   path: '/work/ops',
-  component: workspaceScreen('ops'),
+  component: function Ops() {
+    return <OpsScreen topBar={useTopBar('workspace')} workNav={useWorkNav('ops')} />;
+  },
+});
+const audit = createRoute({
+  getParentRoute: () => root,
+  path: '/work/ops/audit',
+  component: function Audit() {
+    return <AuditScreen topBar={useTopBar('workspace')} workNav={useWorkNav('ops')} />;
+  },
 });
 const settings = createRoute({
   getParentRoute: () => root,
@@ -198,6 +251,7 @@ const settings = createRoute({
         tab={tab}
         onTab={(next) => void navigate({ search: { tab: next }, replace: true })}
         topBar={useTopBar('workspace')}
+        workNav={useWorkNav('settings')}
       />
     );
   },
@@ -248,6 +302,7 @@ const routeTree = root.addChildren([
   discussions,
   credibility,
   ops,
+  audit,
   settings,
   ...devRoutes,
 ]);

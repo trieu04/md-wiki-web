@@ -63,7 +63,8 @@ describe('F-05 Your suggestions (D-69)', () => {
     expect(suggestionRow(draft, now).href).toBe(
       '/wiki/confocal-microscopy.md/edit?section=principle',
     );
-    expect(suggestionRow(stale, now).href).toBe(`/me/suggestions/${stale.id}/resolve`);
+    // The resolve route takes the proposal slug (D-99).
+    expect(suggestionRow(stale, now).href).toBe(`/me/suggestions/${stale.slug ?? ''}/resolve`);
     expect(suggestionRow({ ...draft, needsAttention: true }, now)).toMatchObject({
       action: 'Resolve',
       what: 'Draft: pinhole units',

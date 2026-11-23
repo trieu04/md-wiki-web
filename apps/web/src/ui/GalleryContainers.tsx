@@ -8,6 +8,8 @@ import { DecisionOptions, DecisionReason, SourceRadios, SourceResults } from './
 import { PillToggle } from './PillToggle';
 import { Table } from './Table';
 import { DiffView } from './DiffView';
+import { PublishProgress } from './PublishProgress';
+import { StatusDot } from './StatusDot';
 import { MarkdownToolbar } from './MarkdownToolbar';
 import { Tabs } from './Tabs';
 import type { Tab } from './Tabs';
@@ -347,6 +349,45 @@ export function ContainerExamples() {
             { kind: 'add', number: 18, text: '[^4]: sources/pawley-handbook.md, §2.4' },
           ]}
         />
+      </Example>
+      <Example id="DiffView/review">
+        <DiffView
+          heading="Section Principle · 2 lines added, 1 line removed"
+          rows={[
+            {
+              kind: 'same',
+              number: 13,
+              text: 'through the objective and the same scanning optics.',
+            },
+            {
+              kind: 'del',
+              number: 14,
+              text: 'Closing the pinhole improves sectioning and reduces the detected signal.',
+            },
+            { kind: 'gap', number: null, text: '24 unchanged lines' },
+            { kind: 'add', number: 41, text: '[^4]: sources/pawley-handbook.md, §2.4' },
+          ]}
+        />
+      </Example>
+      <Example id="PublishProgress/writing">
+        <PublishProgress
+          steps={[
+            { label: 'Verified', state: 'done' },
+            { label: 'Writing', state: 'current' },
+            { label: 'Written', state: 'todo' },
+            { label: 'Done', state: 'todo' },
+          ]}
+        />
+      </Example>
+      <Example id="StatusDot/tones">
+        <div className="flex flex-wrap gap-14px">
+          <StatusDot tone="pending">Pending</StatusDot>
+          <StatusDot tone="escalated">Escalated</StatusDot>
+          <StatusDot tone="error">Blocked</StatusDot>
+          <StatusDot tone="publishing">Approved · publishing</StatusDot>
+          <StatusDot tone="published">Published</StatusDot>
+          <StatusDot tone="closed">Rejected</StatusDot>
+        </div>
       </Example>
       <Example id="Callout/warn">
         <Callout tone="warn" title="Use with care: this section is being re-checked.">

@@ -126,6 +126,12 @@ Exact values that appear in a frame but were missing from §2.1–2.3 are added 
 | `size.editor-aside-basis` / `size.editor-aside-max` | 380px / 480px | F-06 submission aside |
 | `size.diff-number` / `size.diff-sign` | 44px / 18px | F-06 Changes line-number and sign columns |
 | `size.you-table` | 680px (table min width) | F-05 activity table |
+| `size.table-proposals` / `size.table-refs` | 980px / 520px | F-09 proposals table / F-10 *Read by the author* table |
+| `size.table-audit` | 760px | derived Audit log table (D-101) |
+| `size.stat-min` | 170px (`grid-cols-stats`: `repeat(auto-fill, minmax(170px, 1fr))`; the frames use `auto-fit` with 4–5 cards, `auto-fill` keeps the card width when fewer cards have data) | F-09 stats, F-13 health cards |
+| `size.filter-basis` / `size.filter-max` | 240px / 320px | F-09 filter input |
+| `size.review-aside` / `size.review-aside-max` | 380px / 480px | F-10 review panel |
+| `size.conflict-pane` / `size.conflict-choices` / `size.conflict-editor` / `size.conflict-editor-min` | 260px / 360px / 520px (`flex: 2 1`) / 170px | F-07 panes, outcome card, merged text |
 
 ## 3. Trust label system (exact, from every frame's `TL` table)
 
@@ -167,9 +173,10 @@ Each component lives in `apps/web/src/ui/<Name>.tsx`, takes only presentational 
 | `Mono` | JetBrains Mono inline text | F-07, F-10, F-13, F-14 |
 | `Mark` | search highlight | F-02 |
 | `Drawer` | right drawer `role="dialog"` with tabs and close — [D-37] opens/closes instantly, no animation; [D-39] non-modal side panel as drawn (`aria-modal="false"`, no scrim, page stays interactive, **no focus trap**): on open focus moves to the drawer heading/first control, Esc and the close button close it, focus returns to the trigger | F-04 |
-| `DiffView` | line diff with flagged phrase, inline | F-06 Changes, F-10 Changes (CodeMirror merge) |
+| `DiffView` | line diff with flagged phrase, inline; F-10 adds unchanged context rows (`text.placeholder` numbers), collapsed "N unchanged lines" rows (`bg.canvas`) and a 12px heading | F-06 Changes, F-10 Changes (CodeMirror merge) |
 | `MarkdownToolbar` | B, I, H, [ ], ¹, ⊞ buttons with aria-labels | F-06 |
-| `PublishProgress` | phase steps | F-10 scenario publishing/blocked |
+| `PublishProgress` | phase steps: ✓ done, current "…" 600, later `trust.none` (`ui/PublishProgress.tsx`) | F-10 scenario publishing/blocked |
+| `StatusDot` | 8px dot + words; tones pending (`trust.reviewed.bar`), escalated (`trust.recheck`), error, publishing (`accent`), published (`trust.checked`), closed (`text.placeholder`) | F-07, F-09, F-10, F-13 |
 | Layouts | `ReadingLayout` (TopBar + `max-width 1240` main, content `flex 999 1 560px` + aside `flex 1 1 320px max 400px`, wrap); `WorkspaceLayout` (TopBar + WorkNav 220 + content max 1400, wrap) | F-01, F-08 |
 
 ## 5. Layout and breakpoint rules

@@ -15,4 +15,11 @@ export const queryKeys = {
   draftOpen: (path: string, section: string | null) => ['draft.open', { path, section }] as const,
   draft: (id: string) => ['draft', id] as const,
   suggestions: ['me.suggestions', {}],
+  // Phase 5 (system-logic §7.4.11): prefixes `['proposals']`, `['proposal', slug]`, `['ops', …]`.
+  proposals: (params: { tab: string; limit?: number }) => ['proposals', params] as const,
+  proposal: (slug: string) => ['proposal', slug] as const,
+  proposalDiff: (slug: string, against: 'base' | 'current') =>
+    ['proposal', slug, 'diff', against] as const,
+  opsBlocked: ['ops', 'blocked'],
+  audit: ['ops', 'audit'],
 } as const;

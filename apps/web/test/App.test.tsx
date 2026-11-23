@@ -7,6 +7,7 @@ import { setupServer } from 'msw/node';
 import { afterAll, afterEach, beforeAll, beforeEach, expect, it, vi } from 'vitest';
 import { visualDraft, visualSuggestions } from '../src/dev/fixtures/contribute';
 import { visualRecent, visualSearch, visualTree } from '../src/dev/fixtures/home-search';
+import { visualProposal, visualProposalList } from '../src/dev/fixtures/review';
 import {
   visualHistory,
   visualPage,
@@ -35,6 +36,12 @@ const server = setupServer(
   http.get('*/api/v1/me/suggestions', () => HttpResponse.json(visualSuggestions)),
   http.get('*/api/v1/search', ({ request }) =>
     HttpResponse.json(visualSearch(new URL(request.url).searchParams)),
+  ),
+  http.get('*/api/v1/proposals', ({ request }) =>
+    HttpResponse.json(visualProposalList(new URL(request.url).searchParams.get('tab'))),
+  ),
+  http.get('*/api/v1/proposals/:slug', ({ params }) =>
+    HttpResponse.json(visualProposal(String(params.slug), null)),
   ),
 );
 beforeAll(() => {
@@ -66,10 +73,11 @@ function open(path: string) {
   return router;
 }
 
-it('uses the empty reading screen for the conflict route', async () => {
-  const router = open('/me/suggestions/example-id/resolve');
-  const main = await screen.findByRole('main');
-  expect(main).toHaveTextContent(/^$/);
+it('renders the conflict screen without the workspace for the resolve route', async () => {
+  const router = open('/me/suggestions/detector-table/resolve');
+  expect(
+    await screen.findByRole('heading', { level: 1, name: 'The page changed under your proposal' }),
+  ).toBeVisible();
   expect(router.state.matches.at(-1)?.routeId).toBe('/me/suggestions/$id/resolve');
   expect(screen.queryByRole('navigation', { name: 'Workspace' })).not.toBeInTheDocument();
   await screen.findByText('A runtime wiki');
@@ -91,7 +99,11 @@ it.each([
     await within(screen.getByRole('table')).findByRole('link', { name: 'Confocal microscopy' }),
   ).toHaveAttribute('href', '/wiki/confocal-microscopy.md');
   expect(screen.getByRole('img', { name: /^41% checked against source/u })).toBeVisible();
-  expect(screen.queryByText('What changed')).not.toBeInTheDocument();
+  // D-102: the section subline and *What changed* come from the version's publication.
+  const row = within(screen.getByRole('table')).getByRole('row', { name: /Confocal microscopy/u });
+  expect(row).toHaveTextContent('Detectors');
+  expect(row).toHaveTextContent('Hybrid detectors named HyD; link to Detectors page');
+  expect(screen.getByRole('columnheader', { name: 'What changed' })).toBeVisible();
   expect(screen.queryByText('On pages you use')).not.toBeInTheDocument();
 });
 
@@ -158,11 +170,8 @@ it('renders Home for a signed-in reader with session initials and no Workspace l
 
 it.each([
   ['/work', '/work', 'Inbox'],
-  ['/work/proposals', '/work/proposals', 'Proposals'],
-  ['/work/proposals/clarify-units', '/work/proposals/$slug', 'Proposals'],
   ['/work/discussions', '/work/discussions', 'Discussions'],
   ['/work/credibility', '/work/credibility', 'Credibility'],
-  ['/work/ops', '/work/ops', 'Operations'],
 ])('uses the empty workspace screen for %s', async (path, id, active) => {
   const router = open(path);
   expect(await screen.findByRole('main')).toBeEmptyDOMElement();

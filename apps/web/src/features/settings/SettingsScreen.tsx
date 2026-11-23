@@ -15,6 +15,7 @@ import { Tabs } from '../../ui/Tabs';
 import { TextInput } from '../../ui/TextInput';
 import type { TopBarProps } from '../../ui/TopBar';
 import { WorkspaceLayout } from '../../ui/WorkspaceLayout';
+import type { WorkNavProps } from '../../ui/WorkNav';
 import {
   ROLES,
   SETTINGS_TABS,
@@ -717,15 +718,17 @@ export function SettingsScreen({
   tab,
   onTab,
   topBar,
+  workNav = { active: 'settings' },
 }: {
   tab: SettingsTabId;
   onTab: (tab: SettingsTabId) => void;
   topBar: TopBarProps;
+  workNav?: WorkNavProps;
 }) {
   const session = useSession();
   const access = settingsAccess(session.data);
   return (
-    <WorkspaceLayout topBar={topBar} workNav={{ active: 'settings' }}>
+    <WorkspaceLayout topBar={topBar} workNav={workNav}>
       {access === 'owner' ? (
         <SettingsContent tab={tab} onTab={onTab} />
       ) : access === 'loading' ? (
