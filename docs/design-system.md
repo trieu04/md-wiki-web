@@ -143,12 +143,12 @@ Each component lives in `apps/web/src/ui/<Name>.tsx`, takes only presentational 
 | `SearchInput` | top bar (38px, `bg.canvas`, ⌘K hint), home (48px, white, strong border) | C-TopBar, F-01 |
 | `TextInput`, `Textarea`, `Select`, native radio | as drawn in F-02 filters, F-04 forms, F-05, F-10 | |
 | `Table` | 12px muted 600 head, row rule `border.row`, scroll box `overflow-x: auto` with min-width | F-01, F-05, F-09, F-10, F-12, F-13 |
-| `Callout` | recheck warn, error, success, info/accent, AI | F-02, F-03, F-04, F-10 |
+| `Callout` | recheck warn, error, success, info/accent, AI — [D-37] info/accent = white bg, 1px `accent.tint` border, r10, padding 16/18 (F-10 *Your decision*, Editor *After you submit*); AI = white bg, 1px `border.default` (#E4E7EC), r10, padding 16/18 with an `AITag` in the heading (F-10 *Agent review*) — no `ai.bg` fill | F-02, F-03, F-04, F-10 |
 | `AITag` | small "AI" tag (`ai` colours) | F-06, F-08, F-10, F-12 |
 | `CountBadge` | dark pill (`#14161B` bg, white, 20px) | C-TopBar, C-WorkNav |
 | `Mono` | JetBrains Mono inline text | F-07, F-10, F-13, F-14 |
 | `Mark` | search highlight | F-02 |
-| `Drawer` | right drawer `role="dialog"` with tabs and close | F-04 |
+| `Drawer` | right drawer `role="dialog"` with tabs and close — [D-37] opens/closes instantly, no animation | F-04 |
 | `DiffView` | line diff with flagged phrase, inline | F-06 Changes, F-10 Changes (CodeMirror merge) |
 | `MarkdownToolbar` | B, I, H, [ ], ¹, ⊞ buttons with aria-labels | F-06 |
 | `PublishProgress` | phase steps | F-10 scenario publishing/blocked |
