@@ -298,6 +298,7 @@ Reversible; each is used as written until a human changes it.
 | D-43 | Phone top bar (pre-empted for P2-C): no menu is drawn, so the TopBar wraps intrinsically as the frame does at 390/768; ux.md's collapsed menu stays undesigned (design-system §6 item 5) | orchestrator (OPUS) |
 | D-44 | Wiki name/description (pre-empted for Phase 3): D-21 put them in env but no endpoint exposed them; new unauthenticated `GET /api/v1/meta` → `{ wikiName, wikiDescription }` (defaults "Wiki", ""), built in P3-A | orchestrator (OPUS) |
 | D-45 | P3-08 live flow searches "objective" — `wiki-sample` has no "pinhole"; frame sample data (pinhole) stays in MSW fixtures for visual checks | orchestrator (OPUS) |
+| D-46 | WorkNav idle weight (P2-C visual): frames request 450 but load Inter 400/500/600/700 only, so CSS font matching renders 500; the app (variable Inter) uses 500 to match what the frames draw — WorkNav crops then pixel-exact | orchestrator (OPUS) |
 | D-13 | Before Phase 9, Home/Page regions whose data does not exist are not rendered (no placeholders) | §4 Phase 3 |
 
 ### 6.1 Decisions on former open questions (2026-11-23, by the orchestrator under the user's delegation)
