@@ -15,7 +15,7 @@ Live tracker for [implementation-plan.md](implementation-plan.md). Updated by th
 | P0-G | OPUS | — | **done** | 0 | merges P0-10 (CI). Clean clone: make up, install, build, make check, contracts:check, design:shots all PASS; references byte-identical across clones; ping round trip succeeded at /__dev/ping (69 ms); launcher SIGTERM leaves no processes. Found + fixed: tunnel socket path too long |
 | P1-A | astra | sol | **done** | 1 | a1 BLOCKED (status-block warning, line base, boundary tests) → D-33; a2 PASS, 74 tests |
 | P1-B | astra | sol | **done** | 1 | a1 BLOCKED (label metadata, empty page) → D-34; a2 review: ordering test gap → OPUS added test; PASS |
-| P1-C | astra | sol | running (attempt 1) | 0 | merges P1-07,P1-08,P1-10; worktree |
+| P1-C | astra | sol | running (attempt 2) | 1 | a1 BLOCKED (fault semantics, publication lookup) → D-36; merges P1-07,P1-08,P1-10; worktree |
 | P1-D | astra | sol | pending | 0 | merges P1-09,P1-13 |
 | P1-E | sol | astra | pending | 0 | merges P1-11,P1-12,P1-15 |
 | P2-A | sol | astra | **done** | 1 | a1 BLOCKED → D-32; a2 no-run (worktree .orchestrate missing); a3 PASS, 152 crops 0 mismatch; terra pass; OPUS unified `Label` type with P1-B on landing |
@@ -75,6 +75,8 @@ none yet
 | P0-G | public API listens on all interfaces (`*:3000`) in dev; bind to 127.0.0.1 unless configured | P1-D |
 | P0-G | Vite dev server listens on IPv6 `localhost` only; `127.0.0.1:5173` is refused | P2-C |
 | P0-08 | coverage test should assert state-only variants independently of variants.json | P0-09 brief |
+| P2-A | gallery pill labels use the option index, not the current selection (astra) | P2-B |
+| P2-A | terra: Mono/Chip crop surroundings white vs light-gray in frame (crop background only; 0% pixel diff) | P2-G |
 
 ## Phase report — Phase 0 (Foundations), 2026-11-23
 
