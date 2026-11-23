@@ -19,6 +19,7 @@ import { audit } from '../auth/credentials.js';
 import { AppError } from '../common/app-error.js';
 import { decodeCursor, encodeCursor, invalid } from '../contributions/pins.js';
 import { EventsService } from '../events/events.service.js';
+import { NotificationsService } from '../notifications/notifications.service.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { holdsEscalation, inProposalAudience } from '../agent/agent-facts.js';
 import { chooseAssignee } from '../review/assignments.js';
@@ -64,7 +65,88 @@ export class DiscussionsService {
   constructor(
     @Inject(PrismaService) private readonly db: PrismaService,
     @Inject(EventsService) private readonly events: EventsService,
+    @Inject(NotificationsService) private readonly notifications: NotificationsService,
   ) {}
+
+  /** `mention` notifications for an entry (system-logic §7.7.9), inside the entry transaction. */
+  private async notifyMentions(
+    tx: Tx,
+    author: { id: string; name: string },
+    topic: { id: string; path: string; anchor: string | null; title: string },
+    mentions: readonly string[],
+  ) {
+    const others = mentions.filter((id) => id !== author.id);
+    if (!others.length) return;
+    await this.notifications.notify(tx, {
+      userIds: others,
+      event: 'mention',
+      path: topic.path,
+      anchor: topic.anchor,
+      text: `${author.name} mentioned you in “${topic.title}”`,
+      data: { topicId: topic.id },
+    });
+  }
+
+  // ---- Phase 9 helpers (system-logic §7.7.6, §7.7.8): run inside the caller's transaction ----
+
+  /** Open a section topic for a report or an *ask the authors* decision. Returns its id. */
+  async openSectionTopic(
+    tx: Tx,
+    author: Pick<User, 'id' | 'kind'>,
+    input: { path: string; anchor: string; versionLabel: string; title: string; body: string },
+  ): Promise<string> {
+    const topic = await tx.topic.create({
+      data: {
+        path: input.path,
+        anchor: input.anchor,
+        versionLabel: input.versionLabel,
+        title: input.title.slice(0, TITLE_LIMIT),
+        authorId: author.id,
+        participantIds: [author.id],
+        entries: { create: { seq: 1, kind: 'open', authorId: author.id, body: input.body } },
+      },
+    });
+    await audit(tx, author, 'topic.opened', 'topic', topic.id, {
+      path: input.path,
+      anchor: input.anchor,
+      versionLabel: input.versionLabel,
+    });
+    return topic.id;
+  }
+
+  /** Close an active topic (dismissed or withdrawn report). False when it is no longer active. */
+  async closeTopic(
+    tx: Tx,
+    id: string,
+    user: Pick<User, 'id' | 'kind'>,
+    outcome: 'resolved' | 'rejected',
+    reason: string,
+  ): Promise<boolean> {
+    await tx.$queryRaw`SELECT id FROM "Topic" WHERE id = ${id}::uuid FOR UPDATE`;
+    const topic = await tx.topic.findUnique({ where: { id }, include: topicInclude });
+    if (!topic || !ACTIVE.includes(topic.status)) return false;
+    const next = topicTransition(topic.status, { kind: 'close', outcome });
+    if (!next.ok) return false;
+    await this.append(tx, topic, user, {
+      kind: 'close',
+      body: reason,
+      outcome,
+      status: next.status,
+      closed: { reason },
+    });
+    await audit(tx, user, 'topic.closed', 'topic', topic.id, {
+      outcome,
+      reason,
+      version: topic.version + 1,
+    });
+    return true;
+  }
+
+  /** Emit `discussion.changed` after the caller's commit. */
+  async emitTopicId(id: string) {
+    const topic = await this.db.topic.findUnique({ where: { id }, include: topicInclude });
+    if (topic) this.emitTopic(topic);
+  }
 
   // ---- guards -------------------------------------------------------------------------------
 
@@ -370,6 +452,7 @@ export class DiscussionsService {
           },
         },
       });
+      await this.notifyMentions(tx, user, topic, mentions);
       await audit(tx, user, 'topic.opened', 'topic', topic.id, {
         path,
         anchor,
@@ -494,6 +577,7 @@ export class DiscussionsService {
         mentions,
         status,
       });
+      await this.notifyMentions(tx, identity.user, topic, mentions);
     });
   }
 
@@ -580,7 +664,7 @@ export class DiscussionsService {
   private async append(
     tx: Tx,
     topic: TopicRow,
-    user: Pick<User, 'id'>,
+    user: Pick<User, 'id' | 'kind'>,
     e: {
       kind: 'comment' | 'agreement' | 'close' | 'reopen';
       body: string;

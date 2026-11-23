@@ -52,6 +52,14 @@ const schema = z.object({
       .regex(/^mwt_[A-Za-z0-9]{8}_[A-Za-z0-9]{32}$/)
       .optional(),
   ),
+  // Phase 9 (system-logic §7.7.7, §7.7.9)
+  MAIL_TRANSPORT: z.enum(['log', 'noop']).default('log'),
+  CREDIBILITY_RETENTION_DAYS: z
+    .string()
+    .regex(/^\d+$/)
+    .transform(Number)
+    .pipe(z.int().min(1).max(3650))
+    .default(90),
 });
 
 export type ApiConfig = z.infer<typeof schema>;

@@ -131,6 +131,10 @@ beforeAll(async () => {
     .useValue({
       forSections: (keys: Parameters<SectionLabels['forSections']>[0]) =>
         Promise.resolve(keys.map(fixtureLabel)),
+      detailed: (keys: Parameters<SectionLabels['forSections']>[0]) =>
+        Promise.resolve(
+          keys.map((key) => ({ label: fixtureLabel(key), checkedBy: 0, sourceName: null })),
+        ),
     })
     .compile();
   app = module.createNestApplication();
@@ -265,8 +269,9 @@ it('serves indexed current and historical bytes, strips status, and keeps the do
     expect(page).toMatchObject({
       path: basics,
       topic: { id: 'microscopy', name: 'Z Imaging' },
-      maintainers: [],
-      usedByTeams: null,
+      // no owners.md and nothing published through review: the owner maintains it (D-164)
+      maintainers: [{ name: 'Owner' }],
+      usedByTeams: 0,
       changedOutsideReview: false,
     });
   }
@@ -395,7 +400,7 @@ it('ranks independently of labels, sorts by trust or recency, and ignores archiv
   ]);
   expect(body<SearchDto>(await get('/search?q=antiqueonly').expect(200)).total).toBe(0);
   const hit = relevance.items[0];
-  expect(hit?.meta).toMatchObject({ checkedBy: null, sourceName: null, usedByTeams: null });
+  expect(hit?.meta).toMatchObject({ checkedBy: 0, sourceName: null, usedByTeams: 0 });
   expect(hit?.meta.updatedAt).toMatch(/Z$/);
   expect(hit?.snippet[0]?.hit.toLowerCase()).toBe('spectrometer');
   expect(JSON.stringify(hit?.snippet)).not.toMatch(/<[^>]*>|mw_start_|mw_stop_/);

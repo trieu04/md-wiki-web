@@ -1,6 +1,7 @@
-import { Controller, Get, Inject, Param } from '@nestjs/common';
+import { Controller, Get, Inject, Param, Req } from '@nestjs/common';
 import { ApiOkResponse, ApiParam, ApiQuery } from '@nestjs/swagger';
-import { Requires } from '../auth/auth-http.js';
+import { principal, Requires } from '../auth/auth-http.js';
+import type { AuthRequest } from '../auth/auth.service.js';
 import { ApiProblemResponse } from '../common/problem.dto.js';
 import { InputQuery } from '../common/validation.js';
 import {
@@ -77,8 +78,8 @@ export class WikiReadController {
   @apiRecentScope()
   @ApiOkResponse({ type: RecentDto })
   @ApiProblemResponse('VALIDATION_FAILED')
-  recent(@InputQuery(RecentInput) query: RecentInput) {
-    return this.wiki.recent(query);
+  recent(@Req() req: AuthRequest, @InputQuery(RecentInput) query: RecentInput) {
+    return this.wiki.recent(query, principal(req).user);
   }
 
   @Get('context')

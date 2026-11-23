@@ -113,7 +113,7 @@ export const apiSearchQuery = () =>
 const timestamp = { type: String, format: 'date-time' } as const;
 const nullableString = { type: String, nullable: true } as const;
 const nullableCount = { type: 'integer', nullable: true } as const;
-const labelCounts = {
+export const labelCounts = {
   type: 'object',
   properties: Object.fromEntries(LABEL_ORDER.map((label) => [label, { type: 'integer' }])),
   required: [...LABEL_ORDER],

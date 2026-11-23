@@ -20,6 +20,54 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/credibility-gates": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["CredibilityAdminController_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/credibility-gates/{capability}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["CredibilityAdminController_set"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/credibility/maintenance": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["CredibilityAdminController_run"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/models": {
         parameters: {
             query?: never;
@@ -164,6 +212,38 @@ export interface paths {
         patch: operations["AdminController_updateUser"];
         trace?: never;
     };
+    "/api/v1/attestations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["ReaderActionsController_attest"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/attestations/{id}/withdraw": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["ReaderActionsController_withdraw"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/audit": {
         parameters: {
             query?: never;
@@ -286,6 +366,166 @@ export interface paths {
         get?: never;
         put?: never;
         post: operations["ContributionsController_import"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/credibility/anchor-links": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["EvidenceController_link"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/credibility/candidates": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["CredibilityQueueController_candidate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/credibility/decisions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["CredibilityQueueController_decide"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/credibility/invalidations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["CredibilityQueueController_invalidation"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/credibility/pages": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["CredibilityQueueController_pages"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/credibility/queue": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["CredibilityQueueController_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/credibility/queue/{type}/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["CredibilityQueueController_detail"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/credibility/source-tiers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["EvidenceController_tiers"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/credibility/source-warnings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["EvidenceController_warnings"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/credibility/sources": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["CredibilityQueueController_sources"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -468,6 +708,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/follows": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["FollowsController_follow"];
+        delete: operations["FollowsController_unfollow"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/health": {
         parameters: {
             query?: never;
@@ -500,6 +756,70 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/me/activity": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["MeCredibilityController_activity"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/me/follows": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["MeNotificationsController_mine"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/me/notices": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["MeNotificationsController_notices"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/me/notification-preferences": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["MeNotificationsController_prefs"];
+        put: operations["MeNotificationsController_setPrefs"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/me/suggestions": {
         parameters: {
             query?: never;
@@ -508,6 +828,22 @@ export interface paths {
             cookie?: never;
         };
         get: operations["ContributionsController_suggestions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/me/summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["MeCredibilityController_summary"];
         put?: never;
         post?: never;
         delete?: never;
@@ -526,6 +862,38 @@ export interface paths {
         get: operations["MetaController_get"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/notifications": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["NotificationsController_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/notifications/read": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["NotificationsController_read"];
         delete?: never;
         options?: never;
         head?: never;
@@ -590,6 +958,38 @@ export interface paths {
         get: operations["JobsOpsController_jobs"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/owner-confirmations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["EvidenceController_confirm"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/page-feedback": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["ReaderActionsController_feedback"];
         delete?: never;
         options?: never;
         head?: never;
@@ -804,6 +1204,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/reports": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["ReaderActionsController_report"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/search": {
         parameters: {
             query?: never;
@@ -814,6 +1230,54 @@ export interface paths {
         get: operations["WikiReadController_search"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/sections/{path}/{anchor}/people": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["SectionsController_people"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/sections/{path}/{anchor}/why": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["SectionsController_why"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/source-checks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["EvidenceController_sourceCheck"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1048,6 +1512,22 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        ActivityDto: {
+            counts: {
+                all: number;
+                checks: number;
+                reports: number;
+            };
+            items: components["schemas"]["AttestationDto"][];
+            nextCursor: string | null;
+        };
+        AddedSourceDto: {
+            ref: string;
+            retracted: boolean;
+            /** @enum {string|null} */
+            tier: "high" | "medium" | "low" | null;
+            warning: string | null;
+        };
         AddSourceInput: {
             path: string;
         };
@@ -1135,6 +1615,15 @@ export interface components {
         };
         /** @enum {string} */
         AgentVerdict: "approve" | "reject" | "escalate";
+        AnchorLinkDto: {
+            /** Format: date-time */
+            createdAt: string;
+            newAnchor: string;
+            newHash: string;
+            oldAnchor: string;
+            oldHash: string;
+            path: string;
+        };
         ApiTokenDto: {
             /** Format: date-time */
             createdAt: string;
@@ -1168,6 +1657,38 @@ export interface components {
             id: string;
             reason: string;
             trigger: string | null;
+        };
+        AttestationDto: {
+            anchor: string;
+            blocking: boolean;
+            /** Format: date-time */
+            createdAt: string;
+            details: {
+                [key: string]: unknown;
+            };
+            /** Format: uuid */
+            id: string;
+            /** @enum {string} */
+            kind: "useful" | "checked" | "used" | "report";
+            note: string | null;
+            outcomeReason: string | null;
+            pageTitle: string;
+            path: string;
+            sectionTitle: string | null;
+            /** @enum {string} */
+            state: "active" | "withdrawn" | "on_old_version" | "stale" | "downweighted" | "open" | "confirmed" | "confirmed_error" | "dismissed" | "fixed";
+            /** Format: uuid */
+            topicId: string | null;
+            /** Format: date-time */
+            undoUntil: string;
+            versionLabel: string;
+        };
+        AttestationResultDto: {
+            attestation: components["schemas"]["AttestationDto"];
+            following: boolean;
+            label: components["schemas"]["LabelDto"];
+            people: components["schemas"]["PeopleDto"];
+            report: components["schemas"]["AttestationDto"] | null;
         };
         AuditEventDto: {
             action: string;
@@ -1369,8 +1890,86 @@ export interface components {
             /** Format: uuid */
             teamId: string | null;
         };
+        CredibilityGateDto: {
+            /** @enum {string} */
+            capability: "label_threshold" | "recheck_ordering" | "attestation_weights" | "report_detection" | "assistant_disclosure";
+            description: string;
+            enabled: boolean;
+            /** @enum {string} */
+            experiment: "E8b" | "E8c" | "E8d";
+            reference: components["schemas"]["GateReferenceDto"] | null;
+            /** Format: date-time */
+            updatedAt: string | null;
+            updatedBy: components["schemas"]["UserRefDto"] | null;
+        };
+        CredibilityGatesDto: {
+            items: components["schemas"]["CredibilityGateDto"][];
+        };
+        CredibilityPageDto: {
+            activeReaders30d: number;
+            oldestUnchecked: components["schemas"]["OldestUncheckedDto"] | null;
+            pageLabel: components["schemas"]["PageLabelDto"];
+            path: string;
+            title: string;
+        };
+        CredibilityPagesDto: {
+            items: components["schemas"]["CredibilityPageDto"][];
+            nextCursor: string | null;
+            tiles: {
+                checked: {
+                    changeThisWeek: number;
+                    sections: number;
+                };
+                error: {
+                    changeThisWeek: number;
+                    sections: number;
+                };
+                not_reviewed: {
+                    changeThisWeek: number;
+                    sections: number;
+                };
+                recheck: {
+                    changeThisWeek: number;
+                    sections: number;
+                };
+                reviewed: {
+                    changeThisWeek: number;
+                    sections: number;
+                };
+            };
+        };
+        CredibilityQueueDto: {
+            counts: {
+                all: number;
+                candidate: number;
+                fix: number;
+                flag: number;
+                pair: number;
+                report: number;
+                retraction: number;
+            };
+            items: components["schemas"]["QueueItemDto"][];
+            nextCursor: string | null;
+        };
+        CredibilitySourceDto: {
+            citedBy: number;
+            lastCheck: components["schemas"]["LastCheckDto"] | null;
+            name: string | null;
+            ref: string;
+            /** @enum {string} */
+            state: "retracted" | "changed" | "archived" | "unchecked" | "ok";
+            /** @enum {string|null} */
+            tier: "high" | "medium" | "low" | null;
+        };
+        CredibilitySourcesDto: {
+            items: components["schemas"]["CredibilitySourceDto"][];
+            nextCursor: string | null;
+        };
         /** @enum {string} */
         CustomTriggerKind: "path" | "term";
+        DecideCanDto: {
+            decide: boolean;
+        };
         DecisionDto: {
             approve: boolean;
             artifactHash: string;
@@ -1396,6 +1995,13 @@ export interface components {
             disputeVersion: number;
             /** Format: date-time */
             previewAt: string;
+            reason: string;
+        };
+        DecisionRecordDto: {
+            actor: components["schemas"]["UserRefDto"];
+            /** Format: date-time */
+            at: string;
+            outcome: string;
             reason: string;
         };
         DiffFromDto: {
@@ -1587,6 +2193,24 @@ export interface components {
         };
         /** @enum {string} */
         EventType: "proposal.changed" | "publication.changed" | "page.changed" | "discussion.changed" | "quality.changed" | "inbox.changed" | "ping";
+        EvidenceDto: {
+            /** @enum {string} */
+            actorKind: "agent" | "person" | "system";
+            /** Format: date-time */
+            at: string;
+            contributes: boolean;
+            id: string;
+            /** @enum {string} */
+            kind: "review" | "source_check" | "owner_confirmation" | "confirmed_error" | "flag" | "retraction" | "report" | "edge" | "anchor_link";
+            onOldVersion: boolean;
+            open: boolean | null;
+            /** @enum {string|null} */
+            result: "supported" | "not_supported" | "unverifiable" | null;
+            sourceName: string | null;
+            sourceRef: string | null;
+            summary: string;
+            valid: boolean;
+        };
         FieldProblemDto: {
             code: string;
             message: string;
@@ -1620,6 +2244,44 @@ export interface components {
             id: string;
             title: string;
         };
+        FollowDto: {
+            anchor: string | null;
+            /** Format: date-time */
+            createdAt: string;
+            muted: boolean;
+            path: string;
+            /** @enum {string} */
+            reason: "manual" | "attested" | "contributed";
+        };
+        FollowedPageDto: {
+            anchor: string | null;
+            checkAgain: components["schemas"]["SectionRefDto"][];
+            /** Format: date-time */
+            createdAt: string;
+            lastChange: components["schemas"]["LastChangeDto"];
+            muted: boolean;
+            pageLabel: components["schemas"]["PageLabelDto"];
+            pageTitle: string;
+            path: string;
+            /** @enum {string} */
+            reason: "manual" | "attested" | "contributed";
+        };
+        FollowedPagesDto: {
+            items: components["schemas"]["FollowedPageDto"][];
+            nextCursor: string | null;
+        };
+        FollowInput: {
+            /** @description Section anchor; omit to follow the page */
+            anchor?: string | null;
+            /** @description true mutes, false unmutes */
+            muted?: boolean;
+            path: string;
+        };
+        GateReferenceDto: {
+            /** Format: date */
+            runDate: string;
+            runRecord: string;
+        };
         HealthDto: {
             /** @enum {string} */
             db: "ok" | "down";
@@ -1634,6 +2296,10 @@ export interface components {
         HistoryDto: {
             items: components["schemas"]["VersionDto"][];
             nextCursor: string | null;
+        };
+        IdDto: {
+            /** Format: uuid */
+            id: string;
         };
         ImportInput: {
             /** @description The `.contribution.md` v3 file text */
@@ -1688,6 +2354,11 @@ export interface components {
             slug: string;
             state: string;
             title: string;
+        };
+        InvalidationResultDto: {
+            affected: components["schemas"]["SectionKeyDto"][];
+            /** Format: uuid */
+            id: string;
         };
         JobErrorDto: {
             code: string;
@@ -1751,6 +2422,17 @@ export interface components {
             /** Format: date-time */
             since: string | null;
         };
+        LastChangeDto: {
+            /** Format: date-time */
+            at: string;
+            summary: string | null;
+            versionLabel: string;
+        };
+        LastCheckDto: {
+            /** Format: date-time */
+            at: string;
+            result: string;
+        };
         LastUsedDto: {
             /** Format: date-time */
             at: string;
@@ -1778,6 +2460,16 @@ export interface components {
         };
         MaintainerDto: {
             name: string;
+        };
+        MaintenanceDto: {
+            digests: number;
+            pairs: number;
+            purged: components["schemas"]["PurgedDto"];
+        };
+        MarkReadInput: {
+            /** @enum {boolean} */
+            all?: true;
+            ids?: string[];
         };
         MeDto: {
             email: string;
@@ -1810,8 +2502,62 @@ export interface components {
             lastUsed: components["schemas"]["LastUsedDto"][];
             openaiCompat: components["schemas"]["OpenAiCompatDto"];
         };
+        NoticeDto: {
+            /** @enum {string} */
+            action: "read_section" | "see_affected" | "check_again" | "see_outcome";
+            anchor: string | null;
+            /** Format: date-time */
+            createdAt: string;
+            /** @enum {string} */
+            event: "section_recheck" | "section_edited" | "report_outcome" | "report_received" | "mention" | "weekly_summary";
+            /** Format: uuid */
+            id: string;
+            pageTitle: string;
+            path: string;
+            text: string;
+        };
+        NoticeListDto: {
+            items: components["schemas"]["NoticeDto"][];
+        };
+        NotificationDto: {
+            anchor: string | null;
+            /** Format: date-time */
+            createdAt: string;
+            data: {
+                [key: string]: unknown;
+            };
+            /** @enum {string} */
+            event: "section_recheck" | "section_edited" | "report_outcome" | "report_received" | "mention" | "weekly_summary";
+            /** Format: uuid */
+            id: string;
+            pageTitle: string | null;
+            path: string | null;
+            /** Format: date-time */
+            readAt: string | null;
+            text: string;
+        };
+        NotificationListDto: {
+            items: components["schemas"]["NotificationDto"][];
+            nextCursor: string | null;
+            unread: number;
+        };
+        NotificationPrefsDto: {
+            /** @enum {string} */
+            channel: "wiki" | "wiki_and_daily_email";
+            events: components["schemas"]["PrefEventsDto"];
+        };
+        OldestUncheckedDto: {
+            anchor: string;
+            /** Format: date-time */
+            since: string | null;
+            title: string;
+        };
         OldShaDto: {
             sha256: string | null;
+        };
+        OldVersionCountDto: {
+            checked: number;
+            used: number;
         };
         OpenAiCompatDto: {
             /** @description scheme://host:port only */
@@ -1848,6 +2594,13 @@ export interface components {
             usedByTeams: number | null;
             versionLabel: string;
         };
+        PageFeedbackDto: {
+            /** @enum {string} */
+            answer: "yes" | "partly" | "no";
+            /** Format: date-time */
+            createdAt: string;
+            versionLabel: string;
+        };
         PageLabelDto: {
             /** @enum {string} */
             label: "checked" | "reviewed" | "not_reviewed" | "recheck" | "error";
@@ -1866,10 +2619,30 @@ export interface components {
             /** Format: date-time */
             updatedAt: string;
         };
+        PeopleCountDto: {
+            people: number;
+            teams: components["schemas"]["TeamCountDto"][];
+        };
+        PeopleDto: {
+            acted: boolean;
+            checked: components["schemas"]["PeopleCountDto"] | null;
+            hidden: boolean;
+            mine: components["schemas"]["AttestationDto"][];
+            onOldVersion: components["schemas"]["OldVersionCountDto"] | null;
+            purpose: string;
+            used: components["schemas"]["PeopleCountDto"] | null;
+            useful: number | null;
+        };
         PinnedRefDto: {
             path: string;
             sha256: string;
             versionLabel: string;
+        };
+        PrefEventsDto: {
+            report_outcome: boolean;
+            section_edited: boolean;
+            section_recheck: boolean;
+            weekly_summary: boolean;
         };
         PreviewDto: {
             /** @description The exact file that approval publishes */
@@ -1891,6 +2664,10 @@ export interface components {
             status: number;
             title: string;
             type: string;
+        };
+        PropertyDto: {
+            label: string;
+            value: string;
         };
         ProposalDetailDto: {
             appliesTo: components["schemas"]["AppliesToDto"][];
@@ -2060,6 +2837,10 @@ export interface components {
             reviewerKind: "agent" | "person";
             slug: string;
         };
+        PurgedDto: {
+            attestations: number;
+            feedback: number;
+        };
         /** @enum {string} */
         QualityFlag: "blocking_finding" | "dropped_hedge" | "check_failed";
         QualityReportDto: {
@@ -2124,9 +2905,46 @@ export interface components {
         };
         /** @enum {string} */
         QualityTrigger: "submit" | "rerun" | "self_check";
+        QueueItemDetailDto: {
+            /** Format: date-time */
+            at: string;
+            blocking: boolean;
+            can: components["schemas"]["DecideCanDto"];
+            decisions: components["schemas"]["DecisionRecordDto"][];
+            downstream: components["schemas"]["SectionKeyDto"][];
+            id: string;
+            outcomes: string[];
+            properties: components["schemas"]["PropertyDto"][];
+            reach: components["schemas"]["ReachDto"];
+            reporter: components["schemas"]["UserRefDto"] | null;
+            section: components["schemas"]["SectionKeyDto"] | null;
+            title: string;
+            /** Format: uuid */
+            topicId: string | null;
+            /** @enum {string} */
+            type: "report" | "retraction" | "flag" | "candidate" | "pair" | "fix";
+            why: string;
+        };
+        QueueItemDto: {
+            /** Format: date-time */
+            at: string;
+            blocking: boolean;
+            id: string;
+            outcomes: string[];
+            reach: components["schemas"]["ReachDto"];
+            section: components["schemas"]["SectionKeyDto"] | null;
+            title: string;
+            /** @enum {string} */
+            type: "report" | "retraction" | "flag" | "candidate" | "pair" | "fix";
+            why: string;
+        };
         QuoteRefDto: {
             block: string;
             text: string;
+        };
+        ReachDto: {
+            linkedFrom: number;
+            teams: number;
         };
         RebaseInput: {
             /**
@@ -2266,6 +3084,18 @@ export interface components {
             title: string;
             warn: components["schemas"]["SectionWarningDto"] | null;
         };
+        SectionKeyDto: {
+            anchor: string;
+            label: components["schemas"]["LabelDto"];
+            pageTitle: string;
+            path: string;
+            sectionHash: string;
+            sectionTitle: string | null;
+        };
+        SectionRefDto: {
+            anchor: string;
+            title: string;
+        };
         SectionWarningDto: {
             fixProposalSlug: string | null;
             reason: string;
@@ -2286,6 +3116,30 @@ export interface components {
             after: string;
             before: string;
             hit: string;
+        };
+        SourceCheckResultDto: {
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: uuid */
+            id: string;
+            label: components["schemas"]["LabelDto"];
+        };
+        SourceTierDto: {
+            match: string;
+            reason: string;
+            reviewed: string;
+            source: string;
+            /** @enum {string} */
+            tier: "high" | "medium" | "low";
+        };
+        SourceTiersDto: {
+            path: string;
+            tiers: components["schemas"]["SourceTierDto"][];
+            versionLabel: string | null;
+            warnings: components["schemas"]["TierWarningDto"][];
+        };
+        SourceWarningsDto: {
+            added: components["schemas"]["AddedSourceDto"][];
         };
         SpotCheckCountsDto: {
             failed: number;
@@ -2346,6 +3200,12 @@ export interface components {
             nextCursor: string | null;
             total: number;
         };
+        SummaryDto: {
+            checksCounting: number;
+            reportsConfirmed: number;
+            suggestionsPublished: number;
+            year: number;
+        };
         TabCountsDto: {
             all: number;
             blocked: number;
@@ -2353,6 +3213,10 @@ export interface components {
             published: number;
             rejected: number;
             stale: number;
+        };
+        TeamCountDto: {
+            people: number;
+            team: string;
         };
         TeamDto: {
             /** Format: uuid */
@@ -2367,6 +3231,11 @@ export interface components {
             items: components["schemas"]["TeamDto"][];
             /** Format: uuid */
             nextCursor: string | null;
+        };
+        TierWarningDto: {
+            code: string;
+            line: number;
+            message: string;
         };
         TokenInput: {
             /** Format: date-time */
@@ -2541,6 +3410,9 @@ export interface components {
         };
         /** @enum {string} */
         TriggerSource: "default" | "custom";
+        UnreadDto: {
+            unread: number;
+        };
         UpdateDraftInput: {
             appliesTo?: components["schemas"]["AppliesToInput"][];
             content?: string;
@@ -2608,6 +3480,27 @@ export interface components {
             path: string;
             versionLabel: string;
         };
+        WhyCanDto: {
+            attest: boolean;
+            confirm: boolean;
+            recordSourceCheck: boolean;
+            report: boolean;
+        };
+        WhyDto: {
+            anchor: string;
+            /** @enum {boolean} */
+            baseRateCalibrated: false;
+            can: components["schemas"]["WhyCanDto"];
+            changeIt: string[];
+            evidence: components["schemas"]["EvidenceDto"][];
+            label: components["schemas"]["LabelDto"];
+            meaning: string;
+            note: string;
+            path: string;
+            sectionHash: string;
+            title: string;
+            versionLabel: string;
+        };
         WithdrawInput: {
             reason?: string;
         };
@@ -2649,6 +3542,137 @@ export interface operations {
                 };
                 content: {
                     "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description UNAUTHENTICATED */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description FORBIDDEN | ACCOUNT_DISABLED | CSRF_INVALID */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+        };
+    };
+    CredibilityAdminController_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CredibilityGatesDto"];
+                };
+            };
+            /** @description UNAUTHENTICATED */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description FORBIDDEN | ACCOUNT_DISABLED | CSRF_INVALID */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+        };
+    };
+    CredibilityAdminController_set: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                capability: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CredibilityGateDto"];
+                };
+            };
+            /** @description VALIDATION_FAILED */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description UNAUTHENTICATED */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description FORBIDDEN | ACCOUNT_DISABLED | CSRF_INVALID */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description NOT_FOUND */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+        };
+    };
+    CredibilityAdminController_run: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MaintenanceDto"];
                 };
             };
             /** @description UNAUTHENTICATED */
@@ -3323,6 +4347,145 @@ export interface operations {
             };
         };
     };
+    ReaderActionsController_attest: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AttestationResultDto"];
+                };
+            };
+            /** @description INVALID_PATH | VALIDATION_FAILED */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description UNAUTHENTICATED */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description FORBIDDEN | ACCOUNT_DISABLED | CSRF_INVALID */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description NOT_FOUND */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description SECTION_CHANGED | ALREADY_EXISTS */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description RATE_LIMITED */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+        };
+    };
+    ReaderActionsController_withdraw: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AttestationDto"];
+                };
+            };
+            /** @description VALIDATION_FAILED */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description UNAUTHENTICATED */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description FORBIDDEN | ACCOUNT_DISABLED | CSRF_INVALID */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description NOT_FOUND */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description PRECONDITION_FAILED */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+        };
+    };
     AuditController_audit: {
         parameters: {
             query?: {
@@ -3757,6 +4920,516 @@ export interface operations {
             };
             /** @description PAYLOAD_TOO_LARGE */
             413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+        };
+    };
+    EvidenceController_link: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AnchorLinkDto"];
+                };
+            };
+            /** @description INVALID_PATH | VALIDATION_FAILED */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description UNAUTHENTICATED */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description FORBIDDEN | ACCOUNT_DISABLED | CSRF_INVALID */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description NOT_FOUND */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description PRECONDITION_FAILED | ALREADY_EXISTS */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+        };
+    };
+    CredibilityQueueController_candidate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IdDto"];
+                };
+            };
+            /** @description VALIDATION_FAILED */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description UNAUTHENTICATED */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description FORBIDDEN | ACCOUNT_DISABLED | CSRF_INVALID */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+        };
+    };
+    CredibilityQueueController_decide: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QueueItemDetailDto"];
+                };
+            };
+            /** @description VALIDATION_FAILED */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description UNAUTHENTICATED */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description FORBIDDEN | ACCOUNT_DISABLED | CSRF_INVALID */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description NOT_FOUND */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description PRECONDITION_FAILED | SELF_REVIEW */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+        };
+    };
+    CredibilityQueueController_invalidation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InvalidationResultDto"];
+                };
+            };
+            /** @description VALIDATION_FAILED */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description UNAUTHENTICATED */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description FORBIDDEN | ACCOUNT_DISABLED | CSRF_INVALID */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+        };
+    };
+    CredibilityQueueController_pages: {
+        parameters: {
+            query?: {
+                cursor?: string;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CredibilityPagesDto"];
+                };
+            };
+            /** @description VALIDATION_FAILED */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description UNAUTHENTICATED */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description FORBIDDEN | ACCOUNT_DISABLED | CSRF_INVALID */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+        };
+    };
+    CredibilityQueueController_list: {
+        parameters: {
+            query?: {
+                cursor?: string;
+                limit?: number;
+                type?: "report" | "retraction" | "flag" | "candidate" | "pair" | "fix";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CredibilityQueueDto"];
+                };
+            };
+            /** @description VALIDATION_FAILED */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description UNAUTHENTICATED */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description FORBIDDEN | ACCOUNT_DISABLED | CSRF_INVALID */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+        };
+    };
+    CredibilityQueueController_detail: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                type: "report" | "retraction" | "flag" | "candidate" | "pair" | "fix";
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QueueItemDetailDto"];
+                };
+            };
+            /** @description VALIDATION_FAILED */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description UNAUTHENTICATED */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description FORBIDDEN | ACCOUNT_DISABLED | CSRF_INVALID */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description NOT_FOUND */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+        };
+    };
+    EvidenceController_tiers: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SourceTiersDto"];
+                };
+            };
+            /** @description UNAUTHENTICATED */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description FORBIDDEN | ACCOUNT_DISABLED | CSRF_INVALID */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+        };
+    };
+    EvidenceController_warnings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SourceWarningsDto"];
+                };
+            };
+            /** @description INVALID_PATH | VALIDATION_FAILED */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description UNAUTHENTICATED */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description FORBIDDEN | ACCOUNT_DISABLED | CSRF_INVALID */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+        };
+    };
+    CredibilityQueueController_sources: {
+        parameters: {
+            query?: {
+                cursor?: string;
+                limit?: number;
+                state?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CredibilitySourcesDto"];
+                };
+            };
+            /** @description VALIDATION_FAILED */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description UNAUTHENTICATED */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description FORBIDDEN | ACCOUNT_DISABLED | CSRF_INVALID */
+            403: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -4694,6 +6367,121 @@ export interface operations {
             };
         };
     };
+    FollowsController_follow: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FollowInput"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FollowDto"];
+                };
+            };
+            /** @description VALIDATION_FAILED | INVALID_PATH */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description UNAUTHENTICATED */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description FORBIDDEN | ACCOUNT_DISABLED | CSRF_INVALID */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description NOT_FOUND */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+        };
+    };
+    FollowsController_unfollow: {
+        parameters: {
+            query: {
+                anchor?: string;
+                path: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description VALIDATION_FAILED | INVALID_PATH */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description UNAUTHENTICATED */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description FORBIDDEN | ACCOUNT_DISABLED | CSRF_INVALID */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description NOT_FOUND */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+        };
+    };
     HealthController_report: {
         parameters: {
             query?: never;
@@ -4772,6 +6560,229 @@ export interface operations {
             };
         };
     };
+    MeCredibilityController_activity: {
+        parameters: {
+            query?: {
+                cursor?: string;
+                kind?: "checks" | "reports" | "all";
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ActivityDto"];
+                };
+            };
+            /** @description VALIDATION_FAILED */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description UNAUTHENTICATED */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description FORBIDDEN | ACCOUNT_DISABLED | CSRF_INVALID */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+        };
+    };
+    MeNotificationsController_mine: {
+        parameters: {
+            query?: {
+                cursor?: string;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FollowedPagesDto"];
+                };
+            };
+            /** @description VALIDATION_FAILED */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description UNAUTHENTICATED */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description FORBIDDEN | ACCOUNT_DISABLED | CSRF_INVALID */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+        };
+    };
+    MeNotificationsController_notices: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NoticeListDto"];
+                };
+            };
+            /** @description UNAUTHENTICATED */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description FORBIDDEN | ACCOUNT_DISABLED | CSRF_INVALID */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+        };
+    };
+    MeNotificationsController_prefs: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NotificationPrefsDto"];
+                };
+            };
+            /** @description UNAUTHENTICATED */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description FORBIDDEN | ACCOUNT_DISABLED | CSRF_INVALID */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+        };
+    };
+    MeNotificationsController_setPrefs: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NotificationPrefsDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NotificationPrefsDto"];
+                };
+            };
+            /** @description VALIDATION_FAILED */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description UNAUTHENTICATED */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description FORBIDDEN | ACCOUNT_DISABLED | CSRF_INVALID */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+        };
+    };
     ContributionsController_suggestions: {
         parameters: {
             query?: {
@@ -4821,6 +6832,43 @@ export interface operations {
             };
         };
     };
+    MeCredibilityController_summary: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SummaryDto"];
+                };
+            };
+            /** @description UNAUTHENTICATED */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description FORBIDDEN | ACCOUNT_DISABLED | CSRF_INVALID */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+        };
+    };
     MetaController_get: {
         parameters: {
             query?: never;
@@ -4836,6 +6884,106 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["MetaDto"];
+                };
+            };
+        };
+    };
+    NotificationsController_list: {
+        parameters: {
+            query?: {
+                cursor?: string;
+                limit?: number;
+                unread?: "true" | "false";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NotificationListDto"];
+                };
+            };
+            /** @description VALIDATION_FAILED */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description UNAUTHENTICATED */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description FORBIDDEN | ACCOUNT_DISABLED | CSRF_INVALID */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+        };
+    };
+    NotificationsController_read: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MarkReadInput"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UnreadDto"];
+                };
+            };
+            /** @description VALIDATION_FAILED */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description UNAUTHENTICATED */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description FORBIDDEN | ACCOUNT_DISABLED | CSRF_INVALID */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
                 };
             };
         };
@@ -5046,6 +7194,125 @@ export interface operations {
             };
             /** @description FORBIDDEN | ACCOUNT_DISABLED */
             403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+        };
+    };
+    EvidenceController_confirm: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SourceCheckResultDto"];
+                };
+            };
+            /** @description INVALID_PATH | VALIDATION_FAILED */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description UNAUTHENTICATED */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description FORBIDDEN | ACCOUNT_DISABLED | CSRF_INVALID */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description NOT_FOUND */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description SECTION_CHANGED */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+        };
+    };
+    ReaderActionsController_feedback: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PageFeedbackDto"];
+                };
+            };
+            /** @description INVALID_PATH | VALIDATION_FAILED */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description UNAUTHENTICATED */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description FORBIDDEN | ACCOUNT_DISABLED | CSRF_INVALID */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description NOT_FOUND */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -6047,6 +8314,79 @@ export interface operations {
             };
         };
     };
+    ReaderActionsController_report: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AttestationResultDto"];
+                };
+            };
+            /** @description INVALID_PATH | VALIDATION_FAILED */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description UNAUTHENTICATED */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description FORBIDDEN | ACCOUNT_DISABLED | CSRF_INVALID */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description NOT_FOUND */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description SECTION_CHANGED */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description RATE_LIMITED */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+        };
+    };
     WikiReadController_search: {
         parameters: {
             query: {
@@ -6092,6 +8432,192 @@ export interface operations {
             };
             /** @description FORBIDDEN | ACCOUNT_DISABLED */
             403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+        };
+    };
+    SectionsController_people: {
+        parameters: {
+            query?: {
+                reveal?: "true" | "false";
+            };
+            header?: never;
+            path: {
+                anchor: string;
+                /** @description URL-encoded wiki path */
+                path: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PeopleDto"];
+                };
+            };
+            /** @description INVALID_PATH | VALIDATION_FAILED */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description UNAUTHENTICATED */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description FORBIDDEN | ACCOUNT_DISABLED | CSRF_INVALID */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description NOT_FOUND */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+        };
+    };
+    SectionsController_why: {
+        parameters: {
+            query?: {
+                versionLabel?: string;
+            };
+            header?: never;
+            path: {
+                anchor: string;
+                /** @description URL-encoded wiki path */
+                path: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WhyDto"];
+                };
+            };
+            /** @description INVALID_PATH | VALIDATION_FAILED */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description UNAUTHENTICATED */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description FORBIDDEN | ACCOUNT_DISABLED | CSRF_INVALID */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description NOT_FOUND */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+        };
+    };
+    EvidenceController_sourceCheck: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SourceCheckResultDto"];
+                };
+            };
+            /** @description INVALID_PATH | VALIDATION_FAILED */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description UNAUTHENTICATED */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description FORBIDDEN | ACCOUNT_DISABLED | CSRF_INVALID */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description NOT_FOUND */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description SELF_REVIEW | SECTION_CHANGED */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };

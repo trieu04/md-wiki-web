@@ -11,6 +11,8 @@ export class AppError extends Error {
     readonly code: ErrorCode,
     readonly detail?: string,
     readonly fields?: FieldProblem[],
+    /** Seconds for a `Retry-After` header (RATE_LIMITED). */
+    readonly retryAfter?: number,
   ) {
     super(detail ?? code);
   }

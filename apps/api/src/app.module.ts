@@ -11,6 +11,8 @@ import { DiscussionsModule } from './discussions/discussions.module.js';
 import { McpModule } from './mcp/mcp.module.js';
 import { QualityModule } from './quality/quality.module.js';
 import { AgentModule } from './agent/agent.module.js';
+import { CredibilityModule } from './credibility/credibility.module.js';
+import { NotificationsModule } from './notifications/notifications.module.js';
 import { HealthModule } from './health/health.module.js';
 import { DevPingModule, InternalJobsModule } from './jobs/jobs.module.js';
 
@@ -40,6 +42,8 @@ export class InternalModule {}
     DiscussionsModule,
     McpModule,
     QualityModule,
+    NotificationsModule,
+    CredibilityModule,
     AgentModule,
     ...(process.env.NODE_ENV === 'production' ? [] : [DevPingModule]),
   ],

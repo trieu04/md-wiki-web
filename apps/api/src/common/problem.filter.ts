@@ -1,3 +1,4 @@
+import { logger } from './request-id.middleware.js';
 import { BadRequestException, Catch, HttpException } from '@nestjs/common';
 import type { ArgumentsHost, ExceptionFilter } from '@nestjs/common';
 import { ERROR_STATUS } from '@md-wiki/domain';
@@ -53,6 +54,10 @@ export class ProblemFilter implements ExceptionFilter {
         ? exception
         : new AppError(errorCode(exception, http.getRequest<Request>()));
     const status = ERROR_STATUS[problem.code];
+    // Unexpected failures are logged with their stack; the response never carries it.
+    if (problem.code === 'INTERNAL' && !(exception instanceof AppError))
+      logger.error({ err: exception, requestId: res.getHeader('X-Request-Id') }, 'unhandled error');
+    if (problem.retryAfter !== undefined) res.set('Retry-After', String(problem.retryAfter));
     res
       .status(status)
       .type('application/problem+json')

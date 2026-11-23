@@ -18,8 +18,10 @@ import {
   type VersionPublicationDto,
   type Wire,
 } from './read.dto.js';
+import { PageAuthors } from './page-authors.js';
 import { SectionLabels, type SectionKey } from './section-labels.js';
 import { decodeMarkdown, wikiPath } from './storage/wiki-storage.js';
+import { usedByTeams } from './usage.js';
 
 // Use an explicit locale for human-readable names; use the ID/path as a stable tie-breaker.
 export function byName(a: { name: string; id: string }, b: { name: string; id: string }) {
@@ -56,6 +58,7 @@ export class WikiReadService {
     @Inject(PrismaService) private readonly db: PrismaService,
     @Inject(WikiIndexer) private readonly indexer: WikiIndexer,
     @Inject(SectionLabels) private readonly labels: SectionLabels,
+    @Inject(PageAuthors) private readonly authors: PageAuthors,
   ) {}
 
   async tree(topic?: string): Promise<Wire<TreeDto>> {
@@ -118,7 +121,19 @@ export class WikiReadService {
     ]);
     if (!snapshot) throw new AppError('NOT_FOUND');
     const current = versionLabel === page.currentVersionLabel;
-    const rowLabels = await this.labels.forSections(rows);
+    const [rowLabels, authors, teams, fixes] = await Promise.all([
+      this.labels.forSections(rows),
+      this.authors.of(path),
+      usedByTeams(this.db, rows, () => path),
+      this.db.proposal.findMany({
+        where: { targetPath: path, state: 'pending' },
+        orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+        select: { slug: true, section: true },
+      }),
+    ]);
+    // The newest pending proposal on the section (or the whole page) is the fix in progress (§7.7.2).
+    const fixFor = (anchor: string) =>
+      fixes.find((p) => p.section === anchor || p.section === null)?.slug ?? null;
     const sections = rows.map((row, i): Wire<SectionDto> => {
       const label = rowLabels[i] ?? notReviewed;
       return {
@@ -129,7 +144,7 @@ export class WikiReadService {
         label,
         warn:
           (label.label === 'recheck' || label.label === 'error') && label.reason !== null
-            ? { reason: label.reason, fixProposalSlug: null }
+            ? { reason: label.reason, fixProposalSlug: fixFor(row.anchor) }
             : null,
       };
     });
@@ -144,8 +159,8 @@ export class WikiReadService {
       markdown: parseStatusBlock(decodeMarkdown(Buffer.from(snapshot.content))).body,
       sections,
       pageLabel: pageLabel(sections.map((section) => section.label)),
-      maintainers: [],
-      usedByTeams: null,
+      maintainers: authors.map((a) => ({ name: a.name })),
+      usedByTeams: teams.get(path) ?? 0,
     };
   }
 
@@ -228,12 +243,24 @@ export class WikiReadService {
     );
   }
 
-  async recent(query: RecentInput): Promise<Wire<RecentDto>> {
-    if (query.scope === 'mine') return { items: [], nextCursor: null };
+  /** `scope=mine` = the caller's unmuted follows (§7.7.9); no human caller → empty page. */
+  async recent(query: RecentInput, viewer?: { id: string; kind: string }): Promise<Wire<RecentDto>> {
+    let followed: string[] | null = null;
+    if (query.scope === 'mine') {
+      if (viewer?.kind !== 'human') return { items: [], nextCursor: null };
+      followed = (
+        await this.db.follow.findMany({
+          where: { userId: viewer.id, mutedAt: null },
+          select: { path: true },
+        })
+      ).map((f) => f.path);
+      if (!followed.length) return { items: [], nextCursor: null };
+    }
     return this.db.$transaction(
       async (tx) => {
         const rows = await tx.snapshot.findMany({
           ...snapshotArgs(query),
+          ...(followed && { where: { path: { in: [...new Set(followed)] } } }),
           select: { id: true, path: true, label: true, capturedAt: true },
         });
         const { items, nextCursor } = snapshotPage(rows, query.limit);

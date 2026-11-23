@@ -726,3 +726,315 @@ model PublishFollowUp {
   notified      String[] @db.Uuid
   createdAt     DateTime @default(now()) @db.Timestamptz(3)
 }
+
+// ---- Phase 9: credibility (system-logic §7.7.1) ----------------------------------------------
+// Records reference users, topics, proposals and snapshots by id without relations (D-160).
+
+enum SourceCheckResult {
+  supported
+  not_supported
+  unverifiable
+}
+
+enum AttestationKind {
+  useful
+  checked
+  used
+  report
+}
+
+enum AttestationStatus {
+  withdrawn
+  confirmed
+  confirmed_error
+  dismissed
+  fixed
+  downweighted
+}
+
+enum InvalidationKind {
+  retraction
+  concern
+  source_changed
+  version_changed
+  contradiction
+  root_wrong
+}
+
+enum ErrorOrigin {
+  report
+  source_check
+  flag
+  spot_check
+  manual
+}
+
+enum FlagCause {
+  report
+  retraction
+  source_changed
+  version_changed
+  contradiction
+  root_wrong
+  propagated
+}
+
+enum EdgeKind {
+  copy
+  corroborates
+  contradicts
+  lab_data
+}
+
+enum FollowReason {
+  manual
+  attested
+  contributed
+}
+
+enum NotificationChannel {
+  in_app
+  email_daily
+  off
+}
+
+enum FeedbackAnswer {
+  yes
+  partly
+  no
+}
+
+model SourceCheck {
+  id               String            @id @default(uuid(7)) @db.Uuid
+  path             String
+  anchor           String
+  sectionHash      String
+  versionLabel     String
+  sourceRef        String
+  sourceTitle      String?
+  sourceSnapshotId String?           @db.Uuid
+  result           SourceCheckResult
+  excerpt          String?
+  location         String?
+  comparedNumbers  Boolean           @default(false)
+  note             String?
+  checkerId        String            @db.Uuid
+  checkerKind      ReviewerKind
+  proposalId       String?           @db.Uuid
+  createdAt        DateTime          @default(now()) @db.Timestamptz(3)
+
+  @@index([path, anchor, sectionHash])
+  @@index([sourceRef])
+}
+
+model OwnerConfirmation {
+  id           String   @id @default(uuid(7)) @db.Uuid
+  path         String
+  anchor       String
+  sectionHash  String
+  versionLabel String
+  ownerId      String   @db.Uuid
+  note         String
+  createdAt    DateTime @default(now()) @db.Timestamptz(3)
+
+  @@index([path, anchor, sectionHash])
+}
+
+model InvalidationEvent {
+  id           String           @id @default(uuid(7)) @db.Uuid
+  kind         InvalidationKind
+  ref          String
+  detail       String
+  detectedAt   DateTime         @default(now()) @db.Timestamptz(3)
+  recordedById String?          @db.Uuid
+  jobId        String?          @db.Uuid
+
+  @@index([ref])
+}
+
+model ConfirmedError {
+  id            String      @id @default(uuid(7)) @db.Uuid
+  path          String
+  anchor        String
+  sectionHash   String
+  reason        String
+  origin        ErrorOrigin
+  originId      String?     @db.Uuid
+  confirmedById String      @db.Uuid
+  createdAt     DateTime    @default(now()) @db.Timestamptz(3)
+
+  @@index([path, anchor, sectionHash])
+}
+
+model RecheckFlag {
+  id          String    @id @default(uuid(7)) @db.Uuid
+  path        String
+  anchor      String
+  sectionHash String
+  cause       FlagCause
+  causeId     String?   @db.Uuid
+  reason      String
+  depth       Int       @default(0)
+  createdAt   DateTime  @default(now()) @db.Timestamptz(3)
+
+  @@index([path, anchor, sectionHash])
+  @@index([causeId])
+}
+
+model CredibilityResolution {
+  id          String   @id @default(uuid(7)) @db.Uuid
+  subjectType String
+  subjectId   String   @db.Uuid
+  path        String?
+  anchor      String?
+  sectionHash String?
+  outcome     String
+  reason      String
+  actorId     String   @db.Uuid
+  createdAt   DateTime @default(now()) @db.Timestamptz(3)
+
+  @@index([subjectId])
+}
+
+model Attestation {
+  id           String          @id @default(uuid(7)) @db.Uuid
+  path         String
+  anchor       String
+  sectionHash  String
+  versionLabel String
+  actorId      String          @db.Uuid
+  teamId       String?         @db.Uuid
+  role         Role
+  kind         AttestationKind
+  details      Json
+  blocking     Boolean         @default(false)
+  note         String?
+  sawCounts    Boolean
+  topicId      String?         @db.Uuid
+  createdAt    DateTime        @default(now()) @db.Timestamptz(3)
+
+  @@index([path, anchor, sectionHash])
+  @@index([actorId, createdAt])
+}
+
+model AttestationEvent {
+  id            String            @id @default(uuid(7)) @db.Uuid
+  attestationId String            @db.Uuid
+  seq           Int
+  actorId       String?           @db.Uuid
+  status        AttestationStatus
+  reason        String
+  createdAt     DateTime          @default(now()) @db.Timestamptz(3)
+
+  @@unique([attestationId, seq])
+}
+
+model PageFeedback {
+  id           String         @id @default(uuid(7)) @db.Uuid
+  path         String
+  versionLabel String
+  actorId      String         @db.Uuid
+  teamId       String?        @db.Uuid
+  answer       FeedbackAnswer
+  createdAt    DateTime       @default(now()) @db.Timestamptz(3)
+
+  @@index([path, versionLabel])
+}
+
+model CredibilityAggregate {
+  path         String
+  anchor       String
+  sectionHash  String
+  versionLabel String
+  metric       String
+  teamKey      String
+  count        Int
+  updatedAt    DateTime @default(now()) @db.Timestamptz(3)
+
+  @@id([path, anchor, sectionHash, versionLabel, metric, teamKey])
+}
+
+model EdgeCandidate {
+  id        String   @id @default(uuid(7)) @db.Uuid
+  kind      EdgeKind
+  srcPath   String
+  srcAnchor String
+  dstPath   String
+  dstAnchor String
+  score     Float
+  jobId     String?  @db.Uuid
+  detail    Json
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+}
+
+model CredibilityEdge {
+  id            String   @id @default(uuid(7)) @db.Uuid
+  kind          EdgeKind
+  srcPath       String
+  srcAnchor     String
+  dstPath       String
+  dstAnchor     String
+  candidateId   String?  @db.Uuid
+  confirmedById String   @db.Uuid
+  createdAt     DateTime @default(now()) @db.Timestamptz(3)
+
+  @@index([srcPath, srcAnchor])
+  @@index([dstPath, dstAnchor])
+}
+
+model AnchorLink {
+  id         String   @id @default(uuid(7)) @db.Uuid
+  path       String
+  oldAnchor  String
+  oldHash    String
+  newAnchor  String
+  newHash    String
+  proposalId String?  @db.Uuid
+  reviewerId String?  @db.Uuid
+  createdAt  DateTime @default(now()) @db.Timestamptz(3)
+
+  @@unique([path, newAnchor, newHash, oldAnchor, oldHash])
+}
+
+model Follow {
+  userId    String       @db.Uuid
+  path      String
+  anchor    String       @default("")
+  reason    FollowReason
+  createdAt DateTime     @default(now()) @db.Timestamptz(3)
+  mutedAt   DateTime?    @db.Timestamptz(3)
+
+  @@id([userId, path, anchor])
+  @@index([path])
+}
+
+model NotificationPref {
+  userId  String              @db.Uuid
+  event   String
+  channel NotificationChannel
+
+  @@id([userId, event])
+}
+
+model Notification {
+  id        String    @id @default(uuid(7)) @db.Uuid
+  userId    String    @db.Uuid
+  event     String
+  path      String?
+  anchor    String?
+  data      Json
+  createdAt DateTime  @default(now()) @db.Timestamptz(3)
+  readAt    DateTime? @db.Timestamptz(3)
+  emailedAt DateTime? @db.Timestamptz(3)
+
+  @@index([userId, createdAt])
+}
+
+model CredibilityGate {
+  capability String   @id
+  enabled    Boolean  @default(false)
+  runRecord  String?
+  runDate    String?
+  actorId    String?  @db.Uuid
+  updatedAt  DateTime @default(now()) @db.Timestamptz(3)
+}

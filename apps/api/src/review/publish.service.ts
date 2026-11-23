@@ -23,7 +23,14 @@ import {
   type WriteReceipt,
 } from '../wiki/storage/wiki-storage.js';
 import { WIKI_STORAGE } from '../wiki/wiki.module.js';
-import { AFTER_PUBLISH, PUBLISH_HOOKS, type AfterPublish, type PublishHooks } from './ports.js';
+import {
+  AFTER_PUBLISH,
+  PUBLISH_HOOKS,
+  PUBLISH_LISTENER,
+  type AfterPublish,
+  type PublishHooks,
+  type PublishListener,
+} from './ports.js';
 
 export type Actor = Pick<User, 'id' | 'kind'>;
 /** Who asked: a publisher (manual), the outbox (auto-publish), or boot recovery. */
@@ -54,6 +61,7 @@ export class PublishService {
     @Inject(API_CONFIG) private readonly config: ApiConfig,
     @Inject(EventsService) private readonly events: EventsService,
     @Inject(PUBLISH_HOOKS) private readonly hooks: PublishHooks,
+    @Inject(PUBLISH_LISTENER) private readonly listener: PublishListener,
     @Optional() @Inject(AFTER_PUBLISH) private readonly after?: AfterPublish,
   ) {}
 
@@ -137,7 +145,7 @@ export class PublishService {
     return this.storage.withRootLock(async (): Promise<'published'> => {
       const pub = await this.db.publication.findUniqueOrThrow({
         where: { id: publicationId },
-        include: { proposal: true, decision: true },
+        include: { proposal: { include: { baseSnapshot: true } }, decision: true },
       });
       if (pub.phase === 'done') return 'published';
       if (pub.phase !== 'written') throw new AppError('INTERNAL', `finish in phase ${pub.phase}`);
@@ -173,6 +181,16 @@ export class PublishService {
             reviewedAt: pub.decision.createdAt,
           })),
           skipDuplicates: true,
+        });
+        await this.listener.published(tx, {
+          publicationId: pub.id,
+          proposalId: pub.proposalId,
+          path: path.path,
+          section: pub.proposal.section,
+          versionLabel,
+          baseVersionLabel: pub.proposal.baseSnapshot?.label ?? null,
+          submitterId: pub.proposal.submitterId,
+          reviewerId: pub.decision.reviewerId,
         });
         await tx.publication.update({
           where: { id: pub.id },

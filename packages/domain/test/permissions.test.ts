@@ -41,7 +41,7 @@ const matrix: {
     scope: 'contribute',
   },
   {
-    actions: ['proposal.read', 'proposal.decide', 'dispute.write'],
+    actions: ['proposal.read', 'proposal.decide', 'dispute.write', 'source_check.record'],
     roles: reviewer,
     scope: 'review',
   },

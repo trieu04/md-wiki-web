@@ -178,7 +178,8 @@ Roles are cumulative: `reader < contributor < reviewer < publisher < owner`. Age
 | `proposal.read` (workspace lists, §7.4.8) | reviewer | review | [D-86] |
 | `proposal.decide` | reviewer | review | must hold an open `Assignment`; never own proposal (`SELF_REVIEW`) |
 | `proposal.publish` | publisher | publish | only when `AUTO_PUBLISH=false` |
-| `credibility.decide` | reviewer + page author of path | — | |
+| `credibility.decide` | reviewer + page author of path | — | page authors: §7.7.3 (D-164) |
+| `source_check.record` (§7.7.3) | reviewer | review | never on own section version (`SELF_REVIEW`) [D-165] |
 | `admin.*` (users, tokens, settings, reindex, recovery) | owner | — | |
 
 `can(actor, action, ctx) → { ok: true } | { ok: false, code: ErrorCode }` is pure and exhaustively tested (table-driven).
@@ -250,7 +251,7 @@ interface SearchHitDto { path: string; pageTitle: string; anchor: string; sectio
 | P6 Discussions/MCP (**full contract: §7.5**) | `/topics`, `/topics/{id}/comments`, `/proposals/{slug}/discussion`, `/proposals/{slug}/disputes`, MCP at `/mcp` (streamable HTTP) |
 | P7 Quality (**full contract: §7.6**) | `POST /proposals/{slug}/quality-check`, `GET /proposals/{slug}/findings`, internal `GET /internal/v1/jobs/{id}/input`, `POST /internal/v1/jobs/{id}/result`, `/admin/models`, `/admin/rules` |
 | P8 Agent review | `GET /inbox?tab`, `POST /proposals/{slug}/escalations`, `/admin/review-settings`, `POST /admin/agent/pause` |
-| P9 Credibility | `/sections/{path}/{anchor}/why`, `/attestations`, `/reports`, `/source-checks`, `/owner-confirmations`, `/page-feedback`, `/follows`, `/notifications`, `/me/*`, `/credibility/queue`, `/credibility/pages`, `/credibility/sources`, internal invalidation/candidate endpoints |
+| P9 Credibility (**full contract: §7.7**) | `/sections/{path}/{anchor}/why`, `/attestations`, `/reports`, `/source-checks`, `/owner-confirmations`, `/page-feedback`, `/follows`, `/notifications`, `/me/*`, `/credibility/queue`, `/credibility/pages`, `/credibility/sources`, internal invalidation/candidate endpoints |
 
 ### 7.1 Job wire contract (binding from Phase 0; later job kinds add an input/output pair only)
 
@@ -1034,6 +1035,308 @@ interface JobListDto { kinds: JobKindSummaryDto[] /* quality_check always; ping 
 
 - **Dataset line**: `{ "id": string, "targetPath"?: string, "title"?: string, "reason": string, "base": string | null, "proposed": string, "sources"?: [{ "path", "text" }], "expected": string[] /* rule ids */ }` or, instead of `expected`, `"class": <E3 class name>` mapped by `E3_CLASS_RULES` (clean classes → `[]`, `real_reverted` → bad with no specific rule). Blank lines are skipped; a bad line stops the run with its line number.
 - **Report** (JSON to `--out`, table to stdout): per rule `tp, fp, fn, precision, recall` (a rule is *predicted* for an item when a kept finding cites it; `null` when undefined); per item `{ id, expected, predicted, bad, flagged, dropped, error }`; overall `items: { bad, clean, caught, falseAlarms, detection, falseAlarmRate }` (an item with any expected rule or a bad class counts as bad; flagged by any finding = caught; a clean item with any finding = false alarm), dropped counts by reason, provider, model, prompt version, rules sha. Items whose call fails are counted under `errors` and excluded from P/R and detection.
+
+### 7.7 Phase 9 — Credibility (full contract for 7a, 7c, 7d; 7b outline; P9-00)
+
+Behavioural source: `md-wiki/docs/research/page-credibility.md` (§5 model, §6 reader interactions, §7 E8) and architecture.md › Credibility. Decisions D-160 … D-199. Every number-driven behaviour stays behind a gate (§7.7.10); weights of reader attestations are 0. UI tasks P9-09 … P9-14 bind to these contracts.
+
+#### 7.7.1 Data model (Prisma) [D-160]
+
+```text
+enum SourceCheckResult  supported | not_supported | unverifiable
+enum AttestationKind    useful | checked | used | report
+enum AttestationStatus  withdrawn | confirmed | confirmed_error | dismissed | fixed | downweighted
+enum InvalidationKind   retraction | concern | source_changed | version_changed | contradiction | root_wrong
+enum ErrorOrigin        report | source_check | flag | spot_check | manual
+enum FlagCause          report | retraction | source_changed | version_changed | contradiction | root_wrong | propagated
+enum EdgeKind           copy | corroborates | contradicts | lab_data
+enum FollowReason       manual | attested | contributed
+enum NotificationChannel in_app | email_daily | off
+enum FeedbackAnswer     yes | partly | no
+
+SourceCheck(id, path, anchor, sectionHash, versionLabel, sourceRef, sourceTitle?, sourceSnapshotId?, result,
+      excerpt?, location?, comparedNumbers bool, note?, checkerId, checkerKind ReviewerKind, proposalId?, createdAt)
+      index(path, anchor, sectionHash)  index(sourceRef)                              append-only
+OwnerConfirmation(id, path, anchor, sectionHash, versionLabel, ownerId, note, createdAt)   index(path, anchor, sectionHash)  append-only
+InvalidationEvent(id, kind, ref, detail, detectedAt, recordedById?, jobId?)          index(ref)     append-only
+ConfirmedError(id, path, anchor, sectionHash, reason, origin, originId?, confirmedById, createdAt)
+      index(path, anchor, sectionHash)                                                append-only
+RecheckFlag(id, path, anchor, sectionHash, cause, causeId?, reason, depth int ≥ 0, createdAt)
+      index(path, anchor, sectionHash)  index(causeId)                               append-only
+CredibilityResolution(id, subjectType flag|retraction|edge|candidate, subjectId, path?, anchor?, sectionHash?,
+      outcome, reason, actorId, createdAt)                                            index(subjectId)  append-only
+Attestation(id, path, anchor, sectionHash, versionLabel, actorId, teamId?, role Role, kind, details jsonb,
+      blocking bool, note?, sawCounts bool, topicId?, createdAt)
+      index(path, anchor, sectionHash)  index(actorId, createdAt)                    append-only (purge, §7.7.7)
+AttestationEvent(id, attestationId, seq int ≥ 1, actorId?, status, reason, createdAt)
+      unique(attestationId, seq)                                                     append-only (purge)
+PageFeedback(id, path, versionLabel, actorId, teamId?, answer, createdAt)  index(path, versionLabel)   append-only (purge)
+CredibilityAggregate(path, anchor, sectionHash, versionLabel, metric, teamKey, count, updatedAt)
+      pk(path, anchor, sectionHash, versionLabel, metric, teamKey)                   cache of purged raw rows
+EdgeCandidate(id, kind, srcPath, srcAnchor, dstPath, dstAnchor, score float, jobId?, detail jsonb, createdAt)   append-only
+CredibilityEdge(id, kind, srcPath, srcAnchor, dstPath, dstAnchor, candidateId?, confirmedById, createdAt)       append-only
+AnchorLink(id, path, oldAnchor, oldHash, newAnchor, newHash, proposalId?, reviewerId?, createdAt)
+      unique(path, newAnchor, newHash, oldAnchor, oldHash)                           append-only
+Follow(userId, path, anchor default '', reason, createdAt, mutedAt?)  pk(userId, path, anchor)   state row
+NotificationPref(userId, event, channel)  pk(userId, event)                          state row
+Notification(id, userId, event, path?, anchor?, data jsonb, createdAt, readAt?, emailedAt?)  index(userId, createdAt)
+CredibilityGate(capability pk, enabled bool, runRecord?, runDate date?, actorId?, updatedAt)   state row, audited
+```
+
+- Credibility record tables reference users, topics, proposals and snapshots **by id without foreign keys** [D-160]: the retention purge deletes raw rows, and audit/label code never joins through them; ids are validated by the service at write time. They are not declared as Prisma relations.
+- Append-only (§4): a trigger rejects `UPDATE` and `DELETE` on `SourceCheck`, `OwnerConfirmation`, `InvalidationEvent`, `ConfirmedError`, `RecheckFlag`, `CredibilityResolution`, `EdgeCandidate`, `CredibilityEdge`, `AnchorLink`. `Attestation`, `AttestationEvent` and `PageFeedback` reject `UPDATE` always and `DELETE` unless the transaction set `SET LOCAL md_wiki.purge = 'on'` (only the retention purge does) [D-169].
+- **Status is derived, never stored on the record** [D-160]: an attestation's status is its latest `AttestationEvent` (none = `active`); `on_old_version` = its `sectionHash` is not the section's current hash (after anchor links); `stale` = an invalidation of its source ref happened after it (§7.7.3). A flag is open until a `CredibilityResolution` with outcome `still_correct` or `confirm_error` exists for it; `keep_recheck` records a decision and leaves it open. A candidate is open until resolved (`yes`/`no`); `ask_authors` records the question and leaves it open.
+
+#### 7.7.2 Label engine (`domain/labels.ts#computeSectionLabel`) [D-161, D-179, D-180]
+
+`SectionLabels.forSections(keys)` loads every record for the keys (and their anchor-link aliases) in one round of queries and calls `computeSectionLabel` per key **synchronously in the request**: a write that changes evidence and the read that follows see the same label; nothing waits for the worker. Inputs (all filtered to `sectionHash = currentHash` by the pure function):
+
+| Rule | Input | Records |
+| --- | --- | --- |
+| 1 *Confirmed error* | `confirmedErrors` | `ConfirmedError` rows; valid human source checks with `not_supported` (reason "A person found the source does not support it") |
+| 2 *Under re-check* | `openRecheckReasons` | open `RecheckFlag` rows (confirmed reports, propagated flags, source changes, contradictions); valid **agent** source checks with `not_supported` ("The reviewer agent found the source does not support it"); a cited source with an open retraction (`InvalidationEvent` kind `retraction` on a ref the section text cites, §7.7.5, not resolved `still_correct` for this section hash) ("A cited source was retracted"); a section topic (`Topic.anchor` = anchor, no proposal) with status `on_hold` ("A discussion on this section is on hold") [D-180]; a confirmed `contradicts` edge not resolved, **on the weak side only** (below) |
+| 3 *Not reviewed* | `reviewedVersions` | `PublishedSection` rows (§7.4.10) |
+| 4 *Checked against source* | `sourceChecks` (`checkerKind = person`, `supported`, `valid`), `ownerConfirmations` (`valid`), optional `threshold` | `SourceCheck`, `OwnerConfirmation` |
+| 5 *Reviewed* | latest review; `reason = 'source not checkable'` when the latest valid source check on the hash is `unverifiable` and none is `supported` | |
+
+- `threshold?: { enabled: boolean; theta: number; hysteresis: number; p: number | null; previous: Label | null }` (gate `label_threshold`, §7.7.10). When enabled and `p !== null`, rule 4 also needs `p ≥ θ`, or `p ≥ θ − hysteresis` when `previous = 'checked'`; `p = null` (score not yet computed) leaves rule 4 as without θ. Off by default, so rule 4 is evidence-only.
+- **No vote path** [D-161]: attestations (`useful`, `checked`, `used`), page feedback, links, copies and corroboration edges are not inputs of `computeSectionLabel` at all; only an accountable human action (human source check, owner confirmation) reaches rule 4. Agent `supported` checks are shown in *Why* and counted in the shadow score only.
+- **Contradiction asymmetry** [D-179] (`contradictionApplies(self, other)`): a confirmed `contradicts` edge puts a side under re-check unless that side is *strong*: `groups(self) ≥ 2` and `groups(self) > groups(other)`, where `groups` = number of distinct provenance roots = external refs with a valid `supported` source check (person or agent) on the current hash. Balanced or common-root contradictions put both sides under re-check.
+- Rule 1–2 metadata keeps D-34 (earliest open record); `reviewerKind` is `null` for rules 1–3.
+- **Validity** [D-162]: a source check or owner confirmation is valid when bound to the current hash (directly or through anchor links) and no `InvalidationEvent` of kind `retraction`, `source_changed` or `root_wrong` on its `sourceRef` was detected after it (owner confirmations have no ref: only the hash binding applies). `concern` and `version_changed` never invalidate (concern only warns, research §5.6; `version_changed` creates flags instead).
+- **Page label** stays `pageLabel(sections)` = worst section + spread (§6).
+- `SectionDto.warn.fixProposalSlug` = the newest pending proposal on the path whose `section` is the anchor or `null` (whole page) when the label is `recheck`/`error`.
+
+#### 7.7.3 Evidence writes [D-163, D-164, D-165]
+
+| Method | Path | Perm | Request | Response | Errors |
+| --- | --- | --- | --- | --- | --- |
+| POST | `/source-checks` | **new `source_check.record`** (reviewer, scope `review`) | `SourceCheckInput` | `201 SourceCheckResultDto` | `FORBIDDEN`, `SELF_REVIEW` (author of the section version), `NOT_FOUND`, `INVALID_PATH`, `SECTION_CHANGED`, `VALIDATION_FAILED` |
+| POST | `/owner-confirmations` | `credibility.decide` | `OwnerConfirmationInput` | `201 SourceCheckResultDto` | `FORBIDDEN`, `NOT_FOUND`, `INVALID_PATH`, `SECTION_CHANGED`, `VALIDATION_FAILED` |
+| POST | `/credibility/anchor-links` | `credibility.decide` | `{ path, oldAnchor, newAnchor }` | `201 AnchorLinkDto` | `FORBIDDEN`, `NOT_FOUND`, `PRECONDITION_FAILED` (bodies differ, or `newAnchor` already exists in the old version), `ALREADY_EXISTS` |
+
+```ts
+interface SectionRefInput { path: string; anchor: string; sectionHash: hex64 }
+interface SourceCheckInput extends SectionRefInput { sourceRef: string /* 1..500, normalized §7.7.5 */; sourceTitle?: string /* ≤ 200 */;
+  result: 'supported' | 'not_supported' | 'unverifiable'; excerpt?: string /* ≤ 4000 */; location?: string /* ≤ 200 */;
+  comparedNumbers?: boolean; note?: string /* ≤ 2000 */; proposalSlug?: string; sourceSnapshotId?: uuid }
+interface OwnerConfirmationInput extends SectionRefInput { note: string /* trimmed 1..2000 */ }
+interface SourceCheckResultDto { id: string; label: LabelDto /* the section's label after the write */; createdAt: string }
+interface AnchorLinkDto { path: string; oldAnchor: string; newAnchor: string; oldHash: string; newHash: string; createdAt: string }
+```
+
+- `SECTION_CHANGED` (409) whenever `sectionHash` is not the current hash of `(path, anchor)` — the same binding as a decision to its bundle hash; unknown page → `NOT_FOUND`, unknown anchor in the current version → `VALIDATION_FAILED` field `anchor` code `UNKNOWN_SECTION`.
+- The response carries the recomputed label (same request). A human `not_supported` check makes it *Confirmed error*.
+- **Page authors** [D-164]: the one rule of §7.8.5 (D-206, `domain/page-authors.ts`): the **last** matching row of `wiki-meta/owners.md` (CODEOWNERS order; columns `Pages`/`Path` and `Email`/`Authors`/`Owners`), else the enabled humans whose proposals on the path were published, else the oldest enabled owner. A user with role `owner` always counts as a page author for `credibility.decide`. `credibility.decide` = role ≥ reviewer **and** page author (§5.2). `PageDto.maintainers` = the page authors' names.
+- **Anchor relinking** [D-163] (`domain/credibility.ts#detectRenames`): a section of the new version is a *pure rename* of a section of the previous version when their bodies (section text without the heading line, normalized like §3.3) are equal, the old anchor is absent from the new version, the new anchor is absent from the old one, and the match is one-to-one. At publish finish the API records an `AnchorLink` for every pure rename between the proposal's base and the artifact (`reviewerId` = the decision's reviewer, `proposalId`); reviewers can link manually under the same equality rule. Evidence recorded for `(path, oldAnchor, oldHash)` then counts for `(path, newAnchor, newHash)` (transitively). Anything but a pure rename resets evidence ("hash change resets evidence").
+
+#### 7.7.4 Why this label and people who rely on it [D-168, D-184]
+
+| Method | Path | Perm | Request | Response | Errors |
+| --- | --- | --- | --- | --- | --- |
+| GET | `/sections/{path}/{anchor}/why` | `wiki.read` | `?versionLabel` (default current) | `WhyDto` | `NOT_FOUND`, `INVALID_PATH` |
+| GET | `/sections/{path}/{anchor}/people` | `wiki.read` | `?reveal=true` | `PeopleDto` | `NOT_FOUND`, `INVALID_PATH` |
+
+```ts
+type EvidenceKind = 'review' | 'source_check' | 'owner_confirmation' | 'confirmed_error' | 'flag' | 'retraction' | 'report' | 'edge' | 'anchor_link';
+interface EvidenceDto { id: string; kind: EvidenceKind; at: string; actorKind: 'agent' | 'person' | 'system';
+  summary: string; result: 'supported' | 'not_supported' | 'unverifiable' | null; sourceRef: string | null; sourceName: string | null;
+  valid: boolean; onOldVersion: boolean; contributes: boolean /* counts for the label now */; open: boolean | null /* flags, reports */ }
+interface WhyDto { path: string; anchor: string; title: string; versionLabel: string; sectionHash: string; label: LabelDto;
+  meaning: string; evidence: EvidenceDto[] /* newest first */; changeIt: string[]; note: string; baseRateCalibrated: false;
+  can: { recordSourceCheck: boolean; confirm: boolean; attest: boolean; report: boolean } }
+interface TeamCountDto { team: string /* team name, or "No team" */; people: number }
+interface PeopleCountDto { people: number; teams: TeamCountDto[] }
+interface PeopleDto { hidden: boolean; acted: boolean /* the viewer has an active attestation on this hash */;
+  checked: PeopleCountDto | null; used: PeopleCountDto | null; useful: number | null;
+  onOldVersion: { checked: number; used: number } | null; purpose: string; mine: AttestationDto[] }
+```
+
+- Evidence lists records of the section across versions (old versions marked `onOldVersion`, `contributes: false`), newest first. Summaries describe evidence, never names: "Checked against <source> by a person", "Reviewed by the reviewer agent", "Reviewed by a person". `note` = "Labels follow fixed rules over these records; they are not a score." `changeIt` is derived from the winning rule (e.g. *reviewed* → "A person checks it against its source"; *recheck* → "A page author resolves the re-check"; *error* → "A correction is published"; *not_reviewed* → "A reviewer approves a change that contains it").
+- **Hidden counts** [D-168]: `hidden = !acted && !reveal`; when hidden every count field is `null`. Counts include active and downweighted attestations on the current hash plus purged aggregates (§7.7.7); withdrawn ones never count. Readers see team counts only; names are never returned here (reviewers see names in the queue detail, §7.7.8). `purpose` = "For content quality, not for rating people." `mine` = the viewer's own attestations on any version of the section.
+- `can` is computed by the API (§1 rule 2): `recordSourceCheck` (`source_check.record` and not the version's author), `confirm` (`credibility.decide`), `attest`/`report` (human, not the version's author/reviewer per §7.7.6).
+
+#### 7.7.5 Sources, tiers and citations [D-175, D-176]
+
+- **Cited sources** (`domain/credibility.ts#citedSources(text)`): DOIs (`10.\d{4,9}/…`, bare or as `doi.org` links) → `doi:<lowercased doi>`; other Markdown/auto links with `http(s)` → `url:<url without fragment>`; wiki links are derivations, not sources. Deduplicated in order. `normalizeSourceRef` applies the same to `SourceCheckInput.sourceRef` (`doi:`/`url:` prefixes kept; other text is kept trimmed as a free reference, e.g. a manual title).
+- **Source tiers** (`domain/credibility.ts#parseSourceTiers(markdown, today)`): `wiki-meta/source-tiers.md` (reviewed like content), first table with header columns `Source`, `Match`, `Tier`, `Reason`, `Reviewed` (case-insensitive, any order). `Tier ∈ high | medium | low`; `Match` = a ref prefix (`doi:10.1101/`, `url:https://www.fpbase.org/`); `Reviewed` = `YYYY-MM-DD`. Warnings (never throws): `NO_TABLE`, `MISSING_COLUMN`, `BAD_TIER`, `BAD_DATE`, `DUPLICATE_MATCH`, `STALE_REVIEW` (older than 4 years, WP:RSP), each `{ line, code, message }`. `tierOf(ref, tiers)` = the longest matching prefix, else `null`. **A tier never changes a label** (architecture.md › Source tiers).
+
+| Method | Path | Perm | Request | Response | Errors |
+| --- | --- | --- | --- | --- | --- |
+| GET | `/credibility/source-tiers` | `wiki.read` | | `{ path, versionLabel \| null, tiers: SourceTierDto[], warnings: TierWarningDto[] }` | |
+| POST | `/credibility/source-warnings` | `wiki.read` | `{ path, content /* ≤ 1 MiB */ }` | `{ added: { ref, tier: 'high'\|'medium'\|'low'\|null, retracted: boolean, warning: string \| null }[] }` | `INVALID_PATH`, `VALIDATION_FAILED` |
+
+`source-warnings` lists sources cited in `content` but not in the current version of `path` (all when the page is new), with a warning for `low` tier ("Low-tier source: <reason>") and for a retracted ref. The editor and review screens show it; it never blocks a submit.
+
+#### 7.7.6 Reader actions: attestations, reports, feedback [D-166, D-167]
+
+| Method | Path | Perm | Request | Response | Errors |
+| --- | --- | --- | --- | --- | --- |
+| POST | `/attestations` | `attest` (humans only) | `AttestationInput` | `201 AttestationResultDto` | `FORBIDDEN`, `NOT_FOUND`, `INVALID_PATH`, `SECTION_CHANGED`, `ALREADY_EXISTS`, `RATE_LIMITED` (a `contradicts` check opens a report), `VALIDATION_FAILED` |
+| POST | `/attestations/{id}/withdraw` | the attestation's actor | `{ reason?: string ≤ 2000 }` | `200 AttestationDto` | `FORBIDDEN`, `NOT_FOUND`, `PRECONDITION_FAILED` (already withdrawn, or a report already decided) |
+| POST | `/reports` | `report` (humans only) | `ReportInput` | `201 AttestationResultDto` | as `/attestations` (+ `RATE_LIMITED`) |
+| POST | `/page-feedback` | `feedback` (humans only) | `{ path, versionLabel, answer: 'yes'\|'partly'\|'no' }` | `201 { answer, versionLabel, createdAt }` | `FORBIDDEN`, `NOT_FOUND`, `INVALID_PATH`, `VALIDATION_FAILED` |
+
+```ts
+type AttestKind = 'useful' | 'checked' | 'used';
+interface CheckedDetails { source: { ref: string /* 1..500 */; cited: boolean }; location: string /* 1..200 */;
+  result: 'supports' | 'partly' | 'contradicts' | 'unverifiable'; comparedNumbers: boolean }
+interface UsedDetails { use: 'acquisition' | 'analysis' | 'training' | 'protocol' | 'other'; worked: 'yes' | 'with_changes' | 'no';
+  change?: string /* ≤ 2000, required unless worked = yes */ }
+interface AttestationInput extends SectionRefInput { kind: AttestKind; sawCounts: boolean; note?: string /* ≤ 2000 */;
+  checked?: CheckedDetails /* required iff kind = checked */; used?: UsedDetails /* required iff kind = used */ }
+type ReportKind = 'wrong' | 'outdated' | 'unclear' | 'source' | 'other';
+interface ReportInput extends SectionRefInput { kind: ReportKind; quote?: string /* ≤ 2000 */; suggestion?: string /* ≤ 4000 */;
+  evidence?: string /* ≤ 4000 */; blocking: boolean; sawCounts: boolean }
+type AttestationState = 'active' | 'withdrawn' | 'on_old_version' | 'stale' | 'downweighted' | 'open' | 'confirmed' | 'confirmed_error' | 'dismissed' | 'fixed';
+interface AttestationDto { id: string; path: string; pageTitle: string; anchor: string; sectionTitle: string | null; versionLabel: string;
+  kind: AttestKind | 'report'; details: object; blocking: boolean; note: string | null; state: AttestationState;
+  outcomeReason: string | null; topicId: string | null; createdAt: string; undoUntil: string /* createdAt + 10 min */ }
+interface AttestationResultDto { attestation: AttestationDto; report: AttestationDto | null /* the report a contradicts check opened */;
+  people: PeopleDto /* revealed */; label: LabelDto; following: boolean }
+```
+
+- **Order of checks** (first failure wins): permission (`FORBIDDEN`: agents, token callers, role) → path (`INVALID_PATH`) → page (`NOT_FOUND`) → anchor in the current version (`VALIDATION_FAILED`/`UNKNOWN_SECTION`) → `sectionHash` current (`SECTION_CHANGED`) → own section version (`FORBIDDEN`, D-166) → fields (`VALIDATION_FAILED`) → duplicate (`ALREADY_EXISTS`: an active attestation of the same kind by the same person on the same hash; reports are not deduplicated) → report rate limit (`RATE_LIMITED`).
+- **Own section version** [D-166]: the submitter of any `done` publication that produced this `(path, anchor, sectionHash)` may neither attest nor report it; its human reviewer (the decision's reviewer) may report it but not attest (already counted through the review).
+- `checked` with `result = contradicts` also creates a report (kind `wrong`, quote = the location, evidence = the note) in the same transaction (`report` in the response). Weights stay 0: nothing here feeds a label.
+- **Report** [D-167]: inserts the `Attestation` (kind `report`) and opens a section topic through the Phase 6 discussions service in the same transaction (`title` = "Report: <kind> — <section title>" cut to 120, `body` = kind, quote, suggestion and evidence as Markdown, author = the reporter, mentions = none), audits `report.opened`, notifies every page author (`report_received`, `data.blocking`): blocking reports are sent at once (in-app now, and an immediate email to authors whose channel is `email_daily`); others wait for the daily digest. Rate limit: **5 reports per person per page per 7 days** (`RATE_LIMITED` with `Retry-After` seconds until the oldest of them is 7 days old).
+- **Auto-follow** [D-171]: `checked`, `used` and `report` create a `Follow(reason attested)` of the page unless one exists (a muted follow stays muted). `following` in the response.
+- **Withdraw**: appends `AttestationEvent(status withdrawn)`; a report can be withdrawn only while open (its topic gets a `close rejected` entry "Withdrawn by the reporter"). Undo in the UI = withdraw within 10 minutes (`undoUntil`).
+- Page feedback is stored per page version; the latest answer of a person for a version wins; it counts as *Useful* only and never changes a label.
+- Audit: `attestation.created { kind, path, anchor, sectionHash }`, `attestation.withdrawn`, `report.opened { attestationId, topicId, blocking }`, `report.decided { outcome }`, `source_check.recorded { result, sourceRef }`, `owner_confirmation.recorded`, `anchor_link.created`, `credibility.decided { itemType, outcome }`, `credibility.gate_changed`, `credibility.maintenance`.
+
+#### 7.7.7 Retention, rate limits, reciprocal pairs [D-169, D-170, D-183]
+
+- `CredibilityMaintenance.run(now)` runs daily in-process (first run 1 min after boot; disabled when `NODE_ENV=test`) and on `POST /admin/credibility/maintenance` (owner) → `{ purged: { attestations, feedback }, pairs, digests }`.
+- **Retention** (default 90 days, `CREDIBILITY_RETENTION_DAYS`): raw `Attestation` rows older than the cutoff whose state is final (`withdrawn`, `dismissed`, `fixed`, or not a report) and `PageFeedback` rows older than the cutoff are folded into `CredibilityAggregate` (`metric` = kind, or `feedback_<answer>`; `teamKey` = team id or `''`; withdrawn rows are dropped, not counted) and deleted with their events in one transaction under `md_wiki.purge`. Open and confirmed reports are kept until final. `retentionPlan(rows, cutoff)` in domain decides which rows go and what they add.
+- **Reciprocal pairs** (`domain/credibility.ts#reciprocalPairs`): two people who each have an active `checked`/`used`/`useful` attestation on a section version the other authored (§7.7.6 authorship) form a pair; each such attestation gets one `AttestationEvent(downweighted, reason "Reciprocal attestations between two readers")`, visible to reviewers in the queue (item type `pair`, information only). Nothing is removed. Clusters larger than a pair are a follow-up for the 7b job.
+
+#### 7.7.8 Workspace › Credibility [D-174]
+
+| Method | Path | Perm | Request | Response | Errors |
+| --- | --- | --- | --- | --- | --- |
+| GET | `/credibility/queue` | `proposal.read` (reviewer) | `?type=report\|retraction\|flag\|candidate\|pair\|fix&limit&cursor` | `CredibilityQueueDto` | `VALIDATION_FAILED` |
+| GET | `/credibility/queue/{type}/{id}` | `proposal.read` | | `QueueItemDetailDto` | `NOT_FOUND` |
+| POST | `/credibility/decisions` | `credibility.decide` (page author of the item's path) | `{ type, id, outcome, reason /* trimmed 1..4000 */, version? }` | `200 QueueItemDetailDto` (with the labels after the decision) | `FORBIDDEN`, `NOT_FOUND`, `PRECONDITION_FAILED` (item already decided, outcome not allowed for the type), `SELF_REVIEW` (deciding on one's own report), `VALIDATION_FAILED` |
+| GET | `/credibility/pages` | `proposal.read` | `?limit&cursor` | `{ items: CredibilityPageDto[], nextCursor, tiles: Record<Label, { sections: number; changeThisWeek: number }> }` | |
+| GET | `/credibility/sources` | `proposal.read` | `?state&limit&cursor` | `{ items: CredibilitySourceDto[], nextCursor }` | `VALIDATION_FAILED` |
+| POST | `/credibility/candidates` | `admin.*` (owner; the 7b worker posts through the internal API) | `EdgeCandidateInput` | `201 { id }` | `FORBIDDEN`, `VALIDATION_FAILED` |
+| POST | `/credibility/invalidations` | `admin.*` (owner; the 7b worker posts through the internal API) | `{ kind, ref, detail }` | `201 { id, affected: SectionKeyDto[] }` | `VALIDATION_FAILED` |
+
+Item types and choices (outcomes):
+
+| `type` | Source | Outcomes | Effect |
+| --- | --- | --- | --- |
+| `report` (open) | `Attestation(kind report)` without decision | `confirm` · `confirm_error` · `dismiss` | `confirm`: `AttestationEvent(confirmed)` + `RecheckFlag(cause report)` → *Under re-check*; `confirm_error`: event `confirmed_error` + `ConfirmedError(origin report)` → *Confirmed error*; `dismiss`: event `dismissed`, topic closed `rejected` with the reason (the reporter can reopen it, §7.5.2). Each tells the reporter (`report_outcome`). *Confirm and fix now* = `confirm`, then the UI opens the editor |
+| `retraction` | `InvalidationEvent(retraction)` with affected sections not resolved | `still_correct` · `confirm_error` · `keep_recheck` | per affected section: resolution recorded; `confirm_error` adds `ConfirmedError(origin flag)` |
+| `flag` | open `RecheckFlag` (any cause but report) | `still_correct` · `confirm_error` · `keep_recheck` | `still_correct` closes it; `confirm_error` closes it and adds a `ConfirmedError` |
+| `candidate` | open `EdgeCandidate` | `yes` · `no` · `ask_authors` | `yes` → `CredibilityEdge` (a `contradicts` edge feeds §7.7.2; `copy` edges make the destination a derivation of the source for flag propagation); `ask_authors` opens a section topic for the page authors and leaves it open |
+| `pair` | reciprocal pair (§7.7.7) | — (information) | |
+| `fix` | pending proposal on a section with an open issue | — (link to Review) | |
+
+```ts
+interface SectionKeyDto { path: string; pageTitle: string; anchor: string; sectionTitle: string | null; sectionHash: string; label: LabelDto }
+interface QueueItemDto { type: QueueType; id: string; title: string; why: string; section: SectionKeyDto | null;
+  reach: { linkedFrom: number; teams: number }; at: string; outcomes: string[]; blocking: boolean }
+interface CredibilityQueueDto { items: QueueItemDto[]; nextCursor: string | null; counts: Record<QueueType | 'all', number> }
+interface QueueItemDetailDto extends QueueItemDto { properties: { label: string; value: string }[];
+  reporter: UserRefDto | null /* names for reviewers only */; topicId: string | null; downstream: SectionKeyDto[];
+  decisions: { outcome: string; reason: string; actor: UserRefDto; at: string }[]; can: { decide: boolean } }
+interface CredibilityPageDto { path: string; title: string; pageLabel: { label: Label; spread: Record<Label, number> };
+  oldestUnchecked: { anchor: string; title: string; since: string | null } | null; activeReaders30d: number }
+interface CredibilitySourceDto { ref: string; name: string | null; tier: 'high' | 'medium' | 'low' | null;
+  state: 'retracted' | 'changed' | 'archived' | 'unchecked' | 'ok'; citedBy: number; lastCheck: { at: string; result: string } | null }
+interface EdgeCandidateInput { kind: EdgeKind; src: { path: string; anchor: string }; dst: { path: string; anchor: string }; score: number /* 0..1 */; detail?: object }
+```
+
+- **Order** [D-174]: by reach (`linkedFrom` = current pages whose text links to the item's page, then `teams` = distinct teams with active `used` attestations on the page), then blocking first, then `at` asc. The E8d gate `recheck_ordering` (off) would switch to lower bound × reach once scores exist (7b). The queue cursor is the base64url of the last item's `(type, id)`; the order is recomputed per request (the queue is small), and an unknown cursor yields an empty page.
+- **Propagation** [D-178]: a retraction or `root_wrong` invalidation, a confirmed error and a `confirm_error` outcome create `RecheckFlag(cause propagated, depth n)` for every **transitive descendant** section: B derives from A when a `done` publication of B was produced by a proposal with a `source` ref on A's path (section-scoped proposals: only their section; whole-page proposals: every section the artifact changed) or a confirmed `copy` edge A → B; cycle-safe BFS (`domain/credibility.ts#descendants`). Followers of each flagged page get `section_recheck`. The score moves one step only (shadow model, §7.7.11); flags move to all descendants.
+- `downstream` in the detail lists those descendants. Readers see the result at once: every decision recomputes labels in the same request and emits `page.changed` for the affected paths.
+
+#### 7.7.9 Follows, notifications, digests, You [D-171, D-172, D-181]
+
+| Method | Path | Perm | Request | Response | Errors |
+| --- | --- | --- | --- | --- | --- |
+| POST | `/follows` | `follow` | `{ path, anchor?: string \| null, muted?: boolean }` | `201 FollowDto` (upsert; `muted` sets/clears `mutedAt`) | `FORBIDDEN`, `NOT_FOUND`, `INVALID_PATH` |
+| DELETE | `/follows` | `follow` | `?path&anchor` | `204` | `NOT_FOUND` |
+| GET | `/me/follows` | `follow` | `?limit&cursor` | `{ items: FollowedPageDto[], nextCursor }` | |
+| GET | `/me/activity` | `attest` | `?kind=checks\|reports\|all&limit&cursor` | `{ items: AttestationDto[], nextCursor, counts }` | |
+| GET | `/me/summary` | `attest` | | `{ year: number, checksCounting: number, reportsConfirmed: number, suggestionsPublished: number }` | |
+| GET/PUT | `/me/notification-preferences` | `follow` | PUT `NotificationPrefsDto` | `NotificationPrefsDto` | `VALIDATION_FAILED` |
+| GET | `/me/notices` | `follow` | | `{ items: NoticeDto[] }` (Home › *On pages you use*, newest 10) | |
+| GET | `/notifications` | `wiki.read` (humans) | `?unread=true&limit&cursor` | `{ items: NotificationDto[], nextCursor, unread: number }` | |
+| POST | `/notifications/read` | `wiki.read` (humans) | `{ ids?: uuid[] /* ≤ 100 */, all?: true }` | `{ unread: number }` | `VALIDATION_FAILED` |
+| GET | `/wiki/recent?scope=mine` | `wiki.read` | | §6 `RecentChangeDto` page restricted to followed, unmuted pages | |
+
+```ts
+type NotificationEvent = 'section_recheck' | 'section_edited' | 'report_outcome' | 'report_received' | 'mention' | 'weekly_summary';
+interface NotificationPrefsDto { events: Record<'section_recheck' | 'section_edited' | 'report_outcome' | 'weekly_summary', boolean>;
+  channel: 'wiki' | 'wiki_and_daily_email' }
+interface NotificationDto { id: string; event: NotificationEvent; path: string | null; pageTitle: string | null; anchor: string | null;
+  text: string; data: object; createdAt: string; readAt: string | null }
+interface NoticeDto { id: string; event: NotificationEvent; path: string; pageTitle: string; anchor: string | null; text: string;
+  action: 'read_section' | 'see_affected' | 'check_again' | 'see_outcome'; createdAt: string }
+interface FollowDto { path: string; anchor: string | null; reason: 'manual' | 'attested' | 'contributed'; muted: boolean; createdAt: string }
+interface FollowedPageDto extends FollowDto { pageTitle: string; pageLabel: { label: Label; spread: Record<Label, number> };
+  lastChange: { versionLabel: string; at: string; summary: string | null }; checkAgain: { anchor: string; title: string }[] }
+```
+
+- **Events** [D-172]: `section_recheck` — a section of a followed page went under re-check (flag, confirmed report, retraction, propagation) → followers; `section_edited` — a new version changed or removed a section on which the person has an active `checked`/`used` attestation and they follow the page; `report_outcome` — confirmed / confirmed as error / dismissed (with the reason) / fixed (a new version changed the reported section after confirmation) → reporter; `report_received` → page authors; `mention` → people mentioned in a discussion entry (§7.5.4); `weekly_summary` — digest only. Muted follows get nothing. `report_outcome` and `report_received` ignore the event toggles (a reporter is always told, plus page-author duty) but respect `channel`.
+- **Preferences**: defaults = all events on, `channel = 'wiki'`. Stored per event as `NotificationPref(channel in_app | email_daily | off)`: toggled off → `off`; on → `in_app` or `email_daily` from `channel`. Slack/Teams is later.
+- **Digests**: `buildDigest(user, notifications, period)` (pure, domain) groups unsent notifications by page into `{ subject, text }`; `DigestService.run(now)` sends one email per user with `email_daily` (and the weekly summary on Mondays) through the `MailTransport` port and sets `emailedAt`. Transports: `log` (default, writes the message to the log) and `noop` (tests capture messages); env `MAIL_TRANSPORT=log|noop`. Blocking reports are sent immediately by the same transport.
+- `/me/follows.checkAgain` = sections where the viewer's active `checked` attestation is `on_old_version`. `/me/activity` items carry the derived `state` (counting = `active`, *stopped counting* = `on_old_version`/`stale`, *fixed and published* = `fixed`, *dismissed* with `outcomeReason`).
+- **Auto-follow after a suggestion** [D-171]: when a person's proposal is published, they follow the page (`reason contributed`) unless a follow exists.
+- `/wiki/recent?scope=mine` (§6) is now real: the recent-change page restricted to the caller's unmuted follows; a caller without a session/human identity gets the empty page.
+
+#### 7.7.10 Gates (7d) [D-177]
+
+| Method | Path | Perm | Request | Response | Errors |
+| --- | --- | --- | --- | --- | --- |
+| GET | `/admin/credibility-gates` | `admin.settings` | | `{ items: CredibilityGateDto[] }` | |
+| PUT | `/admin/credibility-gates/{capability}` | `admin.settings` | `{ enabled: boolean, runRecord?: string, runDate?: 'YYYY-MM-DD' }` | `CredibilityGateDto` | `NOT_FOUND` (unknown capability), `VALIDATION_FAILED` |
+
+```ts
+type GateCapability = 'label_threshold' | 'recheck_ordering' | 'attestation_weights' | 'report_detection' | 'assistant_disclosure';
+interface CredibilityGateDto { capability: GateCapability; experiment: 'E8b' | 'E8c' | 'E8d'; enabled: boolean;
+  reference: { runRecord: string; runDate: string } | null; updatedAt: string | null; updatedBy: UserRefDto | null; description: string }
+```
+
+- `validateGateChange` (domain): enabling needs `runRecord` (trimmed 1..300, a run-record path such as `experiments/runs/e8d/2027-01-10.json`, no `..`, no NUL) and `runDate` (a real calendar date, not in the future); missing → `VALIDATION_FAILED` fields `runRecord` / `runDate` code `REQUIRED`/`INVALID`. Disabling clears nothing (the last reference stays in the audit log) and needs no reference. Every change audits `credibility.gate_changed { capability, enabled, runRecord, runDate }`.
+- Experiments: `label_threshold`, `recheck_ordering` → E8d; `attestation_weights`, `report_detection` → E8b; `assistant_disclosure` → E8c. The API only stores and validates them in this phase; consumers (score, ordering, disclosure) read `CredibilityGates.enabled(capability)` and are inert until 7b provides scores.
+
+#### 7.7.11 Shadow score reference model (`domain/credibility-score.ts`) and E8a invariants [D-178]
+
+The worker job `credibility_score` (7b) must reproduce this pure reference model; the E8a invariants are automated tests over it and over the label engine. Placeholder parameters (research §5.4): `a = 0.8`, `W = 2`; reviewed version `r += 1`; valid supported source check `r += 2` (agent checks `r += 2 × agentWeight`, default 0 until measured); owner confirmation `r += 3`; confirmed error or valid not_supported check `s += 3`; reader attestations `r += min(1.5, 0.5 × effective)` only from ≥ 2 teams and **× attestation weight = 0** while the gate is off; derivation B ← A: B receives A's own opinion discounted by `P_own(A)` with the loss moved to `u` (A never rises); confirmed corroboration with disjoint roots: `r += 2 × P_own(other)`; links: nothing (blast radius only); contradictions: asymmetric (strong side × 0.9, weak side `s += k × P_own(strong)`, balanced × 0.5); evidence on another hash contributes 0. `b = r/(r+s+W)`, `d = s/(r+s+W)`, `u = W/(r+s+W)`, `P = b + a·u`. Flags propagate to all transitive descendants of a retracted or wrong root; the score moves one step.
+
+Invariants (tests in `packages/domain/test/e8a-invariants.test.ts` and `apps/api/test/credibility.integration.test.ts`): copy laundering (ten copies, declared or not, leave A unchanged), link stuffing (a hundred inbound links leave A's label and score unchanged; only reach rises), weak contradiction (A with two disjoint provenance groups stays *Checked against source*), suspicion propagation (a retracted root lowers A, lowers what B received from A, and flags every transitive descendant; followers notified), no vote-only path to *Checked against source* (any number of attestations from any number of teams, page feedback, links and copies never give rule 4), hash change resets evidence (evidence on an old hash contributes 0 to label and score); plus: a confirmed error changes the label in the same request.
+
+#### 7.7.12 Phase 9b worker jobs (outline; implemented by P9-06)
+
+- Job kinds `retraction_check` (Crossref REST `filter=update-type:retraction` + Retraction Watch; at submit, at review and weekly; input = refs, output = hits), `copy_candidates` (MinHash + rare-value weighting + edit time), `relation_candidates` (embedding top 20 + re-ranker → corroborates/contradicts), `credibility_score` (the §7.7.11 model; output cached as `SectionScore(path, anchor, sectionHash, p, lower10, u, r, s, modelVersion, paramsSha256, computedAt)`, shadow: Operations and research export only).
+- Internal endpoints (service token): `POST /internal/v1/credibility/invalidations` (same body and effect as `/credibility/invalidations`), `POST /internal/v1/credibility/candidates` (same as `/credibility/candidates`), `POST /internal/v1/credibility/scores`. Candidates never change a label before a reviewer's `yes`.
+- *Run retraction check now* and *Export* (Workspace › Credibility) arrive with these jobs.
+
+#### 7.7.12a Phase 8 ports served by credibility [D-185]
+
+- `CREDIBILITY_SIGNALS` (§7.8.3): open reports on the touched sections (whole page when none), anchors of the base version labelled *Checked against source*, retracted (`InvalidationEvent retraction`) and `low`-tier refs the proposal **adds**, confirmed `contradicts` edges touching the page.
+- `CONFIRMED_ERRORS` (§7.8.7): a failed spot check writes `ConfirmedError(origin spot_check, originId = spot check)` per section and propagates (D-178) in the spot-check transaction.
+- `INBOX_CHECK_ITEMS` (§7.8.8): open reports and open re-check flags (cause ≠ report) on pages the user is a page author of.
+- `PUBLISH_LISTENER` (§7.4.5 finish transaction): anchor links for pure renames, confirmed reports on changed sections → `fixed` + `report_outcome`, `section_edited`, contributor auto-follow.
+- `AUTHOR_NOTIFIER` stays the log notifier: escalations and spot checks reach page authors through the Inbox; no new `NotificationEvent` is added (contract unchanged). Follow-up: an email for `email_daily` users.
+
+#### 7.7.13 Web (P9-09 … P9-14)
+
+| Route / region | Screen | Data | Writes |
+| --- | --- | --- | --- |
+| Trust drawer (any label / action) | F-04 four tabs + after-submit | `/sections/{path}/{anchor}/why`, `/people` | `/attestations`, `/reports`, `/attestations/{id}/withdraw` |
+| Page rail, action row, feedback, Follow | F-03 | `PageDto` (+ maintainers, usedByTeams), `/why`, `/people` | `/attestations`, `/page-feedback`, `/follows` |
+| `/me` tabs | F-05 | `/me/follows`, `/me/activity`, `/me/summary`, `/me/notification-preferences`, `/me/suggestions` | `PUT /me/notification-preferences`, `/follows` |
+| Home › *On pages you use*, scope toggle | F-01 | `/me/notices`, `/wiki/recent?scope=mine` | — |
+| `/work/credibility` | F-12 | `/credibility/queue`, `/queue/{type}/{id}`, `/pages`, `/sources` | `/credibility/decisions` |
+| Settings › Trust labels | F-14 | `/admin/credibility-gates` | `PUT /admin/credibility-gates/{capability}` |
+| Bell | derived (D-16) | `/notifications` | `/notifications/read` |
+
+Query keys: `['why', path, anchor]`, `['people', path, anchor]`, `['me.follows']`, `['me.activity']`, `['me.notices']`, `['notifications']`, `['credibility', 'queue'|'pages'|'sources']`. Every credibility write invalidates `['wiki.page', {path}]`, `['search']`, `['why', path]`, `['people', path]` and the queue; SSE `page.changed` does the same for other viewers.
 
 ### 7.8 Phase 8 — Self-managed review (full contract) [D-200 … D-216]
 

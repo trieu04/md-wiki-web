@@ -16,9 +16,26 @@ it('reports all missing API keys in one boot error', () => {
         'QUALITY_RULES_PATH',
         'REVIEWER_AGENT_EMAIL',
         'REVIEWER_AGENT_TOKEN',
+        'MAIL_TRANSPORT',
+        'CREDIBILITY_RETENTION_DAYS',
       ].includes(key),
   );
   for (const key of required) expect(() => parseConfig({})).toThrow(key);
+});
+
+it('defaults the credibility settings (system-logic §7.7.7, §7.7.9)', () => {
+  const config = parseConfig({
+    ...example,
+    MAIL_TRANSPORT: undefined,
+    CREDIBILITY_RETENTION_DAYS: undefined,
+  });
+  expect(config.MAIL_TRANSPORT).toBe('log');
+  expect(config.CREDIBILITY_RETENTION_DAYS).toBe(90);
+  expect(parseConfig({ ...example, CREDIBILITY_RETENTION_DAYS: '30' }).CREDIBILITY_RETENTION_DAYS).toBe(30);
+  expect(() => parseConfig({ ...example, CREDIBILITY_RETENTION_DAYS: '0' })).toThrow(
+    'CREDIBILITY_RETENTION_DAYS',
+  );
+  expect(() => parseConfig({ ...example, MAIL_TRANSPORT: 'smtp' })).toThrow('MAIL_TRANSPORT');
 });
 
 it('defaults the internal listener to loopback and accepts a private-network override', () => {

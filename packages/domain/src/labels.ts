@@ -35,6 +35,19 @@ interface SourceCheck extends Evidence {
   valid: boolean;
 }
 
+/**
+ * Rule 4's calibrated threshold (system-logic §7.7.2, gate `label_threshold`). Off by default; when
+ * on, a computed score must reach θ (θ − hysteresis while the section is already checked). A
+ * missing score (`p: null`) leaves rule 4 evidence-only: a lagging score never makes a label false.
+ */
+export interface LabelThreshold {
+  enabled: boolean;
+  theta: number;
+  hysteresis: number;
+  p: number | null;
+  previous: Label | null;
+}
+
 /** Evidence for one (path, anchor). Reviewed versions are published; issue lists contain only still-open issues. */
 export interface SectionLabelInput {
   currentHash: string;
@@ -43,6 +56,14 @@ export interface SectionLabelInput {
   reviewedVersions: readonly ReviewedVersion[];
   sourceChecks: readonly SourceCheck[];
   ownerConfirmations: readonly (AttributedEvidence & { valid: boolean })[];
+  threshold?: LabelThreshold;
+}
+
+export function meetsThreshold(threshold: LabelThreshold | undefined): boolean {
+  if (!threshold?.enabled || threshold.p === null) return true;
+  const floor =
+    threshold.previous === 'checked' ? threshold.theta - threshold.hysteresis : threshold.theta;
+  return threshold.p >= floor;
 }
 
 // Compare UTC instants, not timestamp spelling (fractional precision can vary).
@@ -97,7 +118,7 @@ export function computeSectionLabel(input: SectionLabelInput): LabelDto {
     hash,
     'latest',
   );
-  if (checked)
+  if (checked && meetsThreshold(input.threshold))
     return { label: 'checked', since: checked.time, reviewerKind: checked.kind, reason: null };
   return {
     label: 'reviewed',

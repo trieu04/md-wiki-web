@@ -10,6 +10,8 @@ import {
 import { WikiIndexer } from './indexer/wiki-indexer.js';
 import { WikiReadController } from './read.controller.js';
 import { SearchService } from './search.service.js';
+import { PageAuthors } from './page-authors.js';
+import { SectionEvidenceLoader } from './section-evidence.js';
 import { SectionLabels } from './section-labels.js';
 import { LocalFolderStorage } from './storage/local-folder-storage.js';
 import type { WikiStorage } from './storage/wiki-storage.js';
@@ -23,6 +25,8 @@ export const WIKI_STORAGE = Symbol('WIKI_STORAGE');
     WikiReadService,
     SearchService,
     SectionLabels,
+    SectionEvidenceLoader,
+    PageAuthors,
     {
       provide: WIKI_STORAGE,
       inject: [API_CONFIG],
@@ -40,6 +44,14 @@ export const WIKI_STORAGE = Symbol('WIKI_STORAGE');
         new WikiIndexer(storage, db, lookup),
     },
   ],
-  exports: [WIKI_STORAGE, WikiIndexer, SectionLabels, WikiReadService, SearchService],
+  exports: [
+    WIKI_STORAGE,
+    WikiIndexer,
+    SectionLabels,
+    SectionEvidenceLoader,
+    PageAuthors,
+    WikiReadService,
+    SearchService,
+  ],
 })
 export class WikiModule {}

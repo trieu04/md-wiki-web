@@ -20,6 +20,7 @@ const policies = {
   'proposal.read': ['reviewer', 'review'],
   'proposal.decide': ['reviewer', 'review'],
   'dispute.write': ['reviewer', 'review'],
+  'source_check.record': ['reviewer', 'review'],
   'proposal.publish': ['publisher', 'publish'],
   'credibility.decide': ['reviewer', null],
   'admin.*': ['owner', null],
@@ -94,6 +95,9 @@ export function can(
       break;
     case 'proposal.publish':
       if (ctx.autoPublish !== false) return forbidden;
+      break;
+    case 'source_check.record':
+      if (ctx.isOwnSectionVersion) return { ok: false, code: 'SELF_REVIEW' };
       break;
     case 'credibility.decide':
       if (!ctx.isPageAuthor) return forbidden;

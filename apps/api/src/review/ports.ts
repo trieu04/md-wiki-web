@@ -59,3 +59,28 @@ export class NoHooks implements PublishHooks {
     return undefined;
   }
 }
+
+/**
+ * Phase 9 port (system-logic §7.7.3, §7.7.6, §7.7.9): credibility work at publish finish —
+ * anchor links for pure renames, reports fixed by the new version, `section_edited` notices and
+ * the contributor's auto-follow. `published` runs inside the finish transaction.
+ */
+export interface PublishedVersion {
+  publicationId: string;
+  proposalId: string;
+  path: string;
+  section: string | null;
+  versionLabel: string;
+  baseVersionLabel: string | null;
+  submitterId: string;
+  reviewerId: string;
+}
+export interface PublishListener {
+  published(tx: Prisma.TransactionClient, version: PublishedVersion): Promise<void>;
+}
+export const PUBLISH_LISTENER = Symbol('PUBLISH_LISTENER');
+export class NoListener implements PublishListener {
+  published() {
+    return Promise.resolve();
+  }
+}

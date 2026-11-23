@@ -444,6 +444,9 @@ The user delegated all UI questions and any non-critical question to the orchest
 | P8 → D-214 | Failed spot check = confirmed error on sections in the same transaction (Phase 9 consumes it) | Errors feed credibility |
 | P8 → D-215 | Inbox tabs decide/check/spot/mentions + done (30 days); offset cursor; SSE `inbox.changed` | F-08 |
 | P8 → D-216 | Ops agent metrics over 1–90 days incl. reverts and approval error rate (failed / decided spot checks) | Owner sees agent quality |
+| P9 → D-160..D-184 | Credibility contract decisions as numbered in system-logic §7.7 (records by id without FKs, label engine inputs, no vote path, retention, gates, propagation, contradiction asymmetry) | P9-00 spec (recorded in system-logic) |
+| P9 → D-185 | P8 ports served by credibility (§7.7.12a); page authors use the single D-206 rule (P9's own owners.md parser removed); escalation notices stay in the Inbox | One rule, no contract change |
+| P9 → D-186 | Advisory-lock keys use `|` separators (Postgres text cannot hold NUL); unhandled errors are logged by the problem filter | Bug found by the credibility suite |
 Future non-critical questions are decided the same way and appended to this table.
 
 ## 7. Open questions (need a human)

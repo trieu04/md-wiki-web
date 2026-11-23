@@ -7,6 +7,7 @@ import { WikiIndexer } from './indexer/wiki-indexer.js';
 import { DEFAULT_LIMIT, type SearchDto, type SearchInput, type Wire } from './read.dto.js';
 import { headlineMarkers, splitHeadline } from './search-snippet.js';
 import { SectionLabels, type SectionKey } from './section-labels.js';
+import { usedByTeams } from './usage.js';
 import { byName, compareKey } from './wiki-read.service.js';
 
 interface Match extends SectionKey {
@@ -72,11 +73,13 @@ export class SearchService {
     const topicFilter = new Set(input['topics[]']);
     const labels = pageLabel([]).spread;
     const topics = new Map<string, number>();
-    const rowLabels = await this.labels.forSections(rows);
+    const detailed = await this.labels.detailed(rows);
     const matching = rows
       .map((row, i) => ({
         ...row,
-        label: rowLabels[i] ?? {
+        checkedBy: detailed[i]?.checkedBy ?? 0,
+        sourceName: detailed[i]?.sourceName ?? null,
+        label: detailed[i]?.label ?? {
           label: 'not_reviewed' as const,
           since: null,
           reviewerKind: null,
@@ -91,10 +94,12 @@ export class SearchService {
         if (hasLabel) topics.set(row.topic, (topics.get(row.topic) ?? 0) + 1);
         return inTopic && hasLabel;
       });
+    // "Most checked first" (D-173): label rank, then the number of people who checked, then rank.
     matching.sort((a, b) => {
       const primary =
         sort === 'trust'
-          ? LABEL_ORDER.indexOf(a.label.label) - LABEL_ORDER.indexOf(b.label.label)
+          ? LABEL_ORDER.indexOf(a.label.label) - LABEL_ORDER.indexOf(b.label.label) ||
+            b.checkedBy - a.checkedBy
           : sort === 'recent'
             ? b.updatedAt.getTime() - a.updatedAt.getTime()
             : 0;
@@ -126,6 +131,7 @@ export class SearchService {
     const bySection = new Map(
       headlines.map(({ path, anchor, headline }) => [cursorFor({ path, anchor }), headline]),
     );
+    const teams = await usedByTeams(this.db, selected, cursorFor);
     const last = selected.at(-1);
     return {
       total: matching.length,
@@ -145,9 +151,9 @@ export class SearchService {
         snippet: splitHeadline(bySection.get(cursorFor(row)) ?? '', markers),
         meta: {
           updatedAt: row.updatedAt.toISOString(),
-          checkedBy: null,
-          sourceName: null,
-          usedByTeams: null,
+          checkedBy: row.checkedBy,
+          sourceName: row.sourceName,
+          usedByTeams: teams.get(cursorFor(row)) ?? 0,
         },
       })),
       nextCursor: last && start + limit < matching.length ? cursorFor(last) : null,

@@ -27,7 +27,7 @@ export interface OwnersFile {
 
 const parser = unified().use(remarkParse).use(remarkGfm).freeze();
 const PATH_KEYS = ['path', 'paths', 'pattern', 'page', 'pages'];
-const PEOPLE_KEYS = ['authors', 'author', 'owners', 'owner', 'people'];
+const PEOPLE_KEYS = ['authors', 'author', 'owners', 'owner', 'people', 'email', 'emails'];
 const GLOB = /^[a-z0-9_\-./*]+$/;
 
 /**

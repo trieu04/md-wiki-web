@@ -4947,6 +4947,2060 @@
         ]
       }
     },
+    "/api/v1/follows": {
+      "post": {
+        "operationId": "FollowsController_follow",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FollowInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FollowDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_FAILED | INVALID_PATH",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN | ACCOUNT_DISABLED | CSRF_INVALID",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Follows"
+        ]
+      },
+      "delete": {
+        "operationId": "FollowsController_unfollow",
+        "parameters": [
+          {
+            "name": "anchor",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "path",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          },
+          "400": {
+            "description": "VALIDATION_FAILED | INVALID_PATH",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN | ACCOUNT_DISABLED | CSRF_INVALID",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Follows"
+        ]
+      }
+    },
+    "/api/v1/notifications": {
+      "get": {
+        "operationId": "NotificationsController_list",
+        "parameters": [
+          {
+            "name": "unread",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "enum": [
+                "true",
+                "false"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotificationListDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_FAILED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN | ACCOUNT_DISABLED | CSRF_INVALID",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Notifications"
+        ]
+      }
+    },
+    "/api/v1/notifications/read": {
+      "post": {
+        "operationId": "NotificationsController_read",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MarkReadInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnreadDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_FAILED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN | ACCOUNT_DISABLED | CSRF_INVALID",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Notifications"
+        ]
+      }
+    },
+    "/api/v1/me/follows": {
+      "get": {
+        "operationId": "MeNotificationsController_mine",
+        "parameters": [
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FollowedPagesDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_FAILED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN | ACCOUNT_DISABLED | CSRF_INVALID",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "MeNotifications"
+        ]
+      }
+    },
+    "/api/v1/me/notification-preferences": {
+      "get": {
+        "operationId": "MeNotificationsController_prefs",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotificationPrefsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN | ACCOUNT_DISABLED | CSRF_INVALID",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "MeNotifications"
+        ]
+      },
+      "put": {
+        "operationId": "MeNotificationsController_setPrefs",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NotificationPrefsDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotificationPrefsDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_FAILED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN | ACCOUNT_DISABLED | CSRF_INVALID",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "MeNotifications"
+        ]
+      }
+    },
+    "/api/v1/me/notices": {
+      "get": {
+        "operationId": "MeNotificationsController_notices",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NoticeListDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN | ACCOUNT_DISABLED | CSRF_INVALID",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "MeNotifications"
+        ]
+      }
+    },
+    "/api/v1/source-checks": {
+      "post": {
+        "operationId": "EvidenceController_sourceCheck",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SourceCheckResultDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "INVALID_PATH | VALIDATION_FAILED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN | ACCOUNT_DISABLED | CSRF_INVALID",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "SELF_REVIEW | SECTION_CHANGED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Evidence"
+        ]
+      }
+    },
+    "/api/v1/owner-confirmations": {
+      "post": {
+        "operationId": "EvidenceController_confirm",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SourceCheckResultDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "INVALID_PATH | VALIDATION_FAILED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN | ACCOUNT_DISABLED | CSRF_INVALID",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "SECTION_CHANGED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Evidence"
+        ]
+      }
+    },
+    "/api/v1/credibility/anchor-links": {
+      "post": {
+        "operationId": "EvidenceController_link",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnchorLinkDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "INVALID_PATH | VALIDATION_FAILED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN | ACCOUNT_DISABLED | CSRF_INVALID",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "PRECONDITION_FAILED | ALREADY_EXISTS",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Evidence"
+        ]
+      }
+    },
+    "/api/v1/credibility/source-tiers": {
+      "get": {
+        "operationId": "EvidenceController_tiers",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SourceTiersDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN | ACCOUNT_DISABLED | CSRF_INVALID",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Evidence"
+        ]
+      }
+    },
+    "/api/v1/credibility/source-warnings": {
+      "post": {
+        "operationId": "EvidenceController_warnings",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SourceWarningsDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "INVALID_PATH | VALIDATION_FAILED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN | ACCOUNT_DISABLED | CSRF_INVALID",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Evidence"
+        ]
+      }
+    },
+    "/api/v1/sections/{path}/{anchor}/why": {
+      "get": {
+        "operationId": "SectionsController_why",
+        "parameters": [
+          {
+            "name": "versionLabel",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "anchor",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "path",
+            "required": true,
+            "in": "path",
+            "description": "URL-encoded wiki path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WhyDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "INVALID_PATH | VALIDATION_FAILED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN | ACCOUNT_DISABLED | CSRF_INVALID",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Sections"
+        ]
+      }
+    },
+    "/api/v1/sections/{path}/{anchor}/people": {
+      "get": {
+        "operationId": "SectionsController_people",
+        "parameters": [
+          {
+            "name": "reveal",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "enum": [
+                "true",
+                "false"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "anchor",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "path",
+            "required": true,
+            "in": "path",
+            "description": "URL-encoded wiki path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PeopleDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "INVALID_PATH | VALIDATION_FAILED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN | ACCOUNT_DISABLED | CSRF_INVALID",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Sections"
+        ]
+      }
+    },
+    "/api/v1/attestations": {
+      "post": {
+        "operationId": "ReaderActionsController_attest",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttestationResultDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "INVALID_PATH | VALIDATION_FAILED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN | ACCOUNT_DISABLED | CSRF_INVALID",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "SECTION_CHANGED | ALREADY_EXISTS",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "RATE_LIMITED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "ReaderActions"
+        ]
+      }
+    },
+    "/api/v1/attestations/{id}/withdraw": {
+      "post": {
+        "operationId": "ReaderActionsController_withdraw",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttestationDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_FAILED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN | ACCOUNT_DISABLED | CSRF_INVALID",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "PRECONDITION_FAILED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "ReaderActions"
+        ]
+      }
+    },
+    "/api/v1/reports": {
+      "post": {
+        "operationId": "ReaderActionsController_report",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttestationResultDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "INVALID_PATH | VALIDATION_FAILED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN | ACCOUNT_DISABLED | CSRF_INVALID",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "SECTION_CHANGED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "RATE_LIMITED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "ReaderActions"
+        ]
+      }
+    },
+    "/api/v1/page-feedback": {
+      "post": {
+        "operationId": "ReaderActionsController_feedback",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageFeedbackDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "INVALID_PATH | VALIDATION_FAILED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN | ACCOUNT_DISABLED | CSRF_INVALID",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "ReaderActions"
+        ]
+      }
+    },
+    "/api/v1/me/activity": {
+      "get": {
+        "operationId": "MeCredibilityController_activity",
+        "parameters": [
+          {
+            "name": "kind",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "enum": [
+                "checks",
+                "reports",
+                "all"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 25
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActivityDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_FAILED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN | ACCOUNT_DISABLED | CSRF_INVALID",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "MeCredibility"
+        ]
+      }
+    },
+    "/api/v1/me/summary": {
+      "get": {
+        "operationId": "MeCredibilityController_summary",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SummaryDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN | ACCOUNT_DISABLED | CSRF_INVALID",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "MeCredibility"
+        ]
+      }
+    },
+    "/api/v1/credibility/queue": {
+      "get": {
+        "operationId": "CredibilityQueueController_list",
+        "parameters": [
+          {
+            "name": "type",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "enum": [
+                "report",
+                "retraction",
+                "flag",
+                "candidate",
+                "pair",
+                "fix"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 25
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CredibilityQueueDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_FAILED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN | ACCOUNT_DISABLED | CSRF_INVALID",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "CredibilityQueue"
+        ]
+      }
+    },
+    "/api/v1/credibility/queue/{type}/{id}": {
+      "get": {
+        "operationId": "CredibilityQueueController_detail",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "type",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "enum": [
+                "report",
+                "retraction",
+                "flag",
+                "candidate",
+                "pair",
+                "fix"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QueueItemDetailDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_FAILED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN | ACCOUNT_DISABLED | CSRF_INVALID",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "CredibilityQueue"
+        ]
+      }
+    },
+    "/api/v1/credibility/decisions": {
+      "post": {
+        "operationId": "CredibilityQueueController_decide",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QueueItemDetailDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_FAILED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN | ACCOUNT_DISABLED | CSRF_INVALID",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "PRECONDITION_FAILED | SELF_REVIEW",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "CredibilityQueue"
+        ]
+      }
+    },
+    "/api/v1/credibility/pages": {
+      "get": {
+        "operationId": "CredibilityQueueController_pages",
+        "parameters": [
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 25
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CredibilityPagesDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_FAILED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN | ACCOUNT_DISABLED | CSRF_INVALID",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "CredibilityQueue"
+        ]
+      }
+    },
+    "/api/v1/credibility/sources": {
+      "get": {
+        "operationId": "CredibilityQueueController_sources",
+        "parameters": [
+          {
+            "name": "state",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 25
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CredibilitySourcesDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_FAILED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN | ACCOUNT_DISABLED | CSRF_INVALID",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "CredibilityQueue"
+        ]
+      }
+    },
+    "/api/v1/credibility/candidates": {
+      "post": {
+        "operationId": "CredibilityQueueController_candidate",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IdDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_FAILED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN | ACCOUNT_DISABLED | CSRF_INVALID",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "CredibilityQueue"
+        ]
+      }
+    },
+    "/api/v1/credibility/invalidations": {
+      "post": {
+        "operationId": "CredibilityQueueController_invalidation",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvalidationResultDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_FAILED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN | ACCOUNT_DISABLED | CSRF_INVALID",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "CredibilityQueue"
+        ]
+      }
+    },
+    "/api/v1/admin/credibility-gates": {
+      "get": {
+        "operationId": "CredibilityAdminController_list",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CredibilityGatesDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN | ACCOUNT_DISABLED | CSRF_INVALID",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "CredibilityAdmin"
+        ]
+      }
+    },
+    "/api/v1/admin/credibility-gates/{capability}": {
+      "put": {
+        "operationId": "CredibilityAdminController_set",
+        "parameters": [
+          {
+            "name": "capability",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CredibilityGateDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_FAILED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN | ACCOUNT_DISABLED | CSRF_INVALID",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "CredibilityAdmin"
+        ]
+      }
+    },
+    "/api/v1/admin/credibility/maintenance": {
+      "post": {
+        "operationId": "CredibilityAdminController_run",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MaintenanceDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN | ACCOUNT_DISABLED | CSRF_INVALID",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "CredibilityAdmin"
+        ]
+      }
+    },
     "/api/v1/proposals/{slug}/escalations": {
       "post": {
         "operationId": "EscalationsController_escalate",
@@ -11169,6 +13223,1782 @@
           "disputeVersion",
           "action",
           "reason"
+        ]
+      },
+      "FollowInput": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string"
+          },
+          "anchor": {
+            "type": "string",
+            "nullable": true,
+            "description": "Section anchor; omit to follow the page"
+          },
+          "muted": {
+            "type": "boolean",
+            "description": "true mutes, false unmutes"
+          }
+        },
+        "required": [
+          "path"
+        ]
+      },
+      "FollowDto": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string"
+          },
+          "anchor": {
+            "type": "string",
+            "nullable": true
+          },
+          "reason": {
+            "type": "string",
+            "enum": [
+              "manual",
+              "attested",
+              "contributed"
+            ]
+          },
+          "muted": {
+            "type": "boolean"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "path",
+          "anchor",
+          "reason",
+          "muted",
+          "createdAt"
+        ]
+      },
+      "NotificationDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "event": {
+            "type": "string",
+            "enum": [
+              "section_recheck",
+              "section_edited",
+              "report_outcome",
+              "report_received",
+              "mention",
+              "weekly_summary"
+            ]
+          },
+          "path": {
+            "type": "string",
+            "nullable": true
+          },
+          "pageTitle": {
+            "type": "string",
+            "nullable": true
+          },
+          "anchor": {
+            "type": "string",
+            "nullable": true
+          },
+          "text": {
+            "type": "string"
+          },
+          "data": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "readAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          }
+        },
+        "required": [
+          "id",
+          "event",
+          "path",
+          "pageTitle",
+          "anchor",
+          "text",
+          "data",
+          "createdAt",
+          "readAt"
+        ]
+      },
+      "NotificationListDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/NotificationDto"
+            }
+          },
+          "nextCursor": {
+            "type": "string",
+            "nullable": true
+          },
+          "unread": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "nextCursor",
+          "unread"
+        ]
+      },
+      "MarkReadInput": {
+        "type": "object",
+        "properties": {
+          "ids": {
+            "maxItems": 100,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "all": {
+            "type": "boolean",
+            "enum": [
+              true
+            ]
+          }
+        }
+      },
+      "UnreadDto": {
+        "type": "object",
+        "properties": {
+          "unread": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "unread"
+        ]
+      },
+      "LastChangeDto": {
+        "type": "object",
+        "properties": {
+          "versionLabel": {
+            "type": "string"
+          },
+          "at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "summary": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "versionLabel",
+          "at",
+          "summary"
+        ]
+      },
+      "SectionRefDto": {
+        "type": "object",
+        "properties": {
+          "anchor": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "anchor",
+          "title"
+        ]
+      },
+      "FollowedPageDto": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string"
+          },
+          "anchor": {
+            "type": "string",
+            "nullable": true
+          },
+          "reason": {
+            "type": "string",
+            "enum": [
+              "manual",
+              "attested",
+              "contributed"
+            ]
+          },
+          "muted": {
+            "type": "boolean"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "pageTitle": {
+            "type": "string"
+          },
+          "pageLabel": {
+            "$ref": "#/components/schemas/PageLabelDto"
+          },
+          "lastChange": {
+            "$ref": "#/components/schemas/LastChangeDto"
+          },
+          "checkAgain": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SectionRefDto"
+            }
+          }
+        },
+        "required": [
+          "path",
+          "anchor",
+          "reason",
+          "muted",
+          "createdAt",
+          "pageTitle",
+          "pageLabel",
+          "lastChange",
+          "checkAgain"
+        ]
+      },
+      "FollowedPagesDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FollowedPageDto"
+            }
+          },
+          "nextCursor": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "items",
+          "nextCursor"
+        ]
+      },
+      "PrefEventsDto": {
+        "type": "object",
+        "properties": {
+          "section_recheck": {
+            "type": "boolean"
+          },
+          "section_edited": {
+            "type": "boolean"
+          },
+          "report_outcome": {
+            "type": "boolean"
+          },
+          "weekly_summary": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "section_recheck",
+          "section_edited",
+          "report_outcome",
+          "weekly_summary"
+        ]
+      },
+      "NotificationPrefsDto": {
+        "type": "object",
+        "properties": {
+          "events": {
+            "$ref": "#/components/schemas/PrefEventsDto"
+          },
+          "channel": {
+            "type": "string",
+            "enum": [
+              "wiki",
+              "wiki_and_daily_email"
+            ]
+          }
+        },
+        "required": [
+          "events",
+          "channel"
+        ]
+      },
+      "NoticeDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "event": {
+            "type": "string",
+            "enum": [
+              "section_recheck",
+              "section_edited",
+              "report_outcome",
+              "report_received",
+              "mention",
+              "weekly_summary"
+            ]
+          },
+          "path": {
+            "type": "string"
+          },
+          "pageTitle": {
+            "type": "string"
+          },
+          "anchor": {
+            "type": "string",
+            "nullable": true
+          },
+          "text": {
+            "type": "string"
+          },
+          "action": {
+            "type": "string",
+            "enum": [
+              "read_section",
+              "see_affected",
+              "check_again",
+              "see_outcome"
+            ]
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "event",
+          "path",
+          "pageTitle",
+          "anchor",
+          "text",
+          "action",
+          "createdAt"
+        ]
+      },
+      "NoticeListDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/NoticeDto"
+            }
+          }
+        },
+        "required": [
+          "items"
+        ]
+      },
+      "SourceCheckResultDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "label": {
+            "$ref": "#/components/schemas/LabelDto"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "label",
+          "createdAt"
+        ]
+      },
+      "AnchorLinkDto": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string"
+          },
+          "oldAnchor": {
+            "type": "string"
+          },
+          "newAnchor": {
+            "type": "string"
+          },
+          "oldHash": {
+            "type": "string"
+          },
+          "newHash": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "path",
+          "oldAnchor",
+          "newAnchor",
+          "oldHash",
+          "newHash",
+          "createdAt"
+        ]
+      },
+      "SourceTierDto": {
+        "type": "object",
+        "properties": {
+          "source": {
+            "type": "string"
+          },
+          "match": {
+            "type": "string"
+          },
+          "tier": {
+            "type": "string",
+            "enum": [
+              "high",
+              "medium",
+              "low"
+            ]
+          },
+          "reason": {
+            "type": "string"
+          },
+          "reviewed": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "source",
+          "match",
+          "tier",
+          "reason",
+          "reviewed"
+        ]
+      },
+      "TierWarningDto": {
+        "type": "object",
+        "properties": {
+          "line": {
+            "type": "integer"
+          },
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "line",
+          "code",
+          "message"
+        ]
+      },
+      "SourceTiersDto": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string"
+          },
+          "versionLabel": {
+            "type": "string",
+            "nullable": true
+          },
+          "tiers": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SourceTierDto"
+            }
+          },
+          "warnings": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TierWarningDto"
+            }
+          }
+        },
+        "required": [
+          "path",
+          "versionLabel",
+          "tiers",
+          "warnings"
+        ]
+      },
+      "AddedSourceDto": {
+        "type": "object",
+        "properties": {
+          "ref": {
+            "type": "string"
+          },
+          "tier": {
+            "type": "string",
+            "enum": [
+              "high",
+              "medium",
+              "low"
+            ],
+            "nullable": true
+          },
+          "retracted": {
+            "type": "boolean"
+          },
+          "warning": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "ref",
+          "tier",
+          "retracted",
+          "warning"
+        ]
+      },
+      "SourceWarningsDto": {
+        "type": "object",
+        "properties": {
+          "added": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AddedSourceDto"
+            }
+          }
+        },
+        "required": [
+          "added"
+        ]
+      },
+      "EvidenceDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "review",
+              "source_check",
+              "owner_confirmation",
+              "confirmed_error",
+              "flag",
+              "retraction",
+              "report",
+              "edge",
+              "anchor_link"
+            ]
+          },
+          "at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "actorKind": {
+            "type": "string",
+            "enum": [
+              "agent",
+              "person",
+              "system"
+            ]
+          },
+          "summary": {
+            "type": "string"
+          },
+          "result": {
+            "type": "string",
+            "enum": [
+              "supported",
+              "not_supported",
+              "unverifiable"
+            ],
+            "nullable": true
+          },
+          "sourceRef": {
+            "type": "string",
+            "nullable": true
+          },
+          "sourceName": {
+            "type": "string",
+            "nullable": true
+          },
+          "valid": {
+            "type": "boolean"
+          },
+          "onOldVersion": {
+            "type": "boolean"
+          },
+          "contributes": {
+            "type": "boolean"
+          },
+          "open": {
+            "type": "boolean",
+            "nullable": true
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "at",
+          "actorKind",
+          "summary",
+          "result",
+          "sourceRef",
+          "sourceName",
+          "valid",
+          "onOldVersion",
+          "contributes",
+          "open"
+        ]
+      },
+      "WhyCanDto": {
+        "type": "object",
+        "properties": {
+          "recordSourceCheck": {
+            "type": "boolean"
+          },
+          "confirm": {
+            "type": "boolean"
+          },
+          "attest": {
+            "type": "boolean"
+          },
+          "report": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "recordSourceCheck",
+          "confirm",
+          "attest",
+          "report"
+        ]
+      },
+      "WhyDto": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string"
+          },
+          "anchor": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "versionLabel": {
+            "type": "string"
+          },
+          "sectionHash": {
+            "type": "string"
+          },
+          "label": {
+            "$ref": "#/components/schemas/LabelDto"
+          },
+          "meaning": {
+            "type": "string"
+          },
+          "evidence": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/EvidenceDto"
+            }
+          },
+          "changeIt": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "note": {
+            "type": "string"
+          },
+          "baseRateCalibrated": {
+            "type": "boolean",
+            "enum": [
+              false
+            ]
+          },
+          "can": {
+            "$ref": "#/components/schemas/WhyCanDto"
+          }
+        },
+        "required": [
+          "path",
+          "anchor",
+          "title",
+          "versionLabel",
+          "sectionHash",
+          "label",
+          "meaning",
+          "evidence",
+          "changeIt",
+          "note",
+          "baseRateCalibrated",
+          "can"
+        ]
+      },
+      "TeamCountDto": {
+        "type": "object",
+        "properties": {
+          "team": {
+            "type": "string"
+          },
+          "people": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "team",
+          "people"
+        ]
+      },
+      "PeopleCountDto": {
+        "type": "object",
+        "properties": {
+          "people": {
+            "type": "integer"
+          },
+          "teams": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TeamCountDto"
+            }
+          }
+        },
+        "required": [
+          "people",
+          "teams"
+        ]
+      },
+      "OldVersionCountDto": {
+        "type": "object",
+        "properties": {
+          "checked": {
+            "type": "integer"
+          },
+          "used": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "checked",
+          "used"
+        ]
+      },
+      "AttestationDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "path": {
+            "type": "string"
+          },
+          "pageTitle": {
+            "type": "string"
+          },
+          "anchor": {
+            "type": "string"
+          },
+          "sectionTitle": {
+            "type": "string",
+            "nullable": true
+          },
+          "versionLabel": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "useful",
+              "checked",
+              "used",
+              "report"
+            ]
+          },
+          "details": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "blocking": {
+            "type": "boolean"
+          },
+          "note": {
+            "type": "string",
+            "nullable": true
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "active",
+              "withdrawn",
+              "on_old_version",
+              "stale",
+              "downweighted",
+              "open",
+              "confirmed",
+              "confirmed_error",
+              "dismissed",
+              "fixed"
+            ]
+          },
+          "outcomeReason": {
+            "type": "string",
+            "nullable": true
+          },
+          "topicId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "undoUntil": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "path",
+          "pageTitle",
+          "anchor",
+          "sectionTitle",
+          "versionLabel",
+          "kind",
+          "details",
+          "blocking",
+          "note",
+          "state",
+          "outcomeReason",
+          "topicId",
+          "createdAt",
+          "undoUntil"
+        ]
+      },
+      "PeopleDto": {
+        "type": "object",
+        "properties": {
+          "hidden": {
+            "type": "boolean"
+          },
+          "acted": {
+            "type": "boolean"
+          },
+          "checked": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PeopleCountDto"
+              }
+            ]
+          },
+          "used": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PeopleCountDto"
+              }
+            ]
+          },
+          "useful": {
+            "type": "integer",
+            "nullable": true
+          },
+          "onOldVersion": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/OldVersionCountDto"
+              }
+            ]
+          },
+          "purpose": {
+            "type": "string"
+          },
+          "mine": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AttestationDto"
+            }
+          }
+        },
+        "required": [
+          "hidden",
+          "acted",
+          "checked",
+          "used",
+          "useful",
+          "onOldVersion",
+          "purpose",
+          "mine"
+        ]
+      },
+      "AttestationResultDto": {
+        "type": "object",
+        "properties": {
+          "attestation": {
+            "$ref": "#/components/schemas/AttestationDto"
+          },
+          "report": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AttestationDto"
+              }
+            ]
+          },
+          "people": {
+            "$ref": "#/components/schemas/PeopleDto"
+          },
+          "label": {
+            "$ref": "#/components/schemas/LabelDto"
+          },
+          "following": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "attestation",
+          "report",
+          "people",
+          "label",
+          "following"
+        ]
+      },
+      "PageFeedbackDto": {
+        "type": "object",
+        "properties": {
+          "answer": {
+            "type": "string",
+            "enum": [
+              "yes",
+              "partly",
+              "no"
+            ]
+          },
+          "versionLabel": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "answer",
+          "versionLabel",
+          "createdAt"
+        ]
+      },
+      "ActivityDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AttestationDto"
+            }
+          },
+          "nextCursor": {
+            "type": "string",
+            "nullable": true
+          },
+          "counts": {
+            "type": "object",
+            "properties": {
+              "checks": {
+                "type": "integer"
+              },
+              "reports": {
+                "type": "integer"
+              },
+              "all": {
+                "type": "integer"
+              }
+            },
+            "required": [
+              "checks",
+              "reports",
+              "all"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "items",
+          "nextCursor",
+          "counts"
+        ]
+      },
+      "SummaryDto": {
+        "type": "object",
+        "properties": {
+          "year": {
+            "type": "integer"
+          },
+          "checksCounting": {
+            "type": "integer"
+          },
+          "reportsConfirmed": {
+            "type": "integer"
+          },
+          "suggestionsPublished": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "year",
+          "checksCounting",
+          "reportsConfirmed",
+          "suggestionsPublished"
+        ]
+      },
+      "SectionKeyDto": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string"
+          },
+          "pageTitle": {
+            "type": "string"
+          },
+          "anchor": {
+            "type": "string"
+          },
+          "sectionTitle": {
+            "type": "string",
+            "nullable": true
+          },
+          "sectionHash": {
+            "type": "string"
+          },
+          "label": {
+            "$ref": "#/components/schemas/LabelDto"
+          }
+        },
+        "required": [
+          "path",
+          "pageTitle",
+          "anchor",
+          "sectionTitle",
+          "sectionHash",
+          "label"
+        ]
+      },
+      "ReachDto": {
+        "type": "object",
+        "properties": {
+          "linkedFrom": {
+            "type": "integer"
+          },
+          "teams": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "linkedFrom",
+          "teams"
+        ]
+      },
+      "QueueItemDto": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "report",
+              "retraction",
+              "flag",
+              "candidate",
+              "pair",
+              "fix"
+            ]
+          },
+          "id": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "why": {
+            "type": "string"
+          },
+          "section": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SectionKeyDto"
+              }
+            ]
+          },
+          "reach": {
+            "$ref": "#/components/schemas/ReachDto"
+          },
+          "at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "outcomes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "blocking": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "type",
+          "id",
+          "title",
+          "why",
+          "section",
+          "reach",
+          "at",
+          "outcomes",
+          "blocking"
+        ]
+      },
+      "CredibilityQueueDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/QueueItemDto"
+            }
+          },
+          "nextCursor": {
+            "type": "string",
+            "nullable": true
+          },
+          "counts": {
+            "type": "object",
+            "properties": {
+              "report": {
+                "type": "integer"
+              },
+              "retraction": {
+                "type": "integer"
+              },
+              "flag": {
+                "type": "integer"
+              },
+              "candidate": {
+                "type": "integer"
+              },
+              "pair": {
+                "type": "integer"
+              },
+              "fix": {
+                "type": "integer"
+              },
+              "all": {
+                "type": "integer"
+              }
+            },
+            "required": [
+              "report",
+              "retraction",
+              "flag",
+              "candidate",
+              "pair",
+              "fix",
+              "all"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "items",
+          "nextCursor",
+          "counts"
+        ]
+      },
+      "PropertyDto": {
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string"
+          },
+          "value": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "label",
+          "value"
+        ]
+      },
+      "DecisionRecordDto": {
+        "type": "object",
+        "properties": {
+          "outcome": {
+            "type": "string"
+          },
+          "reason": {
+            "type": "string"
+          },
+          "actor": {
+            "$ref": "#/components/schemas/UserRefDto"
+          },
+          "at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "outcome",
+          "reason",
+          "actor",
+          "at"
+        ]
+      },
+      "DecideCanDto": {
+        "type": "object",
+        "properties": {
+          "decide": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "decide"
+        ]
+      },
+      "QueueItemDetailDto": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "report",
+              "retraction",
+              "flag",
+              "candidate",
+              "pair",
+              "fix"
+            ]
+          },
+          "id": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "why": {
+            "type": "string"
+          },
+          "section": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SectionKeyDto"
+              }
+            ]
+          },
+          "reach": {
+            "$ref": "#/components/schemas/ReachDto"
+          },
+          "at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "outcomes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "blocking": {
+            "type": "boolean"
+          },
+          "properties": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PropertyDto"
+            }
+          },
+          "reporter": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/UserRefDto"
+              }
+            ]
+          },
+          "topicId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "downstream": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SectionKeyDto"
+            }
+          },
+          "decisions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DecisionRecordDto"
+            }
+          },
+          "can": {
+            "$ref": "#/components/schemas/DecideCanDto"
+          }
+        },
+        "required": [
+          "type",
+          "id",
+          "title",
+          "why",
+          "section",
+          "reach",
+          "at",
+          "outcomes",
+          "blocking",
+          "properties",
+          "reporter",
+          "topicId",
+          "downstream",
+          "decisions",
+          "can"
+        ]
+      },
+      "OldestUncheckedDto": {
+        "type": "object",
+        "properties": {
+          "anchor": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "since": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          }
+        },
+        "required": [
+          "anchor",
+          "title",
+          "since"
+        ]
+      },
+      "CredibilityPageDto": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "pageLabel": {
+            "$ref": "#/components/schemas/PageLabelDto"
+          },
+          "oldestUnchecked": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/OldestUncheckedDto"
+              }
+            ]
+          },
+          "activeReaders30d": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "path",
+          "title",
+          "pageLabel",
+          "oldestUnchecked",
+          "activeReaders30d"
+        ]
+      },
+      "CredibilityPagesDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CredibilityPageDto"
+            }
+          },
+          "nextCursor": {
+            "type": "string",
+            "nullable": true
+          },
+          "tiles": {
+            "type": "object",
+            "properties": {
+              "checked": {
+                "type": "object",
+                "properties": {
+                  "sections": {
+                    "type": "integer"
+                  },
+                  "changeThisWeek": {
+                    "type": "integer"
+                  }
+                },
+                "required": [
+                  "sections",
+                  "changeThisWeek"
+                ]
+              },
+              "reviewed": {
+                "type": "object",
+                "properties": {
+                  "sections": {
+                    "type": "integer"
+                  },
+                  "changeThisWeek": {
+                    "type": "integer"
+                  }
+                },
+                "required": [
+                  "sections",
+                  "changeThisWeek"
+                ]
+              },
+              "not_reviewed": {
+                "type": "object",
+                "properties": {
+                  "sections": {
+                    "type": "integer"
+                  },
+                  "changeThisWeek": {
+                    "type": "integer"
+                  }
+                },
+                "required": [
+                  "sections",
+                  "changeThisWeek"
+                ]
+              },
+              "recheck": {
+                "type": "object",
+                "properties": {
+                  "sections": {
+                    "type": "integer"
+                  },
+                  "changeThisWeek": {
+                    "type": "integer"
+                  }
+                },
+                "required": [
+                  "sections",
+                  "changeThisWeek"
+                ]
+              },
+              "error": {
+                "type": "object",
+                "properties": {
+                  "sections": {
+                    "type": "integer"
+                  },
+                  "changeThisWeek": {
+                    "type": "integer"
+                  }
+                },
+                "required": [
+                  "sections",
+                  "changeThisWeek"
+                ]
+              }
+            },
+            "required": [
+              "checked",
+              "reviewed",
+              "not_reviewed",
+              "recheck",
+              "error"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "items",
+          "nextCursor",
+          "tiles"
+        ]
+      },
+      "LastCheckDto": {
+        "type": "object",
+        "properties": {
+          "at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "result": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "at",
+          "result"
+        ]
+      },
+      "CredibilitySourceDto": {
+        "type": "object",
+        "properties": {
+          "ref": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string",
+            "nullable": true
+          },
+          "tier": {
+            "type": "string",
+            "enum": [
+              "high",
+              "medium",
+              "low"
+            ],
+            "nullable": true
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "retracted",
+              "changed",
+              "archived",
+              "unchecked",
+              "ok"
+            ]
+          },
+          "citedBy": {
+            "type": "integer"
+          },
+          "lastCheck": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/LastCheckDto"
+              }
+            ]
+          }
+        },
+        "required": [
+          "ref",
+          "name",
+          "tier",
+          "state",
+          "citedBy",
+          "lastCheck"
+        ]
+      },
+      "CredibilitySourcesDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CredibilitySourceDto"
+            }
+          },
+          "nextCursor": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "items",
+          "nextCursor"
+        ]
+      },
+      "IdDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      },
+      "InvalidationResultDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "affected": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SectionKeyDto"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "affected"
+        ]
+      },
+      "GateReferenceDto": {
+        "type": "object",
+        "properties": {
+          "runRecord": {
+            "type": "string"
+          },
+          "runDate": {
+            "type": "string",
+            "format": "date"
+          }
+        },
+        "required": [
+          "runRecord",
+          "runDate"
+        ]
+      },
+      "CredibilityGateDto": {
+        "type": "object",
+        "properties": {
+          "capability": {
+            "type": "string",
+            "enum": [
+              "label_threshold",
+              "recheck_ordering",
+              "attestation_weights",
+              "report_detection",
+              "assistant_disclosure"
+            ]
+          },
+          "experiment": {
+            "type": "string",
+            "enum": [
+              "E8b",
+              "E8c",
+              "E8d"
+            ]
+          },
+          "enabled": {
+            "type": "boolean"
+          },
+          "reference": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/GateReferenceDto"
+              }
+            ]
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "updatedBy": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/UserRefDto"
+              }
+            ]
+          },
+          "description": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "capability",
+          "experiment",
+          "enabled",
+          "reference",
+          "updatedAt",
+          "updatedBy",
+          "description"
+        ]
+      },
+      "CredibilityGatesDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CredibilityGateDto"
+            }
+          }
+        },
+        "required": [
+          "items"
+        ]
+      },
+      "PurgedDto": {
+        "type": "object",
+        "properties": {
+          "attestations": {
+            "type": "integer"
+          },
+          "feedback": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "attestations",
+          "feedback"
+        ]
+      },
+      "MaintenanceDto": {
+        "type": "object",
+        "properties": {
+          "purged": {
+            "$ref": "#/components/schemas/PurgedDto"
+          },
+          "pairs": {
+            "type": "integer"
+          },
+          "digests": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "purged",
+          "pairs",
+          "digests"
         ]
       },
       "FiredTriggerDto": {

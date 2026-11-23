@@ -20,14 +20,16 @@ import { AgentRuns } from './agent-runs.service.js';
 import { EscalationsService } from './escalations.service.js';
 import { InboxService } from './inbox.service.js';
 import { AgentMetricsService } from './metrics.service.js';
-import { INBOX_CHECK_ITEMS, NoCheckItems } from './ports.js';
+import { INBOX_CHECK_ITEMS } from './ports.js';
+import { CredibilityModule } from '../credibility/credibility.module.js';
+import { CredibilityCheckItems } from '../credibility/review-ports.js';
 import { ReviewSettingsService } from './settings.service.js';
 
 const REMINDER_SWEEP_MS = 60 * 60 * 1000;
 
 /** Self-managed review (system-logic §7.8): escalations, inbox, settings, agent scheduler. */
 @Module({
-  imports: [PrismaModule, QueueModule, DiscussionsModule, ReviewModule],
+  imports: [PrismaModule, QueueModule, DiscussionsModule, ReviewModule, CredibilityModule],
   controllers: [
     EscalationsController,
     InboxController,
@@ -36,7 +38,7 @@ const REMINDER_SWEEP_MS = 60 * 60 * 1000;
     AgentOpsController,
   ],
   providers: [
-    { provide: INBOX_CHECK_ITEMS, useClass: NoCheckItems },
+    { provide: INBOX_CHECK_ITEMS, useExisting: CredibilityCheckItems },
     ReviewSettingsService,
     EscalationsService,
     InboxService,

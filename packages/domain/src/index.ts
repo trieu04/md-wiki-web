@@ -23,3 +23,5 @@ export * from './quality.js';
 export * from './page-authors.js';
 export * from './escalation-triggers.js';
 export * from './agent-review.js';
+export * from './credibility.js';
+export * from './credibility-score.js';
