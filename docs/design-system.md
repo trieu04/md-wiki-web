@@ -94,6 +94,17 @@ Fonts: the frames load Google Fonts. **Deviation DV-1 (proposed)**: self-host th
 - Shadow: only the avatar focus/current ring `0 0 0 2px #FFFFFF, 0 0 0 4px #2453D6`. No elevation shadows elsewhere (drawer: see F-04).
 - Focus: `outline: 2px solid #2453D6; outline-offset: 2px` on `:focus-visible` for `a, button, input` (all frames' helmet CSS).
 
+
+### 2.4 Frame-derived tokens (D-35)
+
+Exact values that appear in a frame but were missing from §2.1–2.3 are added as named tokens when an implementation task meets them. Each row cites its frame; nothing here is approximated.
+
+| Token | Value | Frame |
+| --- | --- | --- |
+| `size.icon-badge-sm` | 13px | F-03 page header badge |
+| `space.mark-x` | 1px (horizontal padding of search highlight) | F-02 result snippet |
+| `radius.mark` | 2px | F-02 result snippet |
+
 ## 3. Trust label system (exact, from every frame's `TL` table)
 
 | Label | SVG (viewBox 0 0 12 12) path 1 | fill / stroke | path 2 | fill / stroke |
@@ -114,7 +125,7 @@ Each component lives in `apps/web/src/ui/<Name>.tsx`, takes only presentational 
 | --- | --- | --- |
 | `TrustIcon` | 5 labels × sizes 12/14/18 | all frames |
 | `TrustBadge` | inline (icon+label, table cell); bordered link (search result, `aria-label` "… Why this label"); section-heading button (F-03) | F-01, F-02, F-03 |
-| `SpreadBar` | segmented 8px bar, gap 2, radius 4, `role="img"` + aria-label; with caption line | F-01 labels card, F-03 header |
+| `SpreadBar` | segmented bar, gap 2, `role="img"` + aria-label; with caption line. Sizes (D-35, from the frames): `md` 8px high, radius 4, full width (F-01 labels card); `sm` 120×6px, radius 3 (F-03 header) | F-01 labels card, F-03 header |
 | `TopBar` | `active` × 7, `role` reader (no Workspace) / page author, notification dot, avatar ring when `you` | C-TopBar |
 | `WorkNav` | `active` × 7; strong count badge vs plain count; footer status | C-WorkNav |
 | `Button` | primary (accent fill, 48px home / 10px-16px padding decision), secondary (white + `border.control`), disabled primary (§2.1), link-style button | F-01, F-10, F-03 |

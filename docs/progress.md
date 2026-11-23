@@ -43,6 +43,8 @@ Live tracker for [implementation-plan.md](implementation-plan.md). Updated by th
 
 **D-30 (user, 2026-11-23): task fragmentation reduced — Phases 0–5 from 51 to 26 tasks (see docs/tasks/merges.tsv).**
 
+**DV-4 (D-35):** design-system inventory gave SpreadBar one geometry; F-03 draws a second (120×6, r3). Frames win; inventory corrected.
+
 ## Escalations
 
 **D-26 (user, 2026-11-23):** gpt-6-luna retired; all remaining luna tasks (P0-10, P1-04, P1-15, P2-01, P3-08, P5-09, P10-04) reassigned to gpt-6.2-sol, reviewed by astra.
