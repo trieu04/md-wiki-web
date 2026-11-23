@@ -23,7 +23,7 @@ Live tracker for [implementation-plan.md](implementation-plan.md). Updated by th
 | P2-C | sol | astra | **done** | 0 | a1 PASS (2 minors); OPUS fixes on landing: WorkNav idle weight 500 (D-46, 36 → 0 WorkNav diffs), notification dot box-content. 304/340 exact. Fixed P0-G follow-up (Vite binds 127.0.0.1) |
 | P3-A | sol | astra | **done** | 0 | a1 PASS (3 minors: token fixed by OPUS; initials → P3-B; Browse fixture → P3-C); terra derived-screen Login pass; DV-3 Login |
 | P3-B | sol | terra+astra | running (attempt 1) | 0 | merges P3-02,P3-03 |
-| P3-C | sol | terra+astra | running (attempt 1) | 0 | merges P3-04,P3-06 |
+| P3-C | sol | astra | **done** | 1 | a1 FAIL (section badge not a button; local date formatting); a2 PASS 0 issues. F-03 aligned below TopBar: 0.0000% at 390/768/1440, 0.0026% at 1024; DV-5 History; D-47 deferrals |
 | P3-D | sol | terra+astra | pending | 0 | merges P3-07,P3-08 |
 | P4-A | astra | sol | pending | 0 | merges P4-01,P4-02,P4-03 |
 | P4-B | sol | astra | pending | 0 | merges P4-04 |
@@ -80,7 +80,7 @@ none yet
 | P2-C | wiki name was a build-time define missing from turbo inputs (astra) | P3-A — **fixed** (`/meta`, D-44) |
 | P2-C | Table/scroll crop at 390/768 clipped by the gallery's layout padding (harness, not component) | recheck on the Main/mine screen (P8) |
 | P3-A | TopBar shows fixture initials for signed-in users (astra) | P3-B |
-| P3-A | visual-mode Browse link opens a page the fixtures don't serve (astra) | P3-C |
+| P3-A | visual-mode Browse link opens a page the fixtures don't serve (astra) | P3-C — **fixed** |
 
 ## Phase report — Phase 0 (Foundations), 2026-11-23
 
