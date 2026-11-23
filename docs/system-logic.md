@@ -198,6 +198,13 @@ Roles are cumulative: `reader < contributor < reviewer < publisher < owner`. Age
 
 **Users [D-38].** `UserDto = { id, email, name, kind: 'human'|'agent', roles: Role[], teamId: string | null, disabled: boolean, createdAt }` — never a password hash. PATCH `disabled: true` sets `User.disabledAt = now` and deletes that user's sessions (tokens of a disabled user are rejected with `ACCOUNT_DISABLED` by the token guard); `disabled: false` clears `disabledAt`. `LAST_OWNER` (409) whenever a PATCH (removing `owner` from roles, or `disabled: true`) would leave no enabled user with the `owner` role. Audit events: `user.created`, `user.updated` (payload lists changed fields, never the password).
 
+**Auth and admin DTOs [D-40].**
+- `MeDto = { id, email, name, kind, roles, teamId: string | null }` (a session or token user is always enabled, so no `disabled`).
+- `TeamDto = { id, name, slug }`. `ApiTokenDto = { id, userId, name, prefix, scopes, createdAt, expiresAt: string | null, lastUsedAt: string | null, revokedAt: string | null }` — never the secret or hash; the full token appears only in the create response.
+- `GET /admin/users`, `/admin/teams`, `/admin/tokens` use the §2 cursor envelope `Page<T>` (`?limit&cursor`, ordered by `createdAt, id`).
+- `GET /auth/session` never fails on bad credentials: a missing, unknown or expired session cookie returns `200 { user: null, csrfToken: null }` (and clears the cookie). A valid bearer token returns `{ user, csrfToken: null }`. An invalid, revoked or expired bearer token presented on any endpoint (including this one) → `401 UNAUTHENTICATED`; a token of a disabled user → `403 ACCOUNT_DISABLED`.
+- `POST /admin/tokens` with a scope the target user's role does not allow (or an unknown scope) → `400 VALIDATION_FAILED` (the caller is authorized; the input is invalid).
+
 DTOs:
 
 ```ts
