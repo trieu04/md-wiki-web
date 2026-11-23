@@ -27,8 +27,7 @@ Live tracker for [implementation-plan.md](implementation-plan.md). Updated by th
 | P3-D | Claude agent | OPUS | **done** | 0 | merges P3-07,P3-08. 1c81996. Settings People/Agents (F-14), derived 403 + management forms (DV candidates in D-49..D-52), `pnpm e2e` 2/2 (D-53). Follow-ups: no token expiry/copy button, agent users not creatable from UI, e2e/*.mjs not linted |
 | P4-00..C | Claude agent | OPUS | **done** | 0 | one commit 4213402 (P4-00 contract §7.2, D-55..D-69; bundles/drafts/submit; contributions + v3 import; F-06 Editor, F-05 Your suggestions, F-03 Suggest link). P4-G: integration test — editor, agent and import freeze identical manifests, all `pending`. Follow-ups: visual shots don't cover F-05/F-06; autosave/submit race → PRECONDITION_FAILED; F-07 still placeholder |
 | P7-01 | Claude agent | OPUS | **done** | 0 | d91f288 worker providers + fencing + quote verification + hedge rule (§7.3, D-70..D-74); not wired to a job yet; `rules/quality.md` to create in P7 |
-| P5-A | astra | OPUS | pending | 0 | merges P5-01,P5-02 |
-| P5-B | astra | sol | pending | 0 | merges P5-03,P5-04 |
+| P5-00,A,B | Claude agent | OPUS | **done** | 0 | one commit (§7.4, D-75..D-94). 36 review integration tests incl. every storage fault, crash per phase + recovery, crash between approval and auto-publish. OPUS review of publish flow: PASS. Follow-ups: no periodic outbox sweeper (boot + after resolution only); SSE single-process; crash in `writing` with disk = base is classified unknown (conservative, per §8.2) |
 | P5-C | sol | terra+astra | pending | 0 | merges P5-05,P5-06 |
 | P5-D | sol | terra+astra | pending | 0 | merges P5-07,P5-08,P5-09 |
 | H-1 | orchestrator (delegated) | — | done | — | decided D-14..D-21, see plan §6.1 |
