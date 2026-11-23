@@ -13,9 +13,9 @@ Live tracker for [implementation-plan.md](implementation-plan.md). Updated by th
 | P0-08 | sol | astra | **done** | 1 | a1 review: runtime not in clean clone (D-24), non-atomic publish, tests not in pnpm test; a2 PASS, 504/504 deterministic. Minor carried to P0-09: assert state-only variants independent of variants.json |
 | P0-09 | sol | astra | **done** | 1 | worktree (D-29). a1: Search fixture totals; a2: hand-written wire types → OPUS fix; astra PASS; rebased twice (lockfile regenerated) |
 | P0-G | OPUS | — | **done** | 0 | merges P0-10 (CI). Clean clone: make up, install, build, make check, contracts:check, design:shots all PASS; references byte-identical across clones; ping round trip succeeded at /__dev/ping (69 ms); launcher SIGTERM leaves no processes. Found + fixed: tunnel socket path too long |
-| P1-A | astra | sol | running (attempt 1) | 0 | merges P1-01,P1-02,P1-03,P1-04; worktree |
-| P1-B | astra | sol | running (attempt 1) | 0 | merges P1-05,P1-06; worktree |
-| P1-C | astra | sol | pending | 0 | merges P1-07,P1-08,P1-10 |
+| P1-A | astra | sol | **done** | 1 | a1 BLOCKED (status-block warning, line base, boundary tests) → D-33; a2 PASS, 74 tests |
+| P1-B | astra | sol | **done** | 1 | a1 BLOCKED (label metadata, empty page) → D-34; a2 review: ordering test gap → OPUS added test; PASS |
+| P1-C | astra | sol | running (attempt 1) | 0 | merges P1-07,P1-08,P1-10; worktree |
 | P1-D | astra | sol | pending | 0 | merges P1-09,P1-13 |
 | P1-E | sol | astra | pending | 0 | merges P1-11,P1-12,P1-15 |
 | P2-A | sol | terra | running (attempt 1) | 0 | merges P2-01,P2-02,P2-03; worktree; D-32 gallery shell + reference crops |
