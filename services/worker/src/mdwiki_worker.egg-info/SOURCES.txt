@@ -1,9 +1,0 @@
-pyproject.toml
-src/mdwiki_worker/__init__.py
-src/mdwiki_worker/main.py
-src/mdwiki_worker.egg-info/PKG-INFO
-src/mdwiki_worker.egg-info/SOURCES.txt
-src/mdwiki_worker.egg-info/dependency_links.txt
-src/mdwiki_worker.egg-info/requires.txt
-src/mdwiki_worker.egg-info/top_level.txt
-tests/test_smoke.py
