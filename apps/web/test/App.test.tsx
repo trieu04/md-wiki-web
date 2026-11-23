@@ -175,26 +175,33 @@ it('renders Home for a signed-in reader with session initials and no Workspace l
   expect(within(banner).queryByRole('link', { name: /Workspace/u })).not.toBeInTheDocument();
 });
 
-it.each([
-  ['/work', '/work', 'Inbox'],
-  ['/work/credibility', '/work/credibility', 'Credibility'],
-])('uses the empty workspace screen for %s', async (path, id, active) => {
-  const router = open(path);
-  expect(await screen.findByRole('main')).toBeEmptyDOMElement();
-  expect(router.state.matches.at(-1)?.routeId).toBe(id);
-  expect(
-    within(screen.getByRole('navigation', { name: 'Workspace' })).getByRole('link', {
-      name: active,
-      current: 'page',
-    }),
-  ).toBeVisible();
-  expect(
-    await within(screen.getByRole('banner')).findByRole('link', {
-      name: 'Workspace',
-      current: 'page',
-    }),
-  ).toBeVisible();
+it('renders the Inbox at /work', async () => {
+  const router = open('/work');
+  expect(await screen.findByRole('heading', { level: 1, name: 'Inbox' })).toBeVisible();
+  expect(router.state.matches.at(-1)?.routeId).toBe('/work');
+  expect(screen.getByRole('tablist', { name: 'Inbox filter' })).toBeVisible();
 });
+
+it.each([['/work/credibility', '/work/credibility', 'Credibility']])(
+  'uses the empty workspace screen for %s',
+  async (path, id, active) => {
+    const router = open(path);
+    expect(await screen.findByRole('main')).toBeEmptyDOMElement();
+    expect(router.state.matches.at(-1)?.routeId).toBe(id);
+    expect(
+      within(screen.getByRole('navigation', { name: 'Workspace' })).getByRole('link', {
+        name: active,
+        current: 'page',
+      }),
+    ).toBeVisible();
+    expect(
+      await within(screen.getByRole('banner')).findByRole('link', {
+        name: 'Workspace',
+        current: 'page',
+      }),
+    ).toBeVisible();
+  },
+);
 
 it.each(['', '123', 'null', '"quoted"', '日本語 & | ! :*', 'a'.repeat(201)])(
   'keeps the literal search query: %s',

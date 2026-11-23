@@ -244,13 +244,18 @@ describe('SSE invalidation (D-96)', () => {
     expect(invalidationsFor({ type: 'proposal.changed', slug: 's' })).toEqual([
       ['proposals'],
       queryKeys.proposal('s'),
+      queryKeys.escalation('s'),
       queryKeys.suggestions,
+      ['inbox'],
     ]);
     expect(invalidationsFor({ type: 'publication.changed', slug: 's', phase: 'unknown' })).toEqual([
       queryKeys.proposal('s'),
+      queryKeys.escalation('s'),
       ['proposals'],
       queryKeys.opsBlocked,
+      ['inbox'],
     ]);
+    expect(invalidationsFor({ type: 'inbox.changed' })).toEqual([['inbox'], ['escalation']]);
     expect(invalidationsFor({ type: 'page.changed', path: 'a.md' })).toEqual([
       queryKeys.page('a.md'),
       queryKeys.history('a.md'),
@@ -261,6 +266,7 @@ describe('SSE invalidation (D-96)', () => {
     expect(invalidationsFor({ type: 'proposal.changed' })).toEqual([
       ['proposals'],
       queryKeys.suggestions,
+      ['inbox'],
     ]);
     expect(invalidationsFor({ type: 'ping' })).toEqual([]);
     expect(invalidationsFor(null)).toEqual([]);

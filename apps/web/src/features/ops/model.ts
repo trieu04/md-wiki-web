@@ -9,7 +9,11 @@ export type JobKindSummaryDto = components['schemas']['JobKindSummaryDto'];
 export type JobStatus = components['schemas']['JobStatus'];
 export type JobKind = components['schemas']['JobKind'];
 
-export const JOB_KINDS = ['quality_check', 'ping'] as const satisfies readonly JobKind[];
+export const JOB_KINDS = [
+  'quality_check',
+  'agent_review',
+  'ping',
+] as const satisfies readonly JobKind[];
 export const JOB_STATUSES = [
   'queued',
   'running',
@@ -212,4 +216,36 @@ export function auditRows(pages: readonly AuditPageDto[]) {
       details: Object.keys(event.data).length ? JSON.stringify(event.data) : '',
     })),
   );
+}
+
+export type AgentMetricsDto = components['schemas']['AgentMetricsDto'];
+const pct = (n: number, of: number) => (of ? ` · ${String(Math.round((n / of) * 100))}%` : '');
+
+/** F-13 *Reviewer agent · last N days* rows (system-logic §7.8.9, D-222). */
+export function agentMetricRows(m: AgentMetricsDto): { k: string; v: string }[] {
+  return [
+    { k: 'Reviews', v: String(m.reviews) },
+    { k: 'Approved', v: `${String(m.approved)}${pct(m.approved, m.decided)}` },
+    { k: 'Auto-published', v: String(m.autoPublished) },
+    { k: 'Sent back', v: `${String(m.sentBack)}${pct(m.sentBack, m.decided)}` },
+    {
+      k: 'Escalated to page authors',
+      v: `${String(m.escalated.total)} (${String(m.escalated.rereview)} re-review, ${String(m.escalated.discussion)} discussion)`,
+    },
+    { k: 'Approvals refused by triggers', v: String(m.refusedByTriggers) },
+    { k: 'Left for a person', v: String(m.leftPending) },
+    { k: 'Failed runs', v: String(m.failed) },
+    {
+      k: 'Spot checks',
+      v: `${String(m.spotChecks.sampled)} sampled · ${String(m.spotChecks.passed)} passed · ${String(m.spotChecks.failed)} failed · ${String(m.spotChecks.open)} open`,
+    },
+    {
+      k: 'Approval error rate',
+      v:
+        m.approvalErrorRate === null
+          ? 'Not enough spot checks'
+          : `${String(Math.round(m.approvalErrorRate * 100))}%`,
+    },
+    { k: 'Reverted after publishing', v: String(m.reverts) },
+  ];
 }

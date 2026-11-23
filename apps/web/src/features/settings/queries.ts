@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import type { components } from '@md-wiki/contracts';
 import { apiData, useApi, type ApiClient } from '../../lib/api';
 import { queryKeys } from '../../lib/query-keys';
 import type { CreateUserInput, TokenInput, UpdateUserInput } from './model';
@@ -100,6 +101,36 @@ export function useAdminMutations() {
         await api.DELETE('/api/v1/admin/tokens/{id}', { params: { path: { id } } });
       },
       onSuccess: refresh(queryKeys.adminTokens),
+    }),
+  };
+}
+
+/** F-14 Review and publishing (system-logic §7.8.7). */
+export function useReviewSettings() {
+  const api = useApi();
+  return useQuery({
+    queryKey: queryKeys.reviewSettings,
+    queryFn: async ({ signal }) =>
+      apiData(await api.GET('/api/v1/admin/review-settings', { signal })),
+  });
+}
+
+export function useReviewSettingsMutations() {
+  const api = useApi();
+  const queryClient = useQueryClient();
+  const set = (data: components['schemas']['ReviewSettingsDto']) => {
+    queryClient.setQueryData(queryKeys.reviewSettings, data);
+  };
+  return {
+    update: useMutation({
+      mutationFn: async (body: components['schemas']['ReviewSettingsInput']) =>
+        apiData(await api.PATCH('/api/v1/admin/review-settings', { body })),
+      onSuccess: set,
+    }),
+    pause: useMutation({
+      mutationFn: async (body: components['schemas']['AgentPauseInput']) =>
+        apiData(await api.POST('/api/v1/admin/agent/pause', { body })),
+      onSettled: () => queryClient.invalidateQueries({ queryKey: queryKeys.reviewSettings }),
     }),
   };
 }

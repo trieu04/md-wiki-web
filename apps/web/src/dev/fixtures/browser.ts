@@ -23,6 +23,7 @@ import {
   visualProposal,
   visualProposalList,
 } from './review';
+import { visualAgentMetrics, visualEscalation, visualInbox, visualReviewSettings } from './agent';
 import { frameSamples } from './samples';
 import { visualHistory, visualMeta, visualPage, visualPageTopic } from './reading';
 import { adminPage, visualOwnerSession, visualTeams, visualTokens, visualUsers } from './settings';
@@ -141,6 +142,27 @@ const worker = setupWorker(
   ),
   http.get('/api/v1/ops/blocked', () => HttpResponse.json(visualBlocked)),
   http.get('/api/v1/audit', () => HttpResponse.json(visualAudit)),
+  // Phase 8 (F-08 Inbox, F-10 escalation, F-14 Review, F-13 agent). `?scenario=not-escalated` on F-10.
+  http.get('/api/v1/inbox', ({ request }) =>
+    HttpResponse.json(visualInbox(new URL(request.url).searchParams.get('tab'))),
+  ),
+  http.get('/api/v1/proposals/:slug/escalation', ({ params }) =>
+    HttpResponse.json(
+      visualEscalation(
+        String(params.slug),
+        new URLSearchParams(globalThis.location.search).get('scenario'),
+      ),
+    ),
+  ),
+  http.get('/api/v1/admin/review-settings', () => HttpResponse.json(visualReviewSettings)),
+  http.patch('/api/v1/admin/review-settings', async ({ request }) =>
+    HttpResponse.json({
+      ...visualReviewSettings,
+      ...((await request.json()) as object),
+      updatedAt: new Date().toISOString(),
+    }),
+  ),
+  http.get('/api/v1/ops/agent', () => HttpResponse.json(visualAgentMetrics)),
   http.get('/__visual/fixtures/:frame', ({ params }) => {
     const { frame } = params;
     if (typeof frame !== 'string' || !Object.hasOwn(frameSamples, frame)) {

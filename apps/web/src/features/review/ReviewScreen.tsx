@@ -30,6 +30,7 @@ import {
 } from '../quality/model';
 import { proposalQualityQueryOptions, useRerunQuality } from '../quality/queries';
 import { DiscussionPanel, type DiscussionQuery } from './DiscussionPanel';
+import { EscalationPanel } from './EscalationPanel';
 import {
   LOCK_CODES,
   bindingText,
@@ -569,6 +570,7 @@ function Review({ detail, viewerId }: { detail: ProposalDetailDto; viewerId: str
           aria-label="Review panel"
           className="flex min-w-0 max-w-review-aside-max grow basis-review-aside flex-col gap-12px"
         >
+          <EscalationPanel slug={detail.slug} />
           {quality.isError ? (
             <QueryFailure
               error={quality.error}
@@ -597,7 +599,7 @@ function Review({ detail, viewerId }: { detail: ProposalDetailDto; viewerId: str
   );
 }
 
-/** F-10 Review (D-98, D-121, D-148). Escalation, agent review and evidence are later phases. */
+/** F-10 Review (D-98, D-121, D-148, D-220). Evidence is a later phase. */
 export function ReviewScreen({
   slug,
   topBar,

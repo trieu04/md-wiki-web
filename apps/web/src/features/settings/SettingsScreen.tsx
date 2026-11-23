@@ -31,6 +31,13 @@ import {
   tokenRows,
   updateUserInput,
   userRows,
+  reviewDraft,
+  reviewRows,
+  reviewSettingsInput,
+  reviewUpdatedText,
+  triggerItems,
+  type ReviewDraft,
+  type ReviewSettingsDto,
   type FieldErrors,
   type Role,
   type Scope,
@@ -39,7 +46,13 @@ import {
   type TeamDto,
   type UserDto,
 } from './model';
-import { useAdminLists, useAdminMutations, useModelsSettings } from './queries';
+import {
+  useAdminLists,
+  useAdminMutations,
+  useModelsSettings,
+  useReviewSettings,
+  useReviewSettingsMutations,
+} from './queries';
 
 type FormState = { message?: string | undefined; fields: FieldErrors };
 const noErrors: FormState = { fields: {} };
@@ -711,7 +724,193 @@ function ModelsPanel() {
   );
 }
 
+function ReviewForm({ settings }: { settings: ReviewSettingsDto }) {
+  const { update } = useReviewSettingsMutations();
+  const [draft, setDraft] = useState<ReviewDraft>(() => reviewDraft(settings));
+  const [errors, setErrors] = useState<FormState>(noErrors);
+  const [saved, setSaved] = useState(false);
+  const items = triggerItems(settings);
+  const isOn = (item: (typeof items)[number]) =>
+    item.id === 'agent_edits_human_pages' ? draft.agentEditsHumanPages : item.enabled;
+  const submit = (event: SubmitEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setSaved(false);
+    const result = reviewSettingsInput(draft, settings);
+    if (!result.ok) {
+      setErrors({ fields: result.fields });
+      return;
+    }
+    setErrors(noErrors);
+    if (!Object.keys(result.input).length) {
+      setSaved(true);
+      return;
+    }
+    update.mutate(result.input, {
+      onSuccess: (data) => {
+        setDraft(reviewDraft(data));
+        setSaved(true);
+      },
+      onError: (error) => {
+        setErrors(settingsFormError(error, ['spotCheckRate', 'reminderDays']));
+      },
+    });
+  };
+  return (
+    <form noValidate onSubmit={submit} aria-label="Review settings">
+      <Row
+        label="Review model"
+        help="Who decides proposals by default."
+        value={
+          draft.reviewModel === 'self_managed'
+            ? 'Self-managed: the reviewer agent decides, page authors take escalations'
+            : 'Human: reviewers decide every proposal'
+        }
+        note=""
+      >
+        <Select
+          label="Review model"
+          value={draft.reviewModel}
+          onChange={(e) => {
+            setDraft({ ...draft, reviewModel: e.target.value as ReviewDraft['reviewModel'] });
+          }}
+        >
+          <option value="self_managed">Self-managed</option>
+          <option value="human">Human</option>
+        </Select>
+      </Row>
+      <Row
+        label="Always escalate to page authors when"
+        help="The API refuses an agent approval if any of these apply."
+        value={`${String(items.filter(isOn).length)} of ${String(items.length)} on`}
+        note="Owner rules are added through the API (customTriggers)."
+      >
+        <ul aria-label="Triggers" className="m-0 flex list-none flex-col p-0">
+          {items.map((item) => (
+            <li key={item.id}>
+              <Checkbox
+                label={`${item.text}${item.note}`}
+                checked={isOn(item)}
+                disabled={!item.editable}
+                onChange={(e) => {
+                  if (item.id === 'agent_edits_human_pages')
+                    setDraft({ ...draft, agentEditsHumanPages: e.target.checked });
+                }}
+              />
+            </li>
+          ))}
+        </ul>
+      </Row>
+      <Row
+        label="Spot checks"
+        help="Share of agent approvals sent to page authors after publishing."
+        value={`${draft.spotCheckPercent || '0'}%`}
+        note="A failed spot check is recorded as a confirmed error."
+      >
+        <TextInput
+          label="Percent of approvals"
+          inputMode="numeric"
+          value={draft.spotCheckPercent}
+          error={errors.fields.spotCheckRate}
+          onChange={(e) => {
+            setDraft({ ...draft, spotCheckPercent: e.target.value });
+          }}
+        />
+      </Row>
+      <Row
+        label="Reminders"
+        help="Nothing is ever decided by timeout."
+        value={`Every ${draft.reminderDays || '?'} days`}
+        note=""
+      >
+        <TextInput
+          label="Days between reminders"
+          inputMode="numeric"
+          value={draft.reminderDays}
+          error={errors.fields.reminderDays}
+          onChange={(e) => {
+            setDraft({ ...draft, reminderDays: e.target.value });
+          }}
+        />
+      </Row>
+      <div className="flex flex-col items-start gap-10px pt-14px">
+        <FormFailure title="Not saved." message={errors.message} />
+        {saved && !update.isPending && (
+          <Callout tone="success" title="Saved.">
+            {reviewUpdatedText(update.data ?? settings)}
+          </Callout>
+        )}
+        <Button type="submit" loading={update.isPending}>
+          Save review settings
+        </Button>
+      </div>
+    </form>
+  );
+}
+
+function AgentPause({ settings }: { settings: ReviewSettingsDto }) {
+  const { pause } = useReviewSettingsMutations();
+  const [reason, setReason] = useState('');
+  const paused = settings.agent.paused;
+  return (
+    <div className="flex flex-col items-start gap-10px">
+      <FormFailure
+        title={paused ? 'Not resumed.' : 'Not paused.'}
+        message={pause.error ? messageForError(pause.error) : undefined}
+      />
+      {!paused && (
+        <TextInput
+          label="Reason (optional)"
+          value={reason}
+          onChange={(e) => {
+            setReason(e.target.value);
+          }}
+        />
+      )}
+      <Button
+        variant="secondary"
+        loading={pause.isPending}
+        onClick={() => {
+          pause.mutate(
+            paused
+              ? { paused: false }
+              : { paused: true, ...(reason.trim() && { reason: reason.trim() }) },
+            {
+              onSuccess: () => {
+                setReason('');
+              },
+            },
+          );
+        }}
+      >
+        {paused ? 'Resume the reviewer agent' : 'Pause the reviewer agent'}
+      </Button>
+    </div>
+  );
+}
+
+function ReviewPanel() {
+  const settings = useReviewSettings();
+  return (
+    <ListState queries={[settings]} title="Review and publishing">
+      {() =>
+        settings.data ? (
+          <>
+            {reviewRows(settings.data).map(({ key, ...row }) => (
+              <Row key={key} {...row}>
+                {key === 'agent' && <AgentPause settings={settings.data} />}
+              </Row>
+            ))}
+            <ReviewForm key={settings.data.updatedAt ?? 'defaults'} settings={settings.data} />
+            <p className="pt-10px text-12 text-muted">{reviewUpdatedText(settings.data)}</p>
+          </>
+        ) : null
+      }
+    </ListState>
+  );
+}
+
 const panels: Partial<Record<SettingsTabId, () => ReactNode>> = {
+  review: () => <ReviewPanel />,
   people: () => <PeoplePanel />,
   agents: () => <AgentsPanel />,
   models: () => <ModelsPanel />,

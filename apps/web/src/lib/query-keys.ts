@@ -32,4 +32,10 @@ export const queryKeys = {
   opsJobs: (params: { kind: string; status: string }) => ['ops', 'jobs', params] as const,
   adminModels: ['admin.models', {}],
   adminRules: ['admin.rules', {}],
+  // Phase 8 (system-logic §7.8): prefixes `['inbox']`, `['escalation', slug]`, `['admin.review']`.
+  inbox: (params: { tab: string }) => ['inbox', params] as const,
+  inboxCounts: ['inbox', { tab: 'counts' }],
+  escalation: (slug: string) => ['escalation', slug] as const,
+  reviewSettings: ['admin.review', {}],
+  agentMetrics: (days: number) => ['ops', 'agent', { days }] as const,
 } as const;

@@ -43,6 +43,7 @@ describe('settings tabs and access', () => {
       'Storage',
     ]);
     expect(SETTINGS_TABS.filter((tab) => tab.implemented).map(({ id }) => id)).toEqual([
+      'review',
       'people',
       'agents',
       'models',

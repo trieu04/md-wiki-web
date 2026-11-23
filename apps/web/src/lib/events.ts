@@ -10,6 +10,7 @@ export const EVENT_TYPES = [
   'page.changed',
   'discussion.changed',
   'quality.changed',
+  'inbox.changed',
   'ping',
 ] as const satisfies readonly EventDto['type'][];
 
@@ -22,14 +23,16 @@ export function invalidationsFor(event: Partial<EventDto> | null | undefined): Q
     case 'proposal.changed':
       return [
         ['proposals'],
-        ...(event.slug ? [queryKeys.proposal(event.slug)] : []),
+        ...(event.slug ? [queryKeys.proposal(event.slug), queryKeys.escalation(event.slug)] : []),
         queryKeys.suggestions,
+        ['inbox'],
       ];
     case 'publication.changed':
       return [
-        ...(event.slug ? [queryKeys.proposal(event.slug)] : []),
+        ...(event.slug ? [queryKeys.proposal(event.slug), queryKeys.escalation(event.slug)] : []),
         ['proposals'],
         queryKeys.opsBlocked,
+        ['inbox'],
       ];
     case 'page.changed':
       return [
@@ -52,6 +55,8 @@ export function invalidationsFor(event: Partial<EventDto> | null | undefined): Q
         ...(event.draftId ? [queryKeys.selfCheck(event.draftId)] : []),
         ['ops', 'jobs'],
       ];
+    case 'inbox.changed':
+      return [['inbox'], ['escalation']];
     default:
       return [];
   }

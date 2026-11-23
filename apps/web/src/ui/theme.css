@@ -230,6 +230,34 @@
   --spacing-ops-jobs: 520px;
   --spacing-table-jobs: 600px;
   --flex-ops-jobs: 2 1 var(--spacing-ops-jobs);
+  /* Phase 8 frame values (F-08 Inbox; design-system §2.4) */
+  --spacing-inbox-list: 420px;
+  --spacing-inbox-detail: 440px;
+  --spacing-inbox-term: 140px;
+  --flex-inbox-list: 1 1 var(--spacing-inbox-list);
+  --flex-inbox-detail: 1.3 1 var(--spacing-inbox-detail);
+  --spacing-ops-agent: 360px;
+  --flex-ops-agent: 1 1 var(--spacing-ops-agent);
+}
+
+@utility flex-ops-agent {
+  flex: var(--flex-ops-agent);
+}
+
+@utility grid-cols-metrics {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+@utility flex-inbox-list {
+  flex: var(--flex-inbox-list);
+}
+
+@utility flex-inbox-detail {
+  flex: var(--flex-inbox-detail);
+}
+
+@utility grid-cols-inbox-props {
+  grid-template-columns: var(--spacing-inbox-term) minmax(0, 1fr);
 }
 
 @utility flex-ops-jobs {

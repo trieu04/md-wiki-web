@@ -19,6 +19,9 @@ import { discussionsHref, topicFilter } from './features/discussions/model';
 import { topicCountsQueryOptions } from './features/discussions/queries';
 import { EditorScreen } from './features/editor/EditorScreen';
 import { HomeScreen } from './features/home/HomeScreen';
+import { InboxScreen } from './features/inbox/InboxScreen';
+import { inboxTab } from './features/inbox/model';
+import { inboxCountsQueryOptions } from './features/inbox/queries';
 import { LoginScreen } from './features/login/LoginScreen';
 import { pageQueryOptions } from './features/markdown/page-query';
 import { AuditScreen, JobsScreen, OpsScreen } from './features/ops/OpsScreen';
@@ -85,7 +88,8 @@ function useWorkNav(active: WorkNavActive): WorkNavProps {
     enabled: hasWorkspace(roles),
   });
   const topics = useQuery({ ...topicCountsQueryOptions(api), enabled: !!data?.user });
-  const navCounts = workNavCounts(counts.data, roles, topics.data);
+  const inboxCounts = useQuery({ ...inboxCountsQueryOptions(api), enabled: !!data?.user });
+  const navCounts = workNavCounts(counts.data, roles, topics.data, inboxCounts.data);
   return { active, ...(navCounts && { counts: navCounts }) };
 }
 
@@ -187,7 +191,24 @@ const conflict = createRoute({
 const inbox = createRoute({
   getParentRoute: () => root,
   path: '/work',
-  component: workspaceScreen('inbox'),
+  validateSearch: ({ tab, item }) => ({
+    tab: inboxTab(tab),
+    item: typeof item === 'string' && item ? item : undefined,
+  }),
+  component: function Inbox() {
+    const { tab, item } = inbox.useSearch();
+    const navigate = inbox.useNavigate();
+    return (
+      <InboxScreen
+        tab={tab}
+        item={item}
+        onTab={(next) => void navigate({ search: { tab: next, item: undefined }, replace: true })}
+        onItem={(id) => void navigate({ search: { tab, item: id }, replace: true })}
+        topBar={useTopBar('workspace')}
+        workNav={useWorkNav('inbox')}
+      />
+    );
+  },
 });
 const proposals = createRoute({
   getParentRoute: () => root,

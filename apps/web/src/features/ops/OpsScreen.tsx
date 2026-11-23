@@ -1,5 +1,6 @@
 import {
   infiniteQueryOptions,
+  queryOptions,
   useInfiniteQuery,
   useMutation,
   useQuery,
@@ -10,7 +11,9 @@ import { useMemo, useState } from 'react';
 import { apiData, useApi, type ApiClient } from '../../lib/api';
 import { messageForError } from '../../lib/error-copy';
 import { queryKeys } from '../../lib/query-keys';
+import { AITag } from '../../ui/AITag';
 import { Button } from '../../ui/Button';
+import { Callout } from '../../ui/Callout';
 import { Card } from '../../ui/Card';
 import { QueryFailure } from '../../ui/QueryFailure';
 import { StatusDot, type StatusTone } from '../../ui/StatusDot';
@@ -22,6 +25,7 @@ import type { WorkNavProps } from '../../ui/WorkNav';
 import { Select } from '../../ui/Select';
 import {
   BLOCKED_CHOICES,
+  agentMetricRows,
   JOB_KINDS,
   JOB_STATUSES,
   auditRows,
@@ -278,6 +282,58 @@ function BackgroundJobs({ data }: { data: JobListDto }) {
   );
 }
 
+function agentQueryOptions(api: ApiClient, days = 7) {
+  return queryOptions({
+    queryKey: queryKeys.agentMetrics(days),
+    queryFn: async ({ signal }) =>
+      apiData(await api.GET('/api/v1/ops/agent', { params: { query: { days } }, signal })),
+  });
+}
+
+/** F-13 *Reviewer agent · last 7 days* (AI): metrics from `/ops/agent` (D-222). */
+function AgentMetrics() {
+  const query = useQuery(agentQueryOptions(useApi()));
+  if (query.isError)
+    return (
+      <div className="min-w-0 flex-ops-agent">
+        <QueryFailure
+          error={query.error}
+          retry={() => void query.refetch()}
+          busy={query.isFetching}
+        />
+      </div>
+    );
+  if (!query.data)
+    return <Card title="Reviewer agent" className="flex-ops-agent" state={{ type: 'loading' }} />;
+  const m = query.data;
+  return (
+    <section
+      aria-labelledby="agent-metrics"
+      className="flex min-w-0 flex-ops-agent flex-col gap-10px rounded-10 border border-edge bg-surface px-18px py-16px"
+    >
+      <h2 id="agent-metrics" className="flex items-center gap-8px text-15 font-bold">
+        Reviewer agent · last {m.days} days <AITag />
+      </h2>
+      {m.paused && (
+        <Callout tone="warn" title="Paused.">
+          Nothing is approved while paused; resume it in Settings › Review and publishing.
+        </Callout>
+      )}
+      <dl className="grid grid-cols-metrics gap-x-14px gap-y-7px text-13">
+        {agentMetricRows(m).map((r) => (
+          <div key={r.k} className="contents">
+            <dt className="text-secondary">{r.k}</dt>
+            <dd className="text-right font-semibold">{r.v}</dd>
+          </div>
+        ))}
+      </dl>
+      <span className="text-12 text-muted">
+        A failed spot check is recorded as a confirmed error on the sections it touched.
+      </span>
+    </section>
+  );
+}
+
 /** F-13 Operations (D-100, D-152): health cards, Blocked targets, Background jobs. */
 export function OpsScreen({ topBar, workNav }: { topBar: TopBarProps; workNav: WorkNavProps }) {
   const api = useApi();
@@ -317,6 +373,7 @@ export function OpsScreen({ topBar, workNav }: { topBar: TopBarProps; workNav: W
         </>
       )}
       <div className="flex flex-wrap items-start gap-16px">
+        <AgentMetrics />
         {jobs.isError && !jobs.data ? (
           <div className="min-w-0 flex-ops-jobs">
             <QueryFailure

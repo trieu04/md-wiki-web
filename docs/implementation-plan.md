@@ -447,6 +447,9 @@ The user delegated all UI questions and any non-critical question to the orchest
 | P9 → D-160..D-184 | Credibility contract decisions as numbered in system-logic §7.7 (records by id without FKs, label engine inputs, no vote path, retention, gates, propagation, contradiction asymmetry) | P9-00 spec (recorded in system-logic) |
 | P9 → D-185 | P8 ports served by credibility (§7.7.12a); page authors use the single D-206 rule (P9's own owners.md parser removed); escalation notices stay in the Inbox | One rule, no contract change |
 | P9 → D-186 | Advisory-lock keys use `|` separators (Postgres text cannot hold NUL); unhandled errors are logged by the problem filter | Bug found by the credibility suite |
+| P8 UI → D-220 | F-08 Inbox at `/work?tab=&item=` (list + selected item, spot-check pass/fail inline; WorkNav Inbox count = `counts.all`); F-10 aside gains *Escalation* (open escalation, or “Ask page authors” when `can.escalate`, citing `judgement`) and *Agent review* (AI) cards from `/proposals/{slug}/escalation`; SSE `inbox.changed` invalidates `['inbox']`/`['escalation']` | Frames F-08/F-10; undrawn parts self-designed (D-30 follow-up) |
+| P8 UI → D-221 | F-14 *Review and publishing*: read-only rows (agent, AUTO_PUBLISH, page authors, quality) + form for model, the one optional trigger, spot-check % (0–100 whole) and reminder days (1–30); PATCH sends changed fields only; pause/resume on the agent row. Custom triggers are shown, edited via API only | Keeps the form small; custom-trigger editor not drawn |
+| P8 UI → D-222 | F-13 *Reviewer agent · last 7 days* (AI) card from `/ops/agent?days=7`; `agent_review` added to the AI jobs kind filter | Frame F-13 |
 Future non-critical questions are decided the same way and appended to this table.
 
 ## 7. Open questions (need a human)

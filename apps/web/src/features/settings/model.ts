@@ -29,9 +29,9 @@ export const SCOPES = [
   'publish',
 ] as const satisfies readonly Scope[];
 
-/** F-14 tab order and copy. People and Agents (D-49), Models from Phase 7 (D-151). */
+/** F-14 tab order and copy. People and Agents (D-49), Models from Phase 7 (D-151), Review from Phase 8 (D-221). */
 export const SETTINGS_TABS = [
-  { id: 'review', label: 'Review and publishing', implemented: false },
+  { id: 'review', label: 'Review and publishing', implemented: true },
   { id: 'trust', label: 'Trust labels', implemented: false },
   { id: 'people', label: 'People and teams', implemented: true },
   { id: 'agents', label: 'Agents and tokens', implemented: true },
@@ -359,4 +359,140 @@ export function modelsRows(models: ModelsDto, rules: RulesDto): ModelsRow[] {
     },
   );
   return [...jobs, localRow, rulesRow];
+}
+
+// ---- Review and publishing (F-14, Phase 8; system-logic §7.8.7, D-221) ----------------------
+
+export type ReviewSettingsDto = components['schemas']['ReviewSettingsDto'];
+export type ReviewSettingsInput = components['schemas']['ReviewSettingsInput'];
+
+const PAGE_AUTHOR_TEXT: Record<ReviewSettingsDto['pageAuthors']['order'][number], string> = {
+  owners_file: 'wiki-meta/owners.md',
+  published_authors: 'people whose changes were published',
+  owner: 'the owner',
+};
+
+const who = (u: { name: string } | null) => (u ? ` by ${u.name}` : '');
+
+/** Read-only rows of the Review tab; the editable ones (model, spot checks, reminders) are the form. */
+export function reviewRows(s: ReviewSettingsDto): ModelsRow[] {
+  const agent = s.agent;
+  const agentValue = !agent.user
+    ? 'No reviewer agent account'
+    : agent.paused
+      ? `${agent.user.name} · paused`
+      : agent.available
+        ? `${agent.user.name} · running`
+        : `${agent.user.name} · not running`;
+  const agentNote = agent.paused
+    ? `Paused${who(agent.pausedBy)}${agent.pausedAt ? `, ${formatDateTime(new Date(agent.pausedAt))}` : ''}${agent.pauseReason ? `: ${agent.pauseReason}` : ''}. Nothing is approved while paused; proposals wait.`
+    : agent.tokenConfigured
+      ? 'Acts through the public API with its own token.'
+      : 'REVIEWER_AGENT_TOKEN is not set; the worker cannot act.';
+  const owners = s.pageAuthors.ownersFile;
+  return [
+    modelsRow(
+      'agent',
+      'Reviewer agent',
+      'Decides proposals in the self-managed model.',
+      agentValue,
+      agentNote,
+    ),
+    modelsRow(
+      'auto-publish',
+      'Auto-publish',
+      'Set by the server environment.',
+      `AUTO_PUBLISH=${String(s.autoPublish)}`,
+      s.autoPublish
+        ? 'Every approval is published at once through the normal conditional write.'
+        : 'Approvals wait for a publisher.',
+      { locked: true },
+    ),
+    modelsRow(
+      'page-authors',
+      'Page authors',
+      'Who gets escalations for a page.',
+      s.pageAuthors.order.map((o) => PAGE_AUTHOR_TEXT[o]).join(', then '),
+      [
+        `${String(owners.rules)} ${owners.rules === 1 ? 'rule' : 'rules'} in ${owners.path}`,
+        owners.versionLabel,
+        ...owners.warnings,
+      ]
+        .filter(Boolean)
+        .join(' · '),
+    ),
+    modelsRow(
+      'quality',
+      'Quality check',
+      'Runs before the reviewer agent.',
+      s.qualityCheck.onSubmit ? 'On every submission' : 'On request only',
+      `Rules: ${s.qualityCheck.rulesPath}`,
+      { locked: true },
+    ),
+  ];
+}
+
+/** The trigger list: built-ins are always on; only optional ones get a checkbox. */
+export function triggerItems(s: ReviewSettingsDto) {
+  return s.triggers.map((t) => ({
+    id: t.id,
+    text: t.title,
+    note:
+      t.source === 'custom'
+        ? ` · owner rule${t.match ? ` (${t.match.kind}: ${t.match.value})` : ''}`
+        : t.optional
+          ? ''
+          : ' · built-in',
+    enabled: t.enabled,
+    editable: t.optional,
+  }));
+}
+
+export type ReviewDraft = {
+  reviewModel: ReviewSettingsDto['reviewModel'];
+  spotCheckPercent: string;
+  reminderDays: string;
+  agentEditsHumanPages: boolean;
+};
+
+export function reviewDraft(s: ReviewSettingsDto): ReviewDraft {
+  return {
+    reviewModel: s.reviewModel,
+    spotCheckPercent: String(Math.round(s.spotCheckRate * 100)),
+    reminderDays: String(s.reminderDays),
+    agentEditsHumanPages:
+      s.triggers.find((t) => t.id === 'agent_edits_human_pages')?.enabled ?? true,
+  };
+}
+
+/** Only the changed fields; percent 0–100 (whole), days 1–30 (D-209, D-212). */
+export function reviewSettingsInput(
+  draft: ReviewDraft,
+  current: ReviewSettingsDto,
+): Validated<ReviewSettingsInput> {
+  const fields: FieldErrors = {};
+  const pct = draft.spotCheckPercent.trim();
+  const days = draft.reminderDays.trim();
+  const rate = Number(pct);
+  const reminder = Number(days);
+  if (!/^\d+$/u.test(pct) || rate > 100) fields.spotCheckRate = 'A whole number from 0 to 100.';
+  if (!/^\d+$/u.test(days) || reminder < 1 || reminder > 30)
+    fields.reminderDays = 'A whole number of days from 1 to 30.';
+  if (Object.keys(fields).length) return { ok: false, fields };
+  const base = reviewDraft(current);
+  const input: ReviewSettingsInput = {
+    ...(draft.reviewModel !== current.reviewModel && { reviewModel: draft.reviewModel }),
+    ...(rate / 100 !== current.spotCheckRate && { spotCheckRate: rate / 100 }),
+    ...(reminder !== current.reminderDays && { reminderDays: reminder }),
+    ...(draft.agentEditsHumanPages !== base.agentEditsHumanPages && {
+      agentEditsHumanPages: draft.agentEditsHumanPages,
+    }),
+  };
+  return { ok: true, input };
+}
+
+export function reviewUpdatedText(s: ReviewSettingsDto) {
+  return s.updatedAt
+    ? `Last changed${who(s.updatedBy)}, ${formatDateTime(new Date(s.updatedAt))}.`
+    : 'Defaults; never changed.';
 }
