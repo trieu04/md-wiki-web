@@ -7,6 +7,7 @@ import type { ApiConfig } from './config/env.js';
 import { configureHttp } from './config/http.js';
 
 import { AuthService } from './auth/auth.service.js';
+import { PublishService } from './review/publish.service.js';
 import { WikiIndexer } from './wiki/indexer/wiki-indexer.js';
 
 async function bootstrap(): Promise<void> {
@@ -20,6 +21,8 @@ async function bootstrap(): Promise<void> {
   try {
     await app.get(AuthService).seedOwner();
     await app.get(WikiIndexer).reindex();
+    // Resume or classify publications a crash interrupted (system-logic §7.4.5).
+    await app.get(PublishService).recover();
     await internal.listen(config.INTERNAL_PORT, config.INTERNAL_HOST);
     await app.listen(config.API_PORT, config.API_HOST);
     logger.info(

@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { pageLabel, pageTitle, parseStatusBlock } from '@md-wiki/domain';
+import { pageLabel, pageTitle, parseStatusBlock, type LabelDto } from '@md-wiki/domain';
 import { Prisma } from '@prisma/client';
 import { AppError } from '../common/app-error.js';
 import { PrismaService } from '../prisma/prisma.service.js';
@@ -15,6 +15,7 @@ import {
   type SnapshotPageInput,
   type TreeDto,
   type TreeTopicDto,
+  type VersionPublicationDto,
   type Wire,
 } from './read.dto.js';
 import { SectionLabels, type SectionKey } from './section-labels.js';
@@ -38,6 +39,12 @@ function snapshotPage<T extends { id: string }>(rows: T[], limit = DEFAULT_LIMIT
   const items = rows.slice(0, limit);
   return { items, nextCursor: rows.length > limit ? (items.at(-1)?.id ?? null) : null };
 }
+const notReviewed: LabelDto = {
+  label: 'not_reviewed',
+  since: null,
+  reviewerKind: null,
+  reason: null,
+};
 function validatedPath(input: unknown) {
   if (typeof input !== 'string') throw new AppError('INVALID_PATH');
   return wikiPath(input).path;
@@ -65,10 +72,11 @@ export class WikiReadService {
       ],
       { isolationLevel: Prisma.TransactionIsolationLevel.RepeatableRead },
     );
-    const byPath = new Map<string, ReturnType<SectionLabels['forSection']>[]>();
-    for (const section of sections) {
+    const byPath = new Map<string, LabelDto[]>();
+    const sectionLabels = await this.labels.forSections(sections);
+    for (const [i, section] of sections.entries()) {
       const labels = byPath.get(section.path) ?? [];
-      labels.push(this.labels.forSection(section));
+      labels.push(sectionLabels[i] ?? notReviewed);
       byPath.set(section.path, labels);
     }
     const topics = new Map<string, Wire<TreeTopicDto>>();
@@ -110,8 +118,9 @@ export class WikiReadService {
     ]);
     if (!snapshot) throw new AppError('NOT_FOUND');
     const current = versionLabel === page.currentVersionLabel;
-    const sections = rows.map((row): Wire<SectionDto> => {
-      const label = this.labels.forSection(row);
+    const rowLabels = await this.labels.forSections(rows);
+    const sections = rows.map((row, i): Wire<SectionDto> => {
+      const label = rowLabels[i] ?? notReviewed;
       return {
         anchor: row.anchor,
         title: row.title,
@@ -154,14 +163,69 @@ export class WikiReadService {
       select: { id: true, label: true, sha256: true, capturedAt: true },
     });
     const { items, nextCursor } = snapshotPage(rows, query.limit);
+    const published = await this.publications(
+      this.db,
+      items.map(({ label }) => ({ path, label })),
+    );
     return {
       items: items.map(({ label, sha256, capturedAt }) => ({
         versionLabel: label,
         sha256,
         capturedAt: capturedAt.toISOString(),
+        publication: published.get(`${path}\0${label}`) ?? null,
       })),
       nextCursor,
     };
+  }
+
+  /** Done publications that produced these versions (system-logic §7.4.10, D-89). */
+  private async publications(
+    db: Prisma.TransactionClient,
+    keys: { path: string; label: string }[],
+  ): Promise<Map<string, Wire<VersionPublicationDto>>> {
+    if (!keys.length) return new Map();
+    const rows = await db.publication.findMany({
+      where: {
+        phase: 'done',
+        OR: keys.map(({ path, label }) => ({ targetPath: path, versionLabel: label })),
+      },
+      include: {
+        proposal: { select: { slug: true, title: true, section: true } },
+        decision: { select: { reviewerKind: true, createdAt: true } },
+      },
+    });
+    const sectioned = rows.filter((r) => r.proposal.section !== null && r.versionLabel !== null);
+    const titles = sectioned.length
+      ? await db.pageSection.findMany({
+          where: {
+            OR: sectioned.map((r) => ({
+              path: r.targetPath,
+              versionLabel: r.versionLabel ?? '',
+              anchor: r.proposal.section ?? '',
+            })),
+          },
+          select: { path: true, versionLabel: true, anchor: true, title: true },
+        })
+      : [];
+    const title = new Map(
+      titles.map((t) => [`${t.path}\0${t.versionLabel}\0${t.anchor}`, t.title]),
+    );
+    return new Map(
+      rows.map((r) => [
+        `${r.targetPath}\0${r.versionLabel ?? ''}`,
+        {
+          proposalSlug: r.proposal.slug,
+          title: r.proposal.title,
+          sectionTitle: r.proposal.section
+            ? (title.get(`${r.targetPath}\0${r.versionLabel ?? ''}\0${r.proposal.section}`) ?? null)
+            : null,
+          reviewerKind: r.decision.reviewerKind,
+          decidedAt: r.decision.createdAt.toISOString(),
+          publishedAt: (r.finishedAt ?? r.updatedAt).toISOString(),
+          auto: r.auto,
+        },
+      ]),
+    );
   }
 
   async recent(query: RecentInput): Promise<Wire<RecentDto>> {
@@ -177,10 +241,15 @@ export class WikiReadService {
         const pages = new Map(
           (await tx.page.findMany({ where: { path: { in: paths } } })).map((p) => [p.path, p]),
         );
+        const published = await this.publications(tx, items);
         return {
           items: items.map(({ path, label, capturedAt }) => {
             const page = pages.get(path);
+            const publication = published.get(`${path}\0${label}`);
             return {
+              proposalSlug: publication?.proposalSlug ?? null,
+              sectionTitle: publication?.sectionTitle ?? null,
+              summary: publication?.title ?? null,
               path,
               pageTitle: page?.title ?? pageTitle(path, []),
               versionLabel: label,

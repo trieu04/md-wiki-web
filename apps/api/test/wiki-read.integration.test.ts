@@ -24,7 +24,7 @@ import type {
   SearchDto,
   TreeDto,
 } from '../src/wiki/read.dto.js';
-import { SectionLabels } from '../src/wiki/section-labels.js';
+import { SectionLabels, type SectionKey } from '../src/wiki/section-labels.js';
 import { testSchema } from './test-schema.js';
 
 const database = testSchema();
@@ -106,7 +106,22 @@ beforeAll(async () => {
     OWNER_EMAIL: email,
     OWNER_PASSWORD: password,
   };
-  const productionLabels = new SectionLabels();
+  const fixtureLabel = (section: SectionKey) => {
+    const { path, anchor, sectionHash } = section;
+    const evidence = { id: 'fixture', time: datedAt, kind: 'person' as const };
+    const reviewedHash =
+      path === weak ? sectionHash : path === basics && anchor === 'zeta' ? oldHash : undefined;
+    return computeSectionLabel({
+      currentHash: sectionHash,
+      confirmedErrors: [],
+      openRecheckReasons:
+        path === other ? [{ ...evidence, sectionHash, reason: 'Verify setup' }] : [],
+      reviewedVersions:
+        reviewedHash === undefined ? [] : [{ ...evidence, sectionHash: reviewedHash }],
+      sourceChecks: [],
+      ownerConfirmations: [],
+    });
+  };
   const module = await Test.createTestingModule({ imports: [AppModule] })
     .overrideProvider(API_CONFIG)
     .useValue(config)
@@ -114,24 +129,8 @@ beforeAll(async () => {
     // algorithm with fixture evidence rather than adding later-phase storage.
     .overrideProvider(SectionLabels)
     .useValue({
-      forSection(section: Parameters<SectionLabels['forSection']>[0]) {
-        const { path, anchor, sectionHash } = section;
-        const evidence = { id: 'fixture', time: datedAt, kind: 'person' as const };
-        const reviewedHash =
-          path === weak ? sectionHash : path === basics && anchor === 'zeta' ? oldHash : undefined;
-        if (path !== other && reviewedHash === undefined)
-          return productionLabels.forSection(section);
-        return computeSectionLabel({
-          currentHash: sectionHash,
-          confirmedErrors: [],
-          openRecheckReasons:
-            path === other ? [{ ...evidence, sectionHash, reason: 'Verify setup' }] : [],
-          reviewedVersions:
-            reviewedHash === undefined ? [] : [{ ...evidence, sectionHash: reviewedHash }],
-          sourceChecks: [],
-          ownerConfirmations: [],
-        });
-      },
+      forSections: (keys: Parameters<SectionLabels['forSections']>[0]) =>
+        Promise.resolve(keys.map(fixtureLabel)),
     })
     .compile();
   app = module.createNestApplication();
@@ -319,6 +318,9 @@ it('paginates history and recent changes newest first, one per snapshot; mine is
     versionLabel: history.items[0]?.versionLabel,
     at: history.items[0]?.capturedAt,
     changedOutsideReview: false,
+    proposalSlug: null,
+    sectionTitle: null,
+    summary: null,
   });
   const firstRecent = body<RecentDto>(await get('/wiki/recent?limit=1').expect(200));
   expect(

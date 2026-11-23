@@ -5,7 +5,7 @@ import { PrismaService } from '../prisma/prisma.service.js';
 import {
   PUBLICATION_LOOKUP,
   type PublicationLookup,
-  NoPublications,
+  PrismaPublications,
 } from './indexer/publication-lookup.js';
 import { WikiIndexer } from './indexer/wiki-indexer.js';
 import { WikiReadController } from './read.controller.js';
@@ -28,7 +28,11 @@ export const WIKI_STORAGE = Symbol('WIKI_STORAGE');
       inject: [API_CONFIG],
       useFactory: (config: ApiConfig) => new LocalFolderStorage(config.WIKI_ROOT),
     },
-    { provide: PUBLICATION_LOOKUP, useClass: NoPublications },
+    {
+      provide: PUBLICATION_LOOKUP,
+      inject: [PrismaService],
+      useFactory: (db: PrismaService) => new PrismaPublications(db),
+    },
     {
       provide: WikiIndexer,
       inject: [WIKI_STORAGE, PrismaService, PUBLICATION_LOOKUP],
@@ -36,6 +40,6 @@ export const WIKI_STORAGE = Symbol('WIKI_STORAGE');
         new WikiIndexer(storage, db, lookup),
     },
   ],
-  exports: [WIKI_STORAGE, WikiIndexer],
+  exports: [WIKI_STORAGE, WikiIndexer, SectionLabels],
 })
 export class WikiModule {}

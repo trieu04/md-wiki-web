@@ -17,6 +17,7 @@ const policies = {
   comment: ['contributor', 'discuss'],
   'draft.*': ['contributor', 'contribute'],
   'proposal.submit': ['contributor', 'contribute'],
+  'proposal.read': ['reviewer', 'review'],
   'proposal.decide': ['reviewer', 'review'],
   'proposal.publish': ['publisher', 'publish'],
   'credibility.decide': ['reviewer', null],

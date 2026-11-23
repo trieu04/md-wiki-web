@@ -30,6 +30,9 @@ export const visualRecent: Recent = {
     at: new Date(Date.parse(visualNow) - itemAt(ages, index) * 3_600_000).toISOString(),
     versionLabel: '20261123',
     changedOutsideReview: false,
+    proposalSlug: null,
+    sectionTitle: null,
+    summary: null,
   })),
   nextCursor: null,
 };

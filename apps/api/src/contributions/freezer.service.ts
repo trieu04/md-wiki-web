@@ -13,7 +13,9 @@ import {
 import type { Prisma, ProposalOrigin, User } from '@prisma/client';
 import { audit } from '../auth/credentials.js';
 import { AppError, type FieldProblem } from '../common/app-error.js';
+import { EventsService } from '../events/events.service.js';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { openAssignment } from '../review/assignments.js';
 import { WikiIndexer } from '../wiki/indexer/wiki-indexer.js';
 import { WIKI_STORAGE } from '../wiki/wiki.module.js';
 import type { WikiStorage } from '../wiki/storage/wiki-storage.js';
@@ -44,7 +46,7 @@ export interface FreezeInput {
   appliesTo: AppliesTo[];
   authorMetadata?: AuthorMetadata;
   /** Runs inside the insert transaction (editor submit deletes the draft here). */
-  commit?: (tx: Prisma.TransactionClient) => Promise<void>;
+  commit?: (tx: Prisma.TransactionClient, proposalId: string) => Promise<void>;
 }
 export interface Frozen {
   proposalId: string;
@@ -60,6 +62,7 @@ export class ProposalFreezer {
     @Inject(PrismaService) private readonly db: PrismaService,
     @Inject(WikiIndexer) private readonly indexer: WikiIndexer,
     @Inject(WIKI_STORAGE) private readonly storage: WikiStorage,
+    @Inject(EventsService) private readonly events: EventsService,
   ) {}
 
   /** Resolve a public (path, versionLabel) pair to its registered snapshot (md-wiki `reference`). */
@@ -210,15 +213,22 @@ export class ProposalFreezer {
               },
               select: { id: true },
             });
-            await input.commit?.(tx);
+            await input.commit?.(tx, created.id);
             await audit(tx, input.submitter, 'proposal.submitted', 'proposal', created.id, {
               slug,
               targetPath: target.path,
               origin: input.origin,
               bundleHash,
             });
+            // Who decides it (system-logic §7.4.2), in the same transaction as the proposal.
+            await openAssignment(
+              tx,
+              { id: created.id, submitterId: input.submitter.id },
+              input.submitter,
+            );
             return created.id;
           });
+          this.events.proposal(slug, input.submitter.id, 'pending');
           return { proposalId: id, replay: false };
         } catch (error) {
           if (isUniqueViolation(error) && input.slug === undefined && attempt < MAX_ATTEMPTS)

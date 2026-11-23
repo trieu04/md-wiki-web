@@ -40,7 +40,7 @@ const matrix: {
     roles: contributor,
     scope: 'contribute',
   },
-  { actions: ['proposal.decide'], roles: reviewer, scope: 'review' },
+  { actions: ['proposal.read', 'proposal.decide'], roles: reviewer, scope: 'review' },
   { actions: ['proposal.publish'], roles: publisher, scope: 'publish' },
   { actions: ['credibility.decide'], roles: reviewer, scope: null },
   {

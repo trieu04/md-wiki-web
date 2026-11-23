@@ -1423,6 +1423,47 @@
         ]
       }
     },
+    "/api/v1/events": {
+      "get": {
+        "operationId": "EventsController_stream",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "One `event: <type>` + `data: EventDto` message per state change",
+            "content": {
+              "text/event-stream": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN | ACCOUNT_DISABLED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Events"
+        ]
+      }
+    },
     "/api/v1/drafts": {
       "get": {
         "operationId": "DraftsController_list",
@@ -2587,6 +2628,904 @@
         },
         "tags": [
           "Contributions"
+        ]
+      }
+    },
+    "/api/v1/proposals": {
+      "get": {
+        "operationId": "ProposalsController_list",
+        "parameters": [
+          {
+            "name": "targetPath",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "state",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "enum": [
+                "pending",
+                "approved",
+                "published",
+                "rejected",
+                "stale"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "tab",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": "open",
+              "enum": [
+                "open",
+                "stale",
+                "blocked",
+                "published",
+                "rejected",
+                "all"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 25
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProposalListDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_FAILED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN | ACCOUNT_DISABLED | CSRF_INVALID",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Proposals"
+        ]
+      }
+    },
+    "/api/v1/proposals/{slug}": {
+      "get": {
+        "operationId": "ProposalsController_detail",
+        "parameters": [
+          {
+            "name": "slug",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProposalDetailDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_FAILED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN | ACCOUNT_DISABLED | CSRF_INVALID",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Proposals"
+        ]
+      }
+    },
+    "/api/v1/proposals/{slug}/diff": {
+      "get": {
+        "operationId": "ProposalsController_diff",
+        "parameters": [
+          {
+            "name": "against",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": "base",
+              "enum": [
+                "base",
+                "current"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "slug",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProposalDiffDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_FAILED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN | ACCOUNT_DISABLED | CSRF_INVALID",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Proposals"
+        ]
+      }
+    },
+    "/api/v1/proposals/{slug}/decisions": {
+      "post": {
+        "operationId": "ProposalsController_decide",
+        "parameters": [
+          {
+            "name": "slug",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DecisionInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Replay of an already recorded decision",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProposalDetailDto"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Decision recorded (and, with AUTO_PUBLISH, the publish attempted)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProposalDetailDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_FAILED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN | ACCOUNT_DISABLED | CSRF_INVALID",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "PRECONDITION_FAILED | NOT_ASSIGNED | SELF_REVIEW | DISPUTED | DECISION_BINDING_MISMATCH | DISCUSSION_CHANGED | STALE_BASE | SOURCE_CHANGED | TARGET_BLOCKED | ESCALATION_REQUIRED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "STORAGE_ERROR",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Proposals"
+        ]
+      }
+    },
+    "/api/v1/proposals/{slug}/publish": {
+      "post": {
+        "operationId": "ProposalsController_publish",
+        "parameters": [
+          {
+            "name": "slug",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Published, stale or blocked: see publication",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProposalDetailDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_FAILED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN | ACCOUNT_DISABLED | CSRF_INVALID",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "PRECONDITION_FAILED | TARGET_BLOCKED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "STORAGE_ERROR",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Proposals"
+        ]
+      }
+    },
+    "/api/v1/proposals/{slug}/withdraw": {
+      "post": {
+        "operationId": "ProposalsController_withdraw",
+        "parameters": [
+          {
+            "name": "slug",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WithdrawInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProposalDetailDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_FAILED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN | ACCOUNT_DISABLED | CSRF_INVALID",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "PRECONDITION_FAILED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Proposals"
+        ]
+      }
+    },
+    "/api/v1/proposals/{slug}/conflict": {
+      "post": {
+        "operationId": "ProposalsController_conflict",
+        "parameters": [
+          {
+            "name": "slug",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConflictInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConflictResultDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_FAILED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN | ACCOUNT_DISABLED | CSRF_INVALID",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "PRECONDITION_FAILED | ALREADY_EXISTS | SOURCE_CHANGED | STALE_BASE",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "PAYLOAD_TOO_LARGE",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Proposals"
+        ]
+      }
+    },
+    "/api/v1/ops/blocked": {
+      "get": {
+        "operationId": "OpsController_blocked",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BlockedListDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN | ACCOUNT_DISABLED | CSRF_INVALID",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Ops"
+        ]
+      }
+    },
+    "/api/v1/ops/blocked/{slug}/resolution": {
+      "post": {
+        "operationId": "OpsController_resolve",
+        "parameters": [
+          {
+            "name": "slug",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResolutionInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProposalDetailDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_FAILED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN | ACCOUNT_DISABLED | CSRF_INVALID",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "PRECONDITION_FAILED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "STORAGE_ERROR",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Ops"
+        ]
+      }
+    },
+    "/api/v1/audit": {
+      "get": {
+        "operationId": "AuditController_audit",
+        "parameters": [
+          {
+            "name": "actorId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "subjectId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "subjectType",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "action",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 25
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuditPageDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_FAILED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN | ACCOUNT_DISABLED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Audit"
         ]
       }
     },
@@ -3821,6 +4760,48 @@
           "usedByTeams"
         ]
       },
+      "VersionPublicationDto": {
+        "type": "object",
+        "properties": {
+          "proposalSlug": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "sectionTitle": {
+            "type": "string",
+            "nullable": true
+          },
+          "reviewerKind": {
+            "type": "string",
+            "enum": [
+              "agent",
+              "person"
+            ]
+          },
+          "decidedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "publishedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "auto": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "proposalSlug",
+          "title",
+          "sectionTitle",
+          "reviewerKind",
+          "decidedAt",
+          "publishedAt",
+          "auto"
+        ]
+      },
       "VersionDto": {
         "type": "object",
         "properties": {
@@ -3833,12 +4814,22 @@
           "capturedAt": {
             "type": "string",
             "format": "date-time"
+          },
+          "publication": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/VersionPublicationDto"
+              }
+            ]
           }
         },
         "required": [
           "versionLabel",
           "sha256",
-          "capturedAt"
+          "capturedAt",
+          "publication"
         ]
       },
       "HistoryDto": {
@@ -3878,6 +4869,18 @@
           },
           "changedOutsideReview": {
             "type": "boolean"
+          },
+          "proposalSlug": {
+            "type": "string",
+            "nullable": true
+          },
+          "sectionTitle": {
+            "type": "string",
+            "nullable": true
+          },
+          "summary": {
+            "type": "string",
+            "nullable": true
           }
         },
         "required": [
@@ -3885,7 +4888,10 @@
           "pageTitle",
           "versionLabel",
           "at",
-          "changedOutsideReview"
+          "changedOutsideReview",
+          "proposalSlug",
+          "sectionTitle",
+          "summary"
         ]
       },
       "RecentDto": {
@@ -4155,6 +5161,63 @@
           "redis",
           "storage",
           "version"
+        ]
+      },
+      "EventType": {
+        "type": "string",
+        "enum": [
+          "proposal.changed",
+          "publication.changed",
+          "page.changed",
+          "ping"
+        ]
+      },
+      "PublicationPhase": {
+        "type": "string",
+        "enum": [
+          "prepared",
+          "writing",
+          "written",
+          "done",
+          "unknown",
+          "stale",
+          "not_written"
+        ]
+      },
+      "EventDto": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EventType"
+              }
+            ]
+          },
+          "slug": {
+            "type": "string"
+          },
+          "path": {
+            "type": "string"
+          },
+          "state": {
+            "type": "string"
+          },
+          "phase": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PublicationPhase"
+              }
+            ]
+          },
+          "at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "type",
+          "at"
         ]
       },
       "AppliesToDto": {
@@ -4962,6 +6025,1500 @@
           "nextCursor",
           "total",
           "items"
+        ]
+      },
+      "UserRefDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "human",
+              "agent"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "kind"
+        ]
+      },
+      "ListDecisionDto": {
+        "type": "object",
+        "properties": {
+          "approve": {
+            "type": "boolean"
+          },
+          "reviewer": {
+            "$ref": "#/components/schemas/UserRefDto"
+          },
+          "reviewerKind": {
+            "type": "string",
+            "enum": [
+              "agent",
+              "person"
+            ]
+          },
+          "at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "approve",
+          "reviewer",
+          "reviewerKind",
+          "at"
+        ]
+      },
+      "ProposalListItemDto": {
+        "type": "object",
+        "properties": {
+          "slug": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "targetPath": {
+            "type": "string"
+          },
+          "pageTitle": {
+            "type": "string"
+          },
+          "section": {
+            "type": "string",
+            "nullable": true
+          },
+          "sectionTitle": {
+            "type": "string",
+            "nullable": true
+          },
+          "submitter": {
+            "$ref": "#/components/schemas/UserRefDto"
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "approved",
+              "published",
+              "rejected",
+              "stale"
+            ]
+          },
+          "tab": {
+            "type": "string",
+            "enum": [
+              "open",
+              "stale",
+              "blocked",
+              "published",
+              "rejected"
+            ]
+          },
+          "phase": {
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PublicationPhase"
+              }
+            ]
+          },
+          "withdrawn": {
+            "type": "boolean"
+          },
+          "conflict": {
+            "type": "boolean"
+          },
+          "assignees": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/UserRefDto"
+            }
+          },
+          "decision": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ListDecisionDto"
+              }
+            ]
+          },
+          "publishedVersion": {
+            "type": "string",
+            "nullable": true
+          },
+          "autoPublished": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "slug",
+          "title",
+          "targetPath",
+          "pageTitle",
+          "section",
+          "sectionTitle",
+          "submitter",
+          "state",
+          "tab",
+          "phase",
+          "withdrawn",
+          "conflict",
+          "assignees",
+          "decision",
+          "publishedVersion",
+          "autoPublished",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "TabCountsDto": {
+        "type": "object",
+        "properties": {
+          "open": {
+            "type": "integer"
+          },
+          "stale": {
+            "type": "integer"
+          },
+          "blocked": {
+            "type": "integer"
+          },
+          "published": {
+            "type": "integer"
+          },
+          "rejected": {
+            "type": "integer"
+          },
+          "all": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "open",
+          "stale",
+          "blocked",
+          "published",
+          "rejected",
+          "all"
+        ]
+      },
+      "ProposalListDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProposalListItemDto"
+            }
+          },
+          "nextCursor": {
+            "type": "string",
+            "nullable": true
+          },
+          "counts": {
+            "$ref": "#/components/schemas/TabCountsDto"
+          }
+        },
+        "required": [
+          "items",
+          "nextCursor",
+          "counts"
+        ]
+      },
+      "WithdrawnDto": {
+        "type": "object",
+        "properties": {
+          "reason": {
+            "type": "string"
+          },
+          "at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "reason",
+          "at"
+        ]
+      },
+      "BindingDto": {
+        "type": "object",
+        "properties": {
+          "bundleHash": {
+            "type": "string"
+          },
+          "artifactHash": {
+            "type": "string"
+          },
+          "previewAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "discussionVersion": {
+            "type": "integer"
+          },
+          "disputeVersion": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "bundleHash",
+          "artifactHash",
+          "previewAt",
+          "discussionVersion",
+          "disputeVersion"
+        ]
+      },
+      "PreviewDto": {
+        "type": "object",
+        "properties": {
+          "artifact": {
+            "type": "string",
+            "description": "The exact file that approval publishes"
+          },
+          "artifactHash": {
+            "type": "string"
+          },
+          "previewAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "decisionId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "reviewerKind": {
+            "type": "string",
+            "enum": [
+              "agent",
+              "person"
+            ]
+          },
+          "binding": {
+            "$ref": "#/components/schemas/BindingDto"
+          }
+        },
+        "required": [
+          "artifact",
+          "artifactHash",
+          "previewAt",
+          "decisionId",
+          "reviewerKind",
+          "binding"
+        ]
+      },
+      "FinalDto": {
+        "type": "object",
+        "properties": {
+          "artifact": {
+            "type": "string"
+          },
+          "artifactHash": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "artifact",
+          "artifactHash"
+        ]
+      },
+      "AssignmentDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "assignee": {
+            "$ref": "#/components/schemas/UserRefDto"
+          },
+          "reason": {
+            "type": "string"
+          },
+          "trigger": {
+            "type": "string",
+            "nullable": true
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "assignee",
+          "reason",
+          "trigger",
+          "createdAt"
+        ]
+      },
+      "DecisionDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "reviewer": {
+            "$ref": "#/components/schemas/UserRefDto"
+          },
+          "reviewerKind": {
+            "type": "string",
+            "enum": [
+              "agent",
+              "person"
+            ]
+          },
+          "approve": {
+            "type": "boolean"
+          },
+          "reason": {
+            "type": "string"
+          },
+          "bundleHash": {
+            "type": "string"
+          },
+          "artifactHash": {
+            "type": "string"
+          },
+          "previewAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "discussionVersion": {
+            "type": "integer"
+          },
+          "disputeVersion": {
+            "type": "integer"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "reviewer",
+          "reviewerKind",
+          "approve",
+          "reason",
+          "bundleHash",
+          "artifactHash",
+          "previewAt",
+          "discussionVersion",
+          "disputeVersion",
+          "createdAt"
+        ]
+      },
+      "ResolutionDto": {
+        "type": "object",
+        "properties": {
+          "outcome": {
+            "type": "string",
+            "enum": [
+              "written",
+              "not_written"
+            ]
+          },
+          "evidence": {
+            "type": "string"
+          },
+          "actor": {
+            "$ref": "#/components/schemas/UserRefDto"
+          },
+          "diskSha256": {
+            "type": "string",
+            "nullable": true
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "outcome",
+          "evidence",
+          "actor",
+          "diskSha256",
+          "createdAt"
+        ]
+      },
+      "PublicationDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "attempt": {
+            "type": "integer"
+          },
+          "phase": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PublicationPhase"
+              }
+            ]
+          },
+          "auto": {
+            "type": "boolean"
+          },
+          "actor": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/UserRefDto"
+              }
+            ]
+          },
+          "baseSha256": {
+            "type": "string",
+            "nullable": true
+          },
+          "artifactHash": {
+            "type": "string"
+          },
+          "receiptId": {
+            "type": "string",
+            "nullable": true
+          },
+          "error": {
+            "type": "string",
+            "nullable": true
+          },
+          "versionLabel": {
+            "type": "string",
+            "nullable": true
+          },
+          "startedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "writtenAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "finishedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "resolution": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ResolutionDto"
+              }
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "attempt",
+          "phase",
+          "auto",
+          "actor",
+          "baseSha256",
+          "artifactHash",
+          "receiptId",
+          "error",
+          "versionLabel",
+          "startedAt",
+          "writtenAt",
+          "finishedAt",
+          "updatedAt",
+          "resolution"
+        ]
+      },
+      "BlockedByDto": {
+        "type": "object",
+        "properties": {
+          "slug": {
+            "type": "string"
+          },
+          "phase": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PublicationPhase"
+              }
+            ]
+          }
+        },
+        "required": [
+          "slug",
+          "phase"
+        ]
+      },
+      "RefStatusDto": {
+        "type": "object",
+        "properties": {
+          "role": {
+            "type": "string",
+            "enum": [
+              "target",
+              "source",
+              "scope"
+            ]
+          },
+          "path": {
+            "type": "string"
+          },
+          "versionLabel": {
+            "type": "string",
+            "nullable": true
+          },
+          "sha256": {
+            "type": "string",
+            "nullable": true
+          },
+          "currentVersionLabel": {
+            "type": "string",
+            "nullable": true
+          },
+          "current": {
+            "type": "boolean",
+            "description": "Unchanged since the author read it"
+          }
+        },
+        "required": [
+          "role",
+          "path",
+          "versionLabel",
+          "sha256",
+          "currentVersionLabel",
+          "current"
+        ]
+      },
+      "ConflictVersionDto": {
+        "type": "object",
+        "properties": {
+          "versionLabel": {
+            "type": "string"
+          },
+          "sha256": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "versionLabel",
+          "sha256"
+        ]
+      },
+      "PublishedByDto": {
+        "type": "object",
+        "properties": {
+          "slug": {
+            "type": "string"
+          },
+          "reviewerKind": {
+            "type": "string",
+            "enum": [
+              "agent",
+              "person"
+            ]
+          }
+        },
+        "required": [
+          "slug",
+          "reviewerKind"
+        ]
+      },
+      "ConflictCurrentDto": {
+        "type": "object",
+        "properties": {
+          "versionLabel": {
+            "type": "string"
+          },
+          "sha256": {
+            "type": "string"
+          },
+          "publishedBy": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PublishedByDto"
+              }
+            ]
+          }
+        },
+        "required": [
+          "versionLabel",
+          "sha256",
+          "publishedBy"
+        ]
+      },
+      "ConflictResolutionDto": {
+        "type": "object",
+        "properties": {
+          "outcome": {
+            "type": "string",
+            "enum": [
+              "keep_current",
+              "use_incoming",
+              "merge"
+            ]
+          },
+          "actor": {
+            "$ref": "#/components/schemas/UserRefDto"
+          },
+          "reason": {
+            "type": "string"
+          },
+          "baseSha256": {
+            "type": "string",
+            "nullable": true
+          },
+          "currentSha256": {
+            "type": "string",
+            "nullable": true
+          },
+          "replacementSlug": {
+            "type": "string",
+            "nullable": true
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "outcome",
+          "actor",
+          "reason",
+          "baseSha256",
+          "currentSha256",
+          "replacementSlug",
+          "createdAt"
+        ]
+      },
+      "ConflictDto": {
+        "type": "object",
+        "properties": {
+          "section": {
+            "type": "string",
+            "nullable": true
+          },
+          "scope": {
+            "type": "string",
+            "enum": [
+              "section",
+              "page"
+            ]
+          },
+          "base": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ConflictVersionDto"
+              }
+            ]
+          },
+          "current": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ConflictCurrentDto"
+              }
+            ]
+          },
+          "baseText": {
+            "type": "string"
+          },
+          "currentText": {
+            "type": "string"
+          },
+          "proposedText": {
+            "type": "string"
+          },
+          "resolution": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ConflictResolutionDto"
+              }
+            ]
+          }
+        },
+        "required": [
+          "section",
+          "scope",
+          "base",
+          "current",
+          "baseText",
+          "currentText",
+          "proposedText",
+          "resolution"
+        ]
+      },
+      "DiscussionDto": {
+        "type": "object",
+        "properties": {
+          "discussionVersion": {
+            "type": "integer"
+          },
+          "disputeVersion": {
+            "type": "integer"
+          },
+          "disputed": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "discussionVersion",
+          "disputeVersion",
+          "disputed"
+        ]
+      },
+      "CanDto": {
+        "type": "object",
+        "properties": {
+          "decide": {
+            "type": "boolean"
+          },
+          "publish": {
+            "type": "boolean"
+          },
+          "withdraw": {
+            "type": "boolean"
+          },
+          "resolveConflict": {
+            "type": "boolean"
+          },
+          "resolveBlocked": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "decide",
+          "publish",
+          "withdraw",
+          "resolveConflict",
+          "resolveBlocked"
+        ]
+      },
+      "ProposalEventDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "action": {
+            "type": "string"
+          },
+          "actor": {
+            "nullable": true,
+            "description": "null = system",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/UserRefDto"
+              }
+            ]
+          },
+          "data": {
+            "type": "object",
+            "additionalProperties": true
+          }
+        },
+        "required": [
+          "id",
+          "at",
+          "action",
+          "actor",
+          "data"
+        ]
+      },
+      "ProposalDetailDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "targetPath": {
+            "type": "string"
+          },
+          "pageTitle": {
+            "type": "string"
+          },
+          "section": {
+            "type": "string",
+            "nullable": true
+          },
+          "sectionTitle": {
+            "type": "string",
+            "nullable": true
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "approved",
+              "published",
+              "rejected",
+              "stale"
+            ]
+          },
+          "origin": {
+            "type": "string",
+            "enum": [
+              "editor",
+              "api",
+              "import"
+            ]
+          },
+          "submitter": {
+            "$ref": "#/components/schemas/SubmitterDto"
+          },
+          "reason": {
+            "type": "string"
+          },
+          "bundleHash": {
+            "type": "string"
+          },
+          "proposedSha256": {
+            "type": "string"
+          },
+          "base": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PinnedRefDto"
+              }
+            ]
+          },
+          "sources": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PinnedRefDto"
+            }
+          },
+          "scope": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ScopeRowDto"
+            }
+          },
+          "appliesTo": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AppliesToDto"
+            }
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "tab": {
+            "type": "string",
+            "enum": [
+              "open",
+              "stale",
+              "blocked",
+              "published",
+              "rejected"
+            ]
+          },
+          "withdrawn": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/WithdrawnDto"
+              }
+            ]
+          },
+          "preview": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PreviewDto"
+              }
+            ]
+          },
+          "final": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/FinalDto"
+              }
+            ]
+          },
+          "assignment": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AssignmentDto"
+              }
+            ]
+          },
+          "decisions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DecisionDto"
+            }
+          },
+          "publication": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PublicationDto"
+              }
+            ]
+          },
+          "publications": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PublicationDto"
+            }
+          },
+          "blockedBy": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/BlockedByDto"
+              }
+            ]
+          },
+          "refs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RefStatusDto"
+            }
+          },
+          "conflict": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ConflictDto"
+              }
+            ]
+          },
+          "discussion": {
+            "$ref": "#/components/schemas/DiscussionDto"
+          },
+          "can": {
+            "$ref": "#/components/schemas/CanDto"
+          },
+          "history": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProposalEventDto"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "slug",
+          "title",
+          "targetPath",
+          "pageTitle",
+          "section",
+          "sectionTitle",
+          "state",
+          "origin",
+          "submitter",
+          "reason",
+          "bundleHash",
+          "proposedSha256",
+          "base",
+          "sources",
+          "scope",
+          "appliesTo",
+          "createdAt",
+          "tab",
+          "withdrawn",
+          "preview",
+          "final",
+          "assignment",
+          "decisions",
+          "publication",
+          "publications",
+          "blockedBy",
+          "refs",
+          "conflict",
+          "discussion",
+          "can",
+          "history"
+        ]
+      },
+      "DiffFromDto": {
+        "type": "object",
+        "properties": {
+          "versionLabel": {
+            "type": "string",
+            "nullable": true
+          },
+          "sha256": {
+            "type": "string",
+            "nullable": true
+          },
+          "text": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "versionLabel",
+          "sha256",
+          "text"
+        ]
+      },
+      "DiffToDto": {
+        "type": "object",
+        "properties": {
+          "sha256": {
+            "type": "string"
+          },
+          "text": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "sha256",
+          "text"
+        ]
+      },
+      "DiffLineDto": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "same",
+              "del",
+              "add"
+            ]
+          },
+          "text": {
+            "type": "string"
+          },
+          "oldLine": {
+            "type": "integer",
+            "nullable": true
+          },
+          "newLine": {
+            "type": "integer",
+            "nullable": true
+          }
+        },
+        "required": [
+          "kind",
+          "text",
+          "oldLine",
+          "newLine"
+        ]
+      },
+      "DiffStatsDto": {
+        "type": "object",
+        "properties": {
+          "added": {
+            "type": "integer"
+          },
+          "removed": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "added",
+          "removed"
+        ]
+      },
+      "ProposalDiffDto": {
+        "type": "object",
+        "properties": {
+          "against": {
+            "type": "string",
+            "enum": [
+              "base",
+              "current"
+            ]
+          },
+          "from": {
+            "$ref": "#/components/schemas/DiffFromDto"
+          },
+          "to": {
+            "$ref": "#/components/schemas/DiffToDto"
+          },
+          "lines": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DiffLineDto"
+            }
+          },
+          "stats": {
+            "$ref": "#/components/schemas/DiffStatsDto"
+          }
+        },
+        "required": [
+          "against",
+          "from",
+          "to",
+          "lines",
+          "stats"
+        ]
+      },
+      "DecisionInput": {
+        "type": "object",
+        "properties": {
+          "approve": {
+            "type": "boolean"
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 4000
+          },
+          "bundleHash": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "artifactHash": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "previewAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "discussionVersion": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "disputeVersion": {
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "required": [
+          "approve",
+          "reason",
+          "bundleHash",
+          "artifactHash",
+          "previewAt",
+          "discussionVersion",
+          "disputeVersion"
+        ]
+      },
+      "WithdrawInput": {
+        "type": "object",
+        "properties": {
+          "reason": {
+            "type": "string",
+            "maxLength": 4000
+          }
+        }
+      },
+      "ConflictInput": {
+        "type": "object",
+        "properties": {
+          "outcome": {
+            "type": "string",
+            "enum": [
+              "keep_current",
+              "use_incoming",
+              "merge"
+            ]
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 4000
+          },
+          "replacement": {
+            "type": "string",
+            "description": "The edited region (section or whole page)"
+          }
+        },
+        "required": [
+          "outcome",
+          "reason"
+        ]
+      },
+      "ConflictResultDto": {
+        "type": "object",
+        "properties": {
+          "resolution": {
+            "$ref": "#/components/schemas/ConflictResolutionDto"
+          },
+          "replacement": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ProposalDto"
+              }
+            ]
+          }
+        },
+        "required": [
+          "resolution",
+          "replacement"
+        ]
+      },
+      "ShaDto": {
+        "type": "object",
+        "properties": {
+          "sha256": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "sha256"
+        ]
+      },
+      "OldShaDto": {
+        "type": "object",
+        "properties": {
+          "sha256": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "sha256"
+        ]
+      },
+      "DiskDto": {
+        "type": "object",
+        "properties": {
+          "sha256": {
+            "type": "string",
+            "nullable": true
+          },
+          "matches": {
+            "type": "string",
+            "enum": [
+              "new",
+              "old",
+              "neither",
+              "missing"
+            ]
+          }
+        },
+        "required": [
+          "sha256",
+          "matches"
+        ]
+      },
+      "BlockedTargetDto": {
+        "type": "object",
+        "properties": {
+          "slug": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "targetPath": {
+            "type": "string"
+          },
+          "pageTitle": {
+            "type": "string"
+          },
+          "since": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "error": {
+            "type": "string",
+            "nullable": true
+          },
+          "publicationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "expected": {
+            "$ref": "#/components/schemas/ShaDto"
+          },
+          "old": {
+            "$ref": "#/components/schemas/OldShaDto"
+          },
+          "disk": {
+            "nullable": true,
+            "description": "null when the file could not be read",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DiskDto"
+              }
+            ]
+          },
+          "waiting": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "slug",
+          "title",
+          "targetPath",
+          "pageTitle",
+          "since",
+          "error",
+          "publicationId",
+          "expected",
+          "old",
+          "disk",
+          "waiting"
+        ]
+      },
+      "BlockedListDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BlockedTargetDto"
+            }
+          }
+        },
+        "required": [
+          "items"
+        ]
+      },
+      "ResolutionInput": {
+        "type": "object",
+        "properties": {
+          "outcome": {
+            "type": "string",
+            "enum": [
+              "written",
+              "not_written"
+            ]
+          },
+          "evidence": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 4000
+          }
+        },
+        "required": [
+          "outcome",
+          "evidence"
+        ]
+      },
+      "AuditEventDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "action": {
+            "type": "string"
+          },
+          "actorKind": {
+            "type": "string",
+            "enum": [
+              "human",
+              "agent",
+              "system"
+            ]
+          },
+          "actor": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/UserRefDto"
+              }
+            ]
+          },
+          "subjectType": {
+            "type": "string"
+          },
+          "subjectId": {
+            "type": "string"
+          },
+          "data": {
+            "type": "object",
+            "additionalProperties": true
+          }
+        },
+        "required": [
+          "id",
+          "at",
+          "action",
+          "actorKind",
+          "actor",
+          "subjectType",
+          "subjectId",
+          "data"
+        ]
+      },
+      "AuditPageDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AuditEventDto"
+            }
+          },
+          "nextCursor": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "items",
+          "nextCursor"
         ]
       }
     }

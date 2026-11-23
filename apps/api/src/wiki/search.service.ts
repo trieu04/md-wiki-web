@@ -72,8 +72,17 @@ export class SearchService {
     const topicFilter = new Set(input['topics[]']);
     const labels = pageLabel([]).spread;
     const topics = new Map<string, number>();
+    const rowLabels = await this.labels.forSections(rows);
     const matching = rows
-      .map((row) => ({ ...row, label: this.labels.forSection(row) }))
+      .map((row, i) => ({
+        ...row,
+        label: rowLabels[i] ?? {
+          label: 'not_reviewed' as const,
+          since: null,
+          reviewerKind: null,
+          reason: null,
+        },
+      }))
       .filter((row) => {
         const label = row.label.label;
         const inTopic = !topicFilter.size || topicFilter.has(row.topic);

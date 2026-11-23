@@ -17,3 +17,4 @@ export * from './bundle.js';
 export * from './draft.js';
 export * from './line-diff.js';
 export * from './contribution-file.js';
+export * from './review.js';

@@ -120,7 +120,7 @@ decided_at: 2026-11-23T10:42:00Z
 - On boot, on `POST /api/v1/admin/reindex` (owner), and after every publish: list storage → for each changed sha: capture snapshot, split sections, upsert `Page` and `PageSection` rows for the current version, refresh the search vector.
 - **Topic [D-7]**: the first path segment. Display name from `wiki-meta/topics.md` (table `folder | name`) when present, else the folder title-cased. Files at the root have topic `general`.
 - Out-of-band detection: if a file's sha differs from the last `Publication.afterSha256` for that path, `Page.changedOutsideReview = true` (shown as "Changed outside review"; next publish goes `stale`).
-  The indexer reads the last published hash through a port `PublicationLookup.lastPublishedSha256(path) → Promise<string | null>` [D-36]. Until the `Publication` model exists (Phase 3/5) the production implementation returns `null`, and `null` means "never published through review" → `changedOutsideReview = false`. Tests inject a lookup that returns a hash.
+  The indexer reads the last published hash through a port `PublicationLookup.lastPublishedSha256(path) → Promise<string | null>` [D-36]. Until the `Publication` model exists (Phase 3/5) the production implementation returns `null`, and `null` means "never published through review" → `changedOutsideReview = false`. Tests inject a lookup that returns a hash. Since Phase 5 the lookup reads `Publication` (§7.4.10).
 
 ## 4. Data model (Phase 1–5 precise, later outline)
 
@@ -142,8 +142,8 @@ Draft(authorId, targetPath, baseSnapshotId?, scope jsonb, title, content text, r
 Proposal(slug unique, title, targetPath, section?, submitterId, origin, state, reason, bundleHash, manifest bytea,
          base bytea?, proposed bytea, artifact bytea?, artifactHash?, baseSha256?, baseSnapshotId?, createdAt, updatedAt)
 ProposalRef(proposalId, snapshotId, role target|scope|source, impact?, ord)
--- Phase 3
-Assignment, Decision, Publication, Resolution, ConflictResolution   (fields as architecture.md › Data model)
+-- Phase 3 (Prisma precise in §7.4.1)
+Assignment, Decision, Publication, Resolution, ConflictResolution, Withdrawal, PublishOutbox, PublishedSection
 ```
 
 Later phases (Discussions, AI jobs, agent review, credibility, reading) use the architecture.md data model verbatim; their `-00` spec task turns it into Prisma with indexes.
@@ -170,6 +170,7 @@ Roles are cumulative: `reader < contributor < reviewer < publisher < owner`. Age
 | `follow`, `attest`, `report`, `feedback` | reader | — (humans only) | not on own section version; agents never |
 | `topic.open`, `comment` | reader / contributor | discuss | |
 | `draft.*`, `proposal.submit` | contributor | contribute | |
+| `proposal.read` (workspace lists, §7.4.8) | reviewer | review | [D-86] |
 | `proposal.decide` | reviewer | review | must hold an open `Assignment`; never own proposal (`SELF_REVIEW`) |
 | `proposal.publish` | publisher | publish | only when `AUTO_PUBLISH=false` |
 | `credibility.decide` | reviewer + page author of path | — | |
@@ -240,7 +241,7 @@ interface SearchHitDto { path: string; pageTitle: string; anchor: string; sectio
 | Phase | Endpoints |
 | --- | --- |
 | P4 Contribute (**full contract: §7.2**) | `GET/POST/PATCH/DELETE /drafts[/{id}]` (autosave `PATCH` with `If-Match: <updatedAt>`), `POST /drafts/{id}/sources`, `POST /drafts/{id}/rebase`, `POST /drafts/{id}/submit` → `ProposalDto`, `POST /contributions` (agent bundle), `GET /contributions/{slug}`, `POST /contributions/import` (`.contribution.md` v3), `GET /drafts/{id}/export` |
-| P5 Review/publish | `GET /proposals?state&tab&cursor`, `GET /proposals/{slug}` (incl. `preview` artifact + hashes), `GET /proposals/{slug}/diff`, `POST /proposals/{slug}/decisions` `{ approve, reason, bundleHash, artifactHash, previewAt, discussionVersion, disputeVersion }`, `POST /proposals/{slug}/publish`, `POST /proposals/{slug}/conflict` `{ outcome: keep_current\|use_incoming\|merge, replacement? }`, `GET /ops/blocked`, `POST /ops/blocked/{slug}/resolution`, `GET /audit`, `GET /events` (SSE) |
+| P5 Review/publish (**full contract: §7.4**) | `GET /proposals?state&tab&cursor`, `GET /proposals/{slug}` (incl. `preview` artifact + hashes), `GET /proposals/{slug}/diff`, `POST /proposals/{slug}/decisions` `{ approve, reason, bundleHash, artifactHash, previewAt, discussionVersion, disputeVersion }`, `POST /proposals/{slug}/publish`, `POST /proposals/{slug}/conflict` `{ outcome: keep_current\|use_incoming\|merge, replacement? }`, `GET /ops/blocked`, `POST /ops/blocked/{slug}/resolution`, `GET /audit`, `GET /events` (SSE) |
 | P6 Discussions/MCP | `/topics`, `/topics/{id}/comments`, `/proposals/{slug}/discussion`, `/proposals/{slug}/disputes`, MCP at `/mcp` (streamable HTTP) |
 | P7 Quality | `POST /proposals/{slug}/quality-check`, `GET /proposals/{slug}/findings`, internal `GET /internal/v1/jobs/{id}/input`, `POST /internal/v1/jobs/{id}/result`, `/admin/models`, `/admin/rules` |
 | P8 Agent review | `GET /inbox?tab`, `POST /proposals/{slug}/escalations`, `/admin/review-settings`, `POST /admin/agent/pause` |
@@ -483,6 +484,232 @@ Worker-only; no job kind, schema or endpoint is added here (the `quality_check` 
 - **Quote verification**: a finding is kept only if `rule` is a loaded rule id, `quote.block` is a block of the prompt, and the NFC + whitespace-collapsed quote is a non-empty substring of the equally normalised block (case and punctuation exact). Dropped findings are counted by reason `unknown_rule | unknown_block | empty_quote | quote_not_found`; identical kept findings (rule, block, normalised quote) collapse to one.
 - **Dropped-hedge rule** (deterministic, advisory): a proposal sentence that is new (not verbatim in the original) and whose content-word Jaccard similarity to a hedged sentence of the base or a source is ≥ 0.6, but lacks one of that sentence's hedge terms (md-wiki `STRONG_HEDGE` + `suggest(s|ed)`, `có thể`, `giả thuyết`; whole-word, case-blind), yields a candidate `{ original, derived, hedges, similarity }`; each derived sentence is reported once, against its best match.
 
+### 7.4 Phase 5 — Review and publish (full contract, P5-00)
+
+Behavioural spec: `md-wiki/wiki_worker/core/worker.py` (`preview`, `review`, `publish`, `finish`, `resolve`, `conflict`, `resolve_conflict`, `integrity`) and its tests (`test_workflow.py`, `test_context.py`, `test_web.py` review/publish/recovery/conflict cases). Decisions D-75 … D-94. UI screens (F-07, F-09, F-10, F-13) bind to these contracts in P5-C/P5-D.
+
+#### 7.4.1 Data model (Prisma)
+
+```text
+enum PublicationPhase   prepared | writing | written | done | unknown | stale | not_written
+enum ResolutionOutcome  written | not_written
+enum ConflictOutcome    keep_current | use_incoming | merge
+enum ReviewerKind       agent | person                       -- status block / label vocabulary
+
+Assignment(id, proposalId → Proposal, assigneeId → User, reason text, trigger text?, createdById? → User,
+      createdAt, closedAt?)                                          index(assigneeId, closedAt)
+      partial unique(proposalId, assigneeId) WHERE closedAt IS NULL
+Decision(id, proposalId → Proposal unique, reviewerId → User, reviewerKind, approve bool, reason,
+      bundleHash, artifactHash, previewAt timestamptz(3), discussionVersion int, disputeVersion int, createdAt)
+      append-only
+Publication(id, proposalId → Proposal, attempt int, targetPath, decisionId → Decision, phase, auto bool,
+      actorId? → User, baseSha256?, artifactHash, condition jsonb, receipt jsonb?, error text?,
+      versionLabel?, startedAt, writtenAt?, finishedAt?, updatedAt)
+      unique(proposalId, attempt)  index(targetPath, phase)
+      partial unique(targetPath) WHERE phase IN (prepared, writing, written, unknown)   -- one open per page
+      partial unique(proposalId) WHERE phase IN (prepared, writing, written, unknown)
+Resolution(id, publicationId → Publication unique, proposalId, actorId → User, outcome, evidence text,
+      diskSha256?, createdAt)                                        append-only
+ConflictResolution(id, proposalId → Proposal unique, actorId → User, outcome, baseSha256?, currentSha256?,
+      replacementId? → Proposal, reason, createdAt)                  append-only
+Withdrawal(id, proposalId → Proposal unique, actorId → User, reason, createdAt)   append-only
+PublishOutbox(id, proposalId → Proposal, decisionId → Decision, kind approval|retry, attempts int default 0,
+      lastError text?, createdAt, processedAt?)
+      partial unique(proposalId) WHERE processedAt IS NULL           -- the outbox row of §8.1
+PublishedSection(publicationId → Publication, path, versionLabel, anchor, sectionHash, reviewerKind,
+      reviewedAt)                                                    pk(publicationId, anchor)
+      index(path, anchor, sectionHash)                               append-only
+```
+
+- `Decision.id` is **deterministic [D-76]**: `decisionId(proposalId, reviewerId, previewAt)` = the first 16 bytes of `sha256("md-wiki:decision\0" + proposalId + "\0" + reviewerId + "\0" + previewAt)` formatted as a UUID with version nibble `8` and RFC 4122 variant (`domain/review.ts`). The preview can therefore print the decision id in the status block before the decision exists, and a replayed decision maps to the same row.
+- `Publication.condition` = `{ kind: 'create' } | { kind: 'replace', expectedSha256 }` (§3.2), persisted at `prepared` before any write. `receipt` = the `WriteReceipt` (ISO dates) or `null` when the outcome was established by reading back (D-79).
+- `PublishedSection` is the "`section_hash` per section for every published version" record: one row per section of every artifact that reaches `done`, with the decision's `reviewerKind` and `reviewedAt = Decision.createdAt` (D-83).
+- A Postgres trigger rejects `UPDATE`/`DELETE` on `Decision`, `Resolution`, `ConflictResolution`, `Withdrawal`, `PublishedSection` (§4). `Assignment`, `Publication`, `PublishOutbox` are mutable state rows; every change to them is audited (§7.4.9).
+- `Proposal` keeps D-57: only `state`, `artifact`, `artifactHash`, `updatedAt` change. `artifact`/`artifactHash` are set once, by the approving decision.
+
+#### 7.4.2 Assignment (until Phase 8) [D-75]
+
+- On submit (same transaction as the proposal insert) one `Assignment` is opened for `pickAssignee(candidates, submitterId)` (`domain/review.ts`): the first **enabled human owner** ordered by `(createdAt, id)` who is not the submitter; if every enabled owner is the submitter, the first enabled human with role `publisher` then `reviewer` (highest role first, then `createdAt, id`) who is not the submitter; else nobody. `reason = 'owner'` or `'fallback_reviewer'`. Agents are never assignees before Phase 8.
+- No candidate → no assignment (the proposal waits; `assignment: null`). At decision time, a proposal without an open assignment re-runs the rule inside the decision transaction; if the caller is the one picked, the assignment is opened (audited `proposal.assigned`) and the decision proceeds. This heals proposals submitted before a reviewer existed without an Assign dialog (not designed).
+- The decision, a withdrawal and a `keep_current`/`use_incoming`/`merge` conflict resolution close every open assignment of the proposal (`closedAt = now`).
+- Migration backfill: every `pending` proposal without an assignment gets one by the same rule.
+
+#### 7.4.3 Preview and decision binding (`domain/review.ts`) [D-76, D-77]
+
+- **Preview** (in `GET /proposals/{slug}` while `pending`): `previewAt` = server time (ISO, ms, `Z`); `reviewerKind` = `person` for a human caller, `agent` for an agent; `decisionId = decisionId(proposal.id, caller.id, previewAt)`; `artifact = renderStatusBlock({ proposal: slug, decision: decisionId, reviewer: reviewerKind, decided_at: previewAt }) + proposed` (bytes: UTF-8 of the block followed by the frozen `proposed` bytes, never reserialized); `artifactHash = sha256(artifact)`. `binding = { bundleHash, artifactHash, previewAt, discussionVersion, disputeVersion }` is what the client sends back.
+- **Decision** `POST /proposals/{slug}/decisions` body `DecisionInput = { approve: boolean, reason: string (trimmed 1..4000), bundleHash: hex64, artifactHash: hex64, previewAt: ISO-8601, discussionVersion: int ≥ 0, disputeVersion: int ≥ 0 }`. The server recomputes the artifact from `(proposal, caller, previewAt)`; it never accepts artifact bytes from the client.
+- **Order of checks** (first failure wins; each its own code). Steps 1–3 are preconditions of any decision; 4–12 are §8.1 in its order:
+
+| # | Check | Code | Applies to |
+| --- | --- | --- | --- |
+| 1 | role ≥ reviewer and (session or token scope `review`) | `FORBIDDEN` | both |
+| 2 | proposal exists | `NOT_FOUND` | both |
+| 3 | idempotent replay: a `Decision` with id `decisionId(proposal, caller, previewAt)` exists with the same `approve`, `bundleHash`, `artifactHash` → `200` with the current detail (nothing changes) | — | both |
+| 4 | `state = pending` | `PRECONDITION_FAILED` | both |
+| 5 | caller holds an open assignment (after the self-heal of §7.4.2) | `NOT_ASSIGNED` | both |
+| 6 | caller ≠ submitter | `SELF_REVIEW` | both |
+| 7 | no open dispute or hold (`DiscussionState.disputed`, Phase 6 port → `false`) | `DISPUTED` | approve |
+| 8 | `bundleHash = proposal.bundleHash`, recomputed `artifactHash` = sent `artifactHash`, `previewAt` parses and is ≤ now + 5 s | `DECISION_BINDING_MISMATCH` | both |
+| 9 | `discussionVersion`, `disputeVersion` = `DiscussionState` versions (Phase 6 port → `0`, `0`) | `DISCUSSION_CHANGED` | both |
+| 10 | target observed live (§7.2.4) still has sha = `baseSha256` (or is still absent for a create) → else `STALE_BASE`; every source/scope pin observed live equals its sha → else `SOURCE_CHANGED` with `fields` as §7.2.4 | `STALE_BASE` / `SOURCE_CHANGED` | approve |
+| 11 | no publication of `targetPath` in phase `unknown` (or another proposal's open `prepared`/`writing`/`written`) | `TARGET_BLOCKED` | approve |
+| 12 | for agent callers: `EscalationTriggers.firing(...)` is empty (Phase 8 port → `[]`) | `ESCALATION_REQUIRED` | approve |
+
+  Step 10 folds md-wiki's context freshness (which includes the target) into the "sources fresh" step: a changed target uses `STALE_BASE`, the code already meaning "the page changed since it was read" **[D-77]**. A rejection skips 7, 10, 11, 12 (md-wiki: a changed source still allows rejection).
+- **Transaction** (all under the storage root lock, D-55 lock order: root lock → DB): observe target/sources (step 10) first, then one DB transaction that `SELECT … FOR UPDATE`s the `Proposal` row, re-reads state, assignment and `DiscussionState` (ports receive the transaction client), runs steps 4–12, inserts the `Decision`, sets `state` (`approved` with `artifact` + `artifactHash`, or `rejected`), closes assignments, audits `proposal.decided`, and — when approving with `AUTO_PUBLISH=true` — inserts the `PublishOutbox` row (audit `publication.queued`). `Decision.proposalId` is unique, so two concurrent decisions cannot both commit: the second waits on the row lock and then fails step 4 (`PRECONDITION_FAILED`), or at worst on the unique index (mapped to `PRECONDITION_FAILED`).
+- **Discussion race** (§11): Phase 6 writes to `ProposalDiscussion`/`DisputeEvent` must take the same `Proposal` row lock (`FOR UPDATE`) and bump the version in that transaction, so an entry posted during a decision either commits first (the decision then fails step 9) or waits until the decision commits.
+- **Auto-publish after approval** [D-82]: after the decision commits, the API processes the outbox row in the same request (§7.4.5) and returns the detail with the resulting publication state. A publish failure never undoes or fails the decision (`201` stays); the row stays pending for recovery.
+
+#### 7.4.4 Proposal state machine (expands §8.1)
+
+```text
+            decide(approve) [§7.4.3]              publish: done
+ pending ──────────────────────────▶ approved ─────────────────────▶ published
+    │  ╲                                 │   ╲ publish: base/source changed, or the
+    │   ╲ decide(reject) ──▶ rejected     │    ╲ conditional write lost a race ──▶ stale
+    │    ╲ withdraw ───────▶ rejected     │ withdraw (no open publication) ──▶ rejected
+    │     ╲ conflict resolved (§7.4.7) ─▶ rejected
+    ╰──── publication unknown keeps `approved`; the target is blocked until a Resolution
+```
+
+- Terminal: `published`, `rejected`, `stale` (a revision is a new proposal; a conflict resolution on a stale proposal records a `ConflictResolution` and leaves it `stale`).
+- `approved` + publication `unknown` = **blocked** (tab `blocked`); `approved` + resolution `not_written` = waits for the next publish attempt (auto: a `retry` outbox row; manual: a publisher).
+- Withdraw [D-85]: only the submitter (permission `proposal.submit`, else `FORBIDDEN`), state `pending`, or `approved` with no open publication (else `PRECONDITION_FAILED`), body `{ reason?: string ≤ 4000 }` (default `"withdrawn"`); writes `Withdrawal`, `state = rejected`, closes assignments, marks a pending outbox row processed, audits `proposal.withdrawn`.
+
+#### 7.4.5 Publish flow (expands §8.2) [D-78, D-79, D-81, D-92]
+
+`PublishService.publish(proposal, trigger)` runs entirely under the storage root lock; `trigger` is `manual(actor)` (`POST /publish`) or `auto(outbox)` (actor `system`, audit data `{ decisionId }`, shown as "system (auto-publish after <decision id>)").
+
+| Step | Action | On failure |
+| --- | --- | --- |
+| 0 | `state = published` → return `published` (idempotent, nothing written) | |
+| 1 | resume an open publication of this proposal: `written` → step 9; `writing` → classify (step 8); `unknown` → `TARGET_BLOCKED`; `prepared` → continue at step 2 with that row | |
+| 2 | `state = approved`, else `PRECONDITION_FAILED` | |
+| 3 | integrity: `sha256(manifest) = bundleHash = Decision.bundleHash`, `sha256(artifact) = artifactHash = Decision.artifactHash`, `artifact` = status block + `proposed` | `PRECONDITION_FAILED`, nothing written (md-wiki "approved artifact changed") |
+| 4 | another proposal's publication of the target is open (`prepared`/`writing`/`written`/`unknown`) | `TARGET_BLOCKED`; proposal stays `approved` |
+| 5 | every source/scope pin observed live equals its sha | proposal `stale`, publication `stale` (`error = 'source_changed'`) |
+| 6 | read the target once (`NOT_FOUND` = absent; **any other read error propagates, no phase is recorded**, md-wiki "failed read is not absence"); its sha ≠ `baseSha256` (or exists for a create) | proposal `stale`, publication `stale` (`error = 'base_changed'`) |
+| 7 | persist `prepared` (condition from step 6) in a transaction that locks the proposal row and re-checks `approved`; then persist `writing`; then `storage.write(target, artifact, condition, { proposal, decision, publication })` | see classification |
+| 8 | classify the write: `PRECONDITION_FAILED`/`ALREADY_EXISTS` → **stale** (the adapter checks before installing, so nothing was written; the out-of-band bytes stay); `VERIFY_FAILED` → **unknown**; any other error → read the target back once: sha = `artifactHash` → **written** with `receipt = null`, `error = 'receipt_missing:<code>'`; else (or the read-back fails) → **unknown** (`error = 'outcome_unknown:<code>'`) | unknown blocks the target |
+| 9 | `written` (receipt, `writtenAt`); **finish**: register the artifact bytes as the new version (snapshot capture with dedupe — the verified artifact, not a later read), write `PublishedSection` rows for `splitSections(artifact)`, set publication `done` (+ `versionLabel`, `finishedAt`), proposal `published`, `Page.changedOutsideReview = false` when the page's current sha is the artifact, mark the outbox row processed, audit; then observe the target once more so an out-of-band edit that landed after the write is indexed (and flagged changed outside review); reindex the search rows for the new version | finish is idempotent; a crash re-runs it |
+
+- No blind retry, no rollback: nothing re-writes after `writing` unless an owner records `not_written` (§7.4.6).
+- `POST /proposals/{slug}/publish` (`proposal.publish`: publisher, token scope `publish`, only when `AUTO_PUBLISH=false`, else `FORBIDDEN`) returns `200 ProposalDetailDto` whatever the outcome (`published`, `stale`, or blocked); errors: `NOT_FOUND`, `PRECONDITION_FAILED`, `TARGET_BLOCKED`, `STORAGE_ERROR` (step 6 read failed).
+- **Outbox** [D-81]: a pending `PublishOutbox` row is processed right after the approving commit and at boot. It is marked processed when the attempt reaches `done`, `stale` or `unknown`, or the proposal is no longer `approved`; `TARGET_BLOCKED` and transient errors (step 6) increment `attempts`, store `lastError`, and keep it pending. After an owner resolution on a target, the pending outbox rows of that target are processed again.
+- **Boot recovery** (after seeding and the boot reindex, before listening): (1) publications in `writing` (process died mid-write) → classify by reading back as step 8 (`written` → finish, else `unknown`); (2) `written` → finish; (3) `prepared` → resume through `publish` (no write had started); (4) pending outbox rows → process; (5) with `AUTO_PUBLISH=true`, `approved` proposals with no open publication, no pending outbox row and no `unknown` attempt get a `retry` outbox row and are processed. Each recovery step is audited with actor `system`.
+- Fault semantics (FixtureStorage, D-36) map to: `beforeRename` → read back = old bytes → `unknown`; `afterRename` → read back = artifact → `written` (receipt missing) → `done`; `beforeVerify` → `VERIFY_FAILED` → `unknown`; `receipt` → read back = artifact → `written` → `done`.
+
+#### 7.4.6 Blocked targets and resolution [D-80]
+
+- `GET /ops/blocked` (owner, `admin.recovery`) → `{ items: BlockedTargetDto[] }`, newest first: every publication in phase `unknown`, with a live read of the file (`disk.sha256`, `disk.matches: 'new' | 'old' | 'neither' | 'missing'`; read error → `disk = null`) and the approved proposals waiting behind it.
+- `POST /ops/blocked/{slug}/resolution` (owner) body `{ outcome: 'written' | 'not_written', evidence: string (trimmed 1..4000) }`, under the root lock: the proposal's open publication must be `unknown` (else `PRECONDITION_FAILED`; unknown slug → `NOT_FOUND`); the file is read: `written` requires sha = `artifactHash`, `not_written` requires sha ≠ `artifactHash` (else `PRECONDITION_FAILED`: "matching content is insufficient" is inverted here — the bytes carry the decision id, so a mismatch disproves `written` and a match disproves `not_written`). Inserts `Resolution` (with `diskSha256`); `written` → publication `written` → finish (§7.4.5 step 9); `not_written` → publication `not_written` (closed, the target is unblocked), proposal stays `approved`, and with `AUTO_PUBLISH=true` a `retry` outbox row is inserted and processed (it runs the full flow, so it goes `stale` when the file is neither version). F-13's three choices map to `written` / `not_written` / `not_written` ("Neither (restore from backup)"). Response `200 ProposalDetailDto`. Audit `publication.resolved { outcome, evidence, diskSha256 }`.
+
+#### 7.4.7 Conflicts (v1 / v2 / proposal) [D-84]
+
+A proposal has a **conflict** when it is `pending` or `stale` and the target's current sha differs from `baseSha256` (or a create's target now exists). md-wiki always compares against the frozen v1 bytes; nothing is rolled back to display it.
+
+- `ProposalDetailDto.conflict` (from the indexed current version, no storage IO): `{ section, scope: 'section' | 'page', base: { versionLabel, sha256 } | null, current: { versionLabel, sha256, publishedBy: { slug, reviewerKind } | null } | null, baseText, currentText, proposedText, resolution: ConflictResolutionDto | null }`. `scope = 'section'` when the proposal is section-scoped and the section exists in base, current and proposed; the three texts are then that section's region (`regionOf`), else the three whole bodies (status block stripped; `''` for an absent version). `publishedBy` names the proposal whose `done` publication produced the current sha.
+- `POST /proposals/{slug}/conflict` body `{ outcome: 'keep_current' | 'use_incoming' | 'merge', reason: string (trimmed 1..4000), replacement?: string }`. Allowed for the submitter (permission `proposal.submit`) or any role ≥ reviewer (`proposal.read`) — never through assignment; others `FORBIDDEN`. Under the root lock the target is observed live: no conflict → `PRECONDITION_FAILED`; already resolved (`ConflictResolution` exists) → `ALREADY_EXISTS`.
+  - `keep_current` ("Drop my change"): no replacement allowed (`VALIDATION_FAILED`).
+  - `use_incoming` ("Replace with mine"): `replacement` optional, default = `proposedText`; `merge` ("Combine both"): `replacement` required.
+  - The replacement is the editable region for `scope` (§7.2.3): it is spliced into the **current** body with `composeProposed(current, scope === 'section' ? section : null, replacement)` and frozen through the single freeze path (`ProposalFreezer`, §7.2) as a new proposal: same submitter and origin as the old one, base = the observed current snapshot, same title, `reason` = the given reason, same section/sources/scope pins/appliesTo (a changed pin → `SOURCE_CHANGED`, nothing recaptured), bundle rules apply (`NO_CHANGE` when the result equals current, etc.).
+  - In the same transaction (freeze `commit` hook): `ConflictResolution { outcome, baseSha256, currentSha256, replacementId }`; a `pending` proposal becomes `rejected` and its assignments close; a `stale` one stays `stale`; audit `proposal.conflict_resolved`.
+  - Response `201 ConflictResultDto = { resolution: ConflictResolutionDto, replacement: ProposalDto | null }`.
+
+#### 7.4.8 Endpoints
+
+All under `/api/v1`. New permission action **`proposal.read`** (min role `reviewer`, token scope `review`) **[D-86]** for workspace lists; `admin.recovery` and `admin.audit` are `admin.*` (owner).
+
+| Method | Path | Perm | Request | Response | Errors |
+| --- | --- | --- | --- | --- | --- |
+| GET | `/proposals` | `proposal.read` | `?tab=open\|stale\|blocked\|published\|rejected\|all` (default `open`) `&state=<ProposalState>` `&targetPath&limit&cursor` | `ProposalListDto` | `VALIDATION_FAILED` |
+| GET | `/proposals/{slug}` | `wiki.read` + (submitter or role ≥ reviewer) | | `ProposalDetailDto` | `NOT_FOUND` (also when not visible, D-63) |
+| GET | `/proposals/{slug}/diff` | as above | `?against=base\|current` (default `base`) | `ProposalDiffDto` | `NOT_FOUND`, `VALIDATION_FAILED` |
+| POST | `/proposals/{slug}/decisions` | `proposal.decide` (checks §7.4.3) | `DecisionInput` | `201 ProposalDetailDto` · `200` replay | table §7.4.3, `VALIDATION_FAILED`, `STORAGE_ERROR` |
+| POST | `/proposals/{slug}/publish` | `proposal.publish` | | `200 ProposalDetailDto` | §7.4.5 |
+| POST | `/proposals/{slug}/withdraw` | `proposal.submit` + submitter | `{ reason? }` | `200 ProposalDetailDto` | `FORBIDDEN`, `NOT_FOUND`, `PRECONDITION_FAILED` |
+| POST | `/proposals/{slug}/conflict` | §7.4.7 | `ConflictInput` | `201 ConflictResultDto` | `FORBIDDEN`, `NOT_FOUND`, `PRECONDITION_FAILED`, `ALREADY_EXISTS`, `VALIDATION_FAILED` (+ bundle codes), `SOURCE_CHANGED`, `STALE_BASE`, `PAYLOAD_TOO_LARGE` |
+| GET | `/ops/blocked` | `admin.recovery` | | `{ items: BlockedTargetDto[] }` | |
+| POST | `/ops/blocked/{slug}/resolution` | `admin.recovery` | `{ outcome, evidence }` | `200 ProposalDetailDto` | `NOT_FOUND`, `PRECONDITION_FAILED`, `VALIDATION_FAILED`, `STORAGE_ERROR` |
+| GET | `/audit` | `admin.audit` | `?action&subjectType&subjectId&actorId&limit&cursor` | `Page<AuditEventDto>` `at desc, id desc` | `VALIDATION_FAILED` |
+| GET | `/events` | `wiki.read` | `text/event-stream` | `EventDto` stream | |
+
+```ts
+type PublicationPhase = 'prepared' | 'writing' | 'written' | 'done' | 'unknown' | 'stale' | 'not_written';
+type ProposalTab = 'open' | 'stale' | 'blocked' | 'published' | 'rejected' | 'all';
+interface UserRefDto { id: string; name: string; kind: 'human' | 'agent' }
+interface AssignmentDto { id: string; assignee: UserRefDto; reason: string; trigger: string | null; createdAt: string }
+interface DecisionDto { id: string; reviewer: UserRefDto; reviewerKind: 'agent' | 'person'; approve: boolean; reason: string;
+  bundleHash: string; artifactHash: string; previewAt: string; discussionVersion: number; disputeVersion: number; createdAt: string }
+interface ResolutionDto { outcome: 'written' | 'not_written'; evidence: string; actor: UserRefDto; diskSha256: string | null; createdAt: string }
+interface PublicationDto { id: string; attempt: number; phase: PublicationPhase; auto: boolean; actor: UserRefDto | null;
+  baseSha256: string | null; artifactHash: string; receiptId: string | null; error: string | null; versionLabel: string | null;
+  startedAt: string; writtenAt: string | null; finishedAt: string | null; updatedAt: string; resolution: ResolutionDto | null }
+interface ProposalListItemDto {
+  slug: string; title: string; targetPath: string; pageTitle: string; section: string | null; sectionTitle: string | null;
+  submitter: UserRefDto; state: ProposalDto['state']; tab: Exclude<ProposalTab, 'all'>;
+  phase: PublicationPhase | null;                 // latest publication attempt
+  withdrawn: boolean; conflict: boolean;          // conflict = §7.4.7 condition on the indexed current version
+  assignees: UserRefDto[];                        // open assignments
+  decision: { approve: boolean; reviewer: UserRefDto; reviewerKind: 'agent' | 'person'; at: string } | null;
+  publishedVersion: string | null; autoPublished: boolean | null;   // quality summary arrives with Phase 7
+  createdAt: string; updatedAt: string }
+interface ProposalListDto { items: ProposalListItemDto[]; nextCursor: string | null; counts: Record<ProposalTab, number> }
+interface PreviewDto { artifact: string; artifactHash: string; previewAt: string; decisionId: string; reviewerKind: 'agent' | 'person';
+  binding: { bundleHash: string; artifactHash: string; previewAt: string; discussionVersion: number; disputeVersion: number } }
+interface RefStatusDto { role: 'target' | 'source' | 'scope'; path: string; versionLabel: string | null; sha256: string | null;
+  currentVersionLabel: string | null; current: boolean /* indexed sha = pinned sha (or both absent) */ }
+interface ProposalEventDto { id: string; at: string; action: string; actor: UserRefDto | null /* null = system */; data: object }
+interface ProposalDetailDto extends ProposalDto {
+  tab: ProposalListItemDto['tab']; withdrawn: { reason: string; at: string } | null;
+  preview: PreviewDto | null;                     // state pending only, computed for the caller
+  final: { artifact: string; artifactHash: string } | null;   // the approved artifact (approved/published)
+  assignment: AssignmentDto | null; decisions: DecisionDto[];
+  publication: PublicationDto | null; publications: PublicationDto[];   // latest first
+  blockedBy: { slug: string; phase: PublicationPhase } | null;          // another proposal holding the target
+  refs: RefStatusDto[]; conflict: ConflictDto | null;
+  discussion: { discussionVersion: number; disputeVersion: number; disputed: boolean };
+  can: { decide: boolean; publish: boolean; withdraw: boolean; resolveConflict: boolean; resolveBlocked: boolean };
+  history: ProposalEventDto[] }                   // audit events with this proposal as subject, oldest first
+interface ProposalDiffDto { against: 'base' | 'current'; from: { versionLabel: string | null; sha256: string | null; text: string };
+  to: { sha256: string; text: string /* preview/final artifact, or proposed when neither */ };
+  lines: DiffLine[] /* domain/line-diff */; stats: { added: number; removed: number } }
+interface ConflictInput { outcome: 'keep_current' | 'use_incoming' | 'merge'; reason: string; replacement?: string }
+interface ConflictResolutionDto { outcome: ConflictInput['outcome']; actor: UserRefDto; reason: string; baseSha256: string | null;
+  currentSha256: string | null; replacementSlug: string | null; createdAt: string }
+interface BlockedTargetDto { slug: string; title: string; targetPath: string; pageTitle: string; since: string; error: string | null;
+  publicationId: string; expected: { sha256: string }; old: { sha256: string | null };
+  disk: { sha256: string | null; matches: 'new' | 'old' | 'neither' | 'missing' } | null; waiting: string[] }
+interface AuditEventDto { id: string; at: string; action: string; actorKind: 'human' | 'agent' | 'system'; actor: UserRefDto | null;
+  subjectType: string; subjectId: string; data: object }
+interface EventDto { type: EventType; slug?: string; path?: string; state?: string; phase?: PublicationPhase; at: string }
+```
+
+- **Tabs [D-87]** (`tabOf(state, phase, withdrawn)` in `domain/review.ts`): `blocked` = `approved` and latest publication `unknown`; `open` = `pending`, or `approved` and not blocked; `stale`; `published`; `rejected` (incl. withdrawn). `counts` covers every tab (with `state`/`targetPath` filters applied, not the tab filter); `all` = their sum. Order `createdAt desc, id desc`; cursor as §7.2.6 (`<epoch ms>.<uuid>`).
+- `diff`: `against=base` compares the frozen base body (`''` for a create) with the artifact the caller would approve (preview while `pending`, else `final`, else `proposed`); `against=current` compares the indexed current version's body instead. Line numbers are those of the stored files (D-33).
+- `ProposalDetailDto.can.*` is computed by the API (`domain/permissions.can` + state) so the web never re-derives permissions: `decide` = steps 1, 4, 5, 6 pass; `publish` = `proposal.publish` allowed and `approved` and not blocked; `withdraw`, `resolveConflict` (`conflict` and no resolution), `resolveBlocked` (owner and phase `unknown`).
+
+#### 7.4.9 Audit events [D-90]
+
+Every transition writes one `AuditEvent` in the transaction that makes it (subject `proposal` = proposal id unless noted): `proposal.assigned {assigneeId, reason}` · `proposal.decided {decisionId, approve, bundleHash, artifactHash, previewAt, discussionVersion, disputeVersion}` · `proposal.withdrawn {reason}` · `publication.queued {decisionId, kind}` · `publication.prepared {publicationId, attempt, condition}` · `publication.writing {publicationId}` · `publication.written {publicationId, receiptId, afterSha256, recovered}` · `publication.unknown {publicationId, error}` · `publication.stale {publicationId, error}` · `proposal.published {publicationId, versionLabel, auto, decisionId}` · `publication.resolved {publicationId, outcome, evidence, diskSha256}` · `proposal.conflict_resolved {outcome, replacementSlug, baseSha256, currentSha256}`. Actor: the caller, or `system` (auto-publish, recovery) with `data.decisionId`.
+
+#### 7.4.10 History, recent changes, changed outside review [D-89, D-93]
+
+- `PublicationLookup.lastPublishedSha256(path)` = `artifactHash` of the latest publication of that path in phase `written` or `done` (`writtenAt desc`); `null` = never published through review. The indexer's `changedOutsideReview` (§3.6) becomes real; finish clears it for the published sha.
+- `VersionDto` gains `publication: VersionPublicationDto | null` and `RecentChangeDto` gains `{ proposalSlug: string | null, sectionTitle: string | null, summary: string | null }`, where `VersionPublicationDto = { proposalSlug, title, sectionTitle, reviewerKind, decidedAt, publishedAt, auto }`; `summary` = the proposal title, `sectionTitle` = the title of the proposal's section in the published version (null for whole-page proposals). Matched by `(path, versionLabel)` of a `done` publication. Presentation of *Changed outside review* and of these fields belongs to the UI tasks (P5-C, D-47/D-48); the API only provides the data.
+- Section labels (§6): `SectionLabels` reads `PublishedSection` rows for `(path, anchor, sectionHash)` as `reviewedVersions` (kind = `reviewerKind`, time = `reviewedAt`), so every section of a published artifact is `reviewed` with its reviewer kind; a later edit (new hash) falls back to `not_reviewed` until reviewed again.
+
+#### 7.4.11 Events (SSE) [D-88]
+
+`GET /events` streams `text/event-stream`; each message has `event: <type>` and `data: EventDto` (JSON). A `ping` event every 25 s keeps proxies open. Events are emitted after the transaction commits, in-process (one API process per deployment, plan.md › Open decisions: one host):
+
+| `type` | Payload | Invalidates (web query keys) | Audience |
+| --- | --- | --- | --- |
+| `proposal.changed` | `slug, state, phase?` | `['proposals']`, `['proposal', slug]`, `['suggestions']` | role ≥ reviewer, and the submitter |
+| `publication.changed` | `slug, phase` | `['proposal', slug]`, `['ops', 'blocked']` | role ≥ reviewer, and the submitter |
+| `page.changed` | `path` | `['page', path]`, `['tree']`, `['recent']`, `['search']`, `['history', path]` | everyone with `wiki.read` |
+| `ping` | `at` | — | everyone |
+
 ## 8. State machines
 
 ### 8.1 Proposal
@@ -494,13 +721,13 @@ approved ─base changed at publish─▶ stale
 (any non-terminal) withdraw by submitter ──▶ rejected (reason "withdrawn")
 ```
 
-- Terminal: `published`, `rejected`, `stale`. A revision is a new proposal.
+- Terminal: `published`, `rejected`, `stale`. A revision is a new proposal. Full transition rules, guards and transactions: §7.4.3–§7.4.4.
 - `decide(approve)` preconditions, checked in this order, each with its own code: assignment open (`NOT_ASSIGNED`), not self (`SELF_REVIEW`), no open dispute/hold (`DISPUTED`), bound hashes equal current (`DECISION_BINDING_MISMATCH`), discussion/dispute versions equal current (`DISCUSSION_CHANGED`), sources fresh (`SOURCE_CHANGED`), target not blocked (`TARGET_BLOCKED`), for agents: no mandatory trigger fires (`ESCALATION_REQUIRED`, Phase 8).
 - `AUTO_PUBLISH=true`: the approve transaction enqueues publish in the same DB transaction (outbox row); a crash between approval and publish is resumed on boot.
 
 ### 8.2 Publication phases
 
-`prepared → writing → written → done`; failures: precondition fails before write → proposal `stale`, publication `stale`; outcome not knowable (crash/timeout after `writing`) → `unknown` and the target path is **blocked** until an owner records a `Resolution(written|not_written, evidence)`. No blind retry, no rollback.
+`prepared → writing → written → done`; failures: precondition fails before write → proposal `stale`, publication `stale`; outcome not knowable (crash/timeout after `writing`) → `unknown` and the target path is **blocked** until an owner records a `Resolution(written|not_written, evidence)`. No blind retry, no rollback. Step table, write classification, outbox and boot recovery: §7.4.5–§7.4.6.
 
 ## 9. Error codes (`domain/errors.ts`)
 

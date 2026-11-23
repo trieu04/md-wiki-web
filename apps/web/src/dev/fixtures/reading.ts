@@ -82,7 +82,12 @@ export const visualPageTopic = {
 
 export const visualHistory = {
   items: [
-    { versionLabel: visualPage.versionLabel, sha256: visualPage.sha256, capturedAt: updatedAt },
+    {
+      versionLabel: visualPage.versionLabel,
+      sha256: visualPage.sha256,
+      capturedAt: updatedAt,
+      publication: null,
+    },
   ],
   nextCursor: null,
 } satisfies components['schemas']['HistoryDto'];

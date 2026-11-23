@@ -2,7 +2,12 @@ import { pageTitle, splitSections, topicId, topicName, topicNames } from '@md-wi
 import type { WikiPath } from '@md-wiki/domain';
 import type { PrismaClient } from '@prisma/client';
 import { AppError } from '../../common/app-error.js';
-import { decodeMarkdown, type ReadResult, type WikiStorage } from '../storage/wiki-storage.js';
+import {
+  decodeMarkdown,
+  sha256,
+  type ReadResult,
+  type WikiStorage,
+} from '../storage/wiki-storage.js';
 import type { PublicationLookup } from './publication-lookup.js';
 import { captureSnapshot } from './snapshots.js';
 
@@ -94,6 +99,18 @@ export class WikiIndexer {
         sha256: file.sha256,
         content: file.content,
       };
+    });
+  }
+
+  /**
+   * Register bytes this API just wrote and verified (publish finish, system-logic §7.4.5): the
+   * new version is the artifact itself, not a later read. Returns its version label. The caller
+   * observes the path afterwards so a later out-of-band edit is indexed on top.
+   */
+  async register(path: WikiPath, content: Buffer): Promise<string> {
+    return this.storage.withRootLock(async () => {
+      const file: ReadResult = { path, content, sha256: sha256(content), mtime: this.now() };
+      return this.index(file, decodeMarkdown(content), false);
     });
   }
 

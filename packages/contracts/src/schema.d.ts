@@ -100,6 +100,22 @@ export interface paths {
         patch: operations["AdminController_updateUser"];
         trace?: never;
     };
+    "/api/v1/audit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["AuditController_audit"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/auth/login": {
         parameters: {
             query?: never;
@@ -356,6 +372,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["EventsController_stream"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/health": {
         parameters: {
             query?: never;
@@ -398,6 +430,150 @@ export interface paths {
         get: operations["MetaController_get"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/ops/blocked": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["OpsController_blocked"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/ops/blocked/{slug}/resolution": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["OpsController_resolve"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/proposals": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ProposalsController_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/proposals/{slug}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ProposalsController_detail"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/proposals/{slug}/conflict": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["ProposalsController_conflict"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/proposals/{slug}/decisions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["ProposalsController_decide"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/proposals/{slug}/diff": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ProposalsController_diff"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/proposals/{slug}/publish": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["ProposalsController_publish"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/proposals/{slug}/withdraw": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["ProposalsController_withdraw"];
         delete?: never;
         options?: never;
         head?: never;
@@ -564,7 +740,115 @@ export interface components {
             name: string;
             version: string;
         };
+        AssignmentDto: {
+            assignee: components["schemas"]["UserRefDto"];
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: uuid */
+            id: string;
+            reason: string;
+            trigger: string | null;
+        };
+        AuditEventDto: {
+            action: string;
+            actor: components["schemas"]["UserRefDto"] | null;
+            /** @enum {string} */
+            actorKind: "human" | "agent" | "system";
+            /** Format: date-time */
+            at: string;
+            data: {
+                [key: string]: unknown;
+            };
+            /** Format: uuid */
+            id: string;
+            subjectId: string;
+            subjectType: string;
+        };
+        AuditPageDto: {
+            items: components["schemas"]["AuditEventDto"][];
+            nextCursor: string | null;
+        };
         BaseRefInput: {
+            sha256: string;
+            versionLabel: string;
+        };
+        BindingDto: {
+            artifactHash: string;
+            bundleHash: string;
+            discussionVersion: number;
+            disputeVersion: number;
+            /** Format: date-time */
+            previewAt: string;
+        };
+        BlockedByDto: {
+            phase: components["schemas"]["PublicationPhase"];
+            slug: string;
+        };
+        BlockedListDto: {
+            items: components["schemas"]["BlockedTargetDto"][];
+        };
+        BlockedTargetDto: {
+            /** @description null when the file could not be read */
+            disk: components["schemas"]["DiskDto"] | null;
+            error: string | null;
+            expected: components["schemas"]["ShaDto"];
+            old: components["schemas"]["OldShaDto"];
+            pageTitle: string;
+            /** Format: uuid */
+            publicationId: string;
+            /** Format: date-time */
+            since: string;
+            slug: string;
+            targetPath: string;
+            title: string;
+            waiting: string[];
+        };
+        CanDto: {
+            decide: boolean;
+            publish: boolean;
+            resolveBlocked: boolean;
+            resolveConflict: boolean;
+            withdraw: boolean;
+        };
+        ConflictCurrentDto: {
+            publishedBy: components["schemas"]["PublishedByDto"] | null;
+            sha256: string;
+            versionLabel: string;
+        };
+        ConflictDto: {
+            base: components["schemas"]["ConflictVersionDto"] | null;
+            baseText: string;
+            current: components["schemas"]["ConflictCurrentDto"] | null;
+            currentText: string;
+            proposedText: string;
+            resolution: components["schemas"]["ConflictResolutionDto"] | null;
+            /** @enum {string} */
+            scope: "section" | "page";
+            section: string | null;
+        };
+        ConflictInput: {
+            /** @enum {string} */
+            outcome: "keep_current" | "use_incoming" | "merge";
+            reason: string;
+            /** @description The edited region (section or whole page) */
+            replacement?: string;
+        };
+        ConflictResolutionDto: {
+            actor: components["schemas"]["UserRefDto"];
+            baseSha256: string | null;
+            /** Format: date-time */
+            createdAt: string;
+            currentSha256: string | null;
+            /** @enum {string} */
+            outcome: "keep_current" | "use_incoming" | "merge";
+            reason: string;
+            replacementSlug: string | null;
+        };
+        ConflictResultDto: {
+            replacement: components["schemas"]["ProposalDto"] | null;
+            resolution: components["schemas"]["ConflictResolutionDto"];
+        };
+        ConflictVersionDto: {
             sha256: string;
             versionLabel: string;
         };
@@ -647,6 +931,63 @@ export interface components {
             /** Format: uuid */
             teamId: string | null;
         };
+        DecisionDto: {
+            approve: boolean;
+            artifactHash: string;
+            bundleHash: string;
+            /** Format: date-time */
+            createdAt: string;
+            discussionVersion: number;
+            disputeVersion: number;
+            /** Format: uuid */
+            id: string;
+            /** Format: date-time */
+            previewAt: string;
+            reason: string;
+            reviewer: components["schemas"]["UserRefDto"];
+            /** @enum {string} */
+            reviewerKind: "agent" | "person";
+        };
+        DecisionInput: {
+            approve: boolean;
+            artifactHash: string;
+            bundleHash: string;
+            discussionVersion: number;
+            disputeVersion: number;
+            /** Format: date-time */
+            previewAt: string;
+            reason: string;
+        };
+        DiffFromDto: {
+            sha256: string | null;
+            text: string;
+            versionLabel: string | null;
+        };
+        DiffLineDto: {
+            /** @enum {string} */
+            kind: "same" | "del" | "add";
+            newLine: number | null;
+            oldLine: number | null;
+            text: string;
+        };
+        DiffStatsDto: {
+            added: number;
+            removed: number;
+        };
+        DiffToDto: {
+            sha256: string;
+            text: string;
+        };
+        DiscussionDto: {
+            discussionVersion: number;
+            disputed: boolean;
+            disputeVersion: number;
+        };
+        DiskDto: {
+            /** @enum {string} */
+            matches: "new" | "old" | "neither" | "missing";
+            sha256: string | null;
+        };
         DraftBaseDto: {
             /** Format: date-time */
             capturedAt: string;
@@ -692,10 +1033,25 @@ export interface components {
         };
         /** @enum {string} */
         ErrorCode: "VALIDATION_FAILED" | "INVALID_PATH" | "UNAUTHENTICATED" | "INVALID_CREDENTIALS" | "CSRF_INVALID" | "FORBIDDEN" | "ACCOUNT_DISABLED" | "NOT_FOUND" | "ALREADY_EXISTS" | "PRECONDITION_FAILED" | "SELF_REVIEW" | "NOT_ASSIGNED" | "DISPUTED" | "DECISION_BINDING_MISMATCH" | "DISCUSSION_CHANGED" | "SOURCE_CHANGED" | "TARGET_BLOCKED" | "ESCALATION_REQUIRED" | "SECTION_CHANGED" | "STALE_BASE" | "EMAIL_TAKEN" | "LAST_OWNER" | "PAYLOAD_TOO_LARGE" | "RATE_LIMITED" | "STORAGE_ERROR" | "VERIFY_FAILED" | "INTERNAL";
+        EventDto: {
+            /** Format: date-time */
+            at: string;
+            path?: string;
+            phase?: components["schemas"]["PublicationPhase"];
+            slug?: string;
+            state?: string;
+            type: components["schemas"]["EventType"];
+        };
+        /** @enum {string} */
+        EventType: "proposal.changed" | "publication.changed" | "page.changed" | "ping";
         FieldProblemDto: {
             code: string;
             message: string;
             path: string;
+        };
+        FinalDto: {
+            artifact: string;
+            artifactHash: string;
         };
         HealthDto: {
             /** @enum {string} */
@@ -725,6 +1081,14 @@ export interface components {
             /** Format: date-time */
             since: string | null;
         };
+        ListDecisionDto: {
+            approve: boolean;
+            /** Format: date-time */
+            at: string;
+            reviewer: components["schemas"]["UserRefDto"];
+            /** @enum {string} */
+            reviewerKind: "agent" | "person";
+        };
         LoginDto: {
             csrfToken: string;
             user: components["schemas"]["MeDto"];
@@ -751,6 +1115,9 @@ export interface components {
         MetaDto: {
             wikiDescription: string;
             wikiName: string;
+        };
+        OldShaDto: {
+            sha256: string | null;
         };
         PageDto: {
             changedOutsideReview: boolean;
@@ -790,6 +1157,18 @@ export interface components {
             sha256: string;
             versionLabel: string;
         };
+        PreviewDto: {
+            /** @description The exact file that approval publishes */
+            artifact: string;
+            artifactHash: string;
+            binding: components["schemas"]["BindingDto"];
+            /** Format: uuid */
+            decisionId: string;
+            /** Format: date-time */
+            previewAt: string;
+            /** @enum {string} */
+            reviewerKind: "agent" | "person";
+        };
         ProblemDto: {
             code: components["schemas"]["ErrorCode"];
             detail?: string;
@@ -798,6 +1177,53 @@ export interface components {
             status: number;
             title: string;
             type: string;
+        };
+        ProposalDetailDto: {
+            appliesTo: components["schemas"]["AppliesToDto"][];
+            assignment: components["schemas"]["AssignmentDto"] | null;
+            base: components["schemas"]["PinnedRefDto"] | null;
+            blockedBy: components["schemas"]["BlockedByDto"] | null;
+            bundleHash: string;
+            can: components["schemas"]["CanDto"];
+            conflict: components["schemas"]["ConflictDto"] | null;
+            /** Format: date-time */
+            createdAt: string;
+            decisions: components["schemas"]["DecisionDto"][];
+            discussion: components["schemas"]["DiscussionDto"];
+            final: components["schemas"]["FinalDto"] | null;
+            history: components["schemas"]["ProposalEventDto"][];
+            /** Format: uuid */
+            id: string;
+            /** @enum {string} */
+            origin: "editor" | "api" | "import";
+            pageTitle: string;
+            preview: components["schemas"]["PreviewDto"] | null;
+            proposedSha256: string;
+            publication: components["schemas"]["PublicationDto"] | null;
+            publications: components["schemas"]["PublicationDto"][];
+            reason: string;
+            refs: components["schemas"]["RefStatusDto"][];
+            scope: components["schemas"]["ScopeRowDto"][];
+            section: string | null;
+            sectionTitle: string | null;
+            slug: string;
+            sources: components["schemas"]["PinnedRefDto"][];
+            /** @enum {string} */
+            state: "pending" | "approved" | "published" | "rejected" | "stale";
+            submitter: components["schemas"]["SubmitterDto"];
+            /** @enum {string} */
+            tab: "open" | "stale" | "blocked" | "published" | "rejected";
+            targetPath: string;
+            title: string;
+            withdrawn: components["schemas"]["WithdrawnDto"] | null;
+        };
+        ProposalDiffDto: {
+            /** @enum {string} */
+            against: "base" | "current";
+            from: components["schemas"]["DiffFromDto"];
+            lines: components["schemas"]["DiffLineDto"][];
+            stats: components["schemas"]["DiffStatsDto"];
+            to: components["schemas"]["DiffToDto"];
         };
         ProposalDto: {
             appliesTo: components["schemas"]["AppliesToDto"][];
@@ -823,6 +1249,76 @@ export interface components {
             targetPath: string;
             title: string;
         };
+        ProposalEventDto: {
+            action: string;
+            /** @description null = system */
+            actor: components["schemas"]["UserRefDto"] | null;
+            /** Format: date-time */
+            at: string;
+            data: {
+                [key: string]: unknown;
+            };
+            /** Format: uuid */
+            id: string;
+        };
+        ProposalListDto: {
+            counts: components["schemas"]["TabCountsDto"];
+            items: components["schemas"]["ProposalListItemDto"][];
+            nextCursor: string | null;
+        };
+        ProposalListItemDto: {
+            assignees: components["schemas"]["UserRefDto"][];
+            autoPublished: boolean | null;
+            conflict: boolean;
+            /** Format: date-time */
+            createdAt: string;
+            decision: components["schemas"]["ListDecisionDto"] | null;
+            pageTitle: string;
+            phase: components["schemas"]["PublicationPhase"] | null;
+            publishedVersion: string | null;
+            section: string | null;
+            sectionTitle: string | null;
+            slug: string;
+            /** @enum {string} */
+            state: "pending" | "approved" | "published" | "rejected" | "stale";
+            submitter: components["schemas"]["UserRefDto"];
+            /** @enum {string} */
+            tab: "open" | "stale" | "blocked" | "published" | "rejected";
+            targetPath: string;
+            title: string;
+            /** Format: date-time */
+            updatedAt: string;
+            withdrawn: boolean;
+        };
+        PublicationDto: {
+            actor: components["schemas"]["UserRefDto"] | null;
+            artifactHash: string;
+            attempt: number;
+            auto: boolean;
+            baseSha256: string | null;
+            error: string | null;
+            /** Format: date-time */
+            finishedAt: string | null;
+            /** Format: uuid */
+            id: string;
+            phase: components["schemas"]["PublicationPhase"];
+            receiptId: string | null;
+            resolution: components["schemas"]["ResolutionDto"] | null;
+            /** Format: date-time */
+            startedAt: string;
+            /** Format: date-time */
+            updatedAt: string;
+            versionLabel: string | null;
+            /** Format: date-time */
+            writtenAt: string | null;
+        };
+        /** @enum {string} */
+        PublicationPhase: "prepared" | "writing" | "written" | "done" | "unknown" | "stale" | "not_written";
+        PublishedByDto: {
+            /** @enum {string} */
+            reviewerKind: "agent" | "person";
+            slug: string;
+        };
         RebaseInput: {
             /**
              * @default auto
@@ -836,16 +1332,43 @@ export interface components {
             changedOutsideReview: boolean;
             pageTitle: string;
             path: string;
+            proposalSlug: string | null;
+            sectionTitle: string | null;
+            summary: string | null;
             versionLabel: string;
         };
         RecentDto: {
             items: components["schemas"]["RecentChangeDto"][];
             nextCursor: string | null;
         };
+        RefStatusDto: {
+            /** @description Unchanged since the author read it */
+            current: boolean;
+            currentVersionLabel: string | null;
+            path: string;
+            /** @enum {string} */
+            role: "target" | "source" | "scope";
+            sha256: string | null;
+            versionLabel: string | null;
+        };
         ReindexDto: {
             changed: number;
             durationMs: number;
             scanned: number;
+        };
+        ResolutionDto: {
+            actor: components["schemas"]["UserRefDto"];
+            /** Format: date-time */
+            createdAt: string;
+            diskSha256: string | null;
+            evidence: string;
+            /** @enum {string} */
+            outcome: "written" | "not_written";
+        };
+        ResolutionInput: {
+            evidence: string;
+            /** @enum {string} */
+            outcome: "written" | "not_written";
         };
         ScopeInput: {
             /** @description Only null (whole page) is accepted */
@@ -910,6 +1433,9 @@ export interface components {
             csrfToken: string | null;
             user: components["schemas"]["MeDto"] | null;
         };
+        ShaDto: {
+            sha256: string;
+        };
         SnippetDto: {
             after: string;
             before: string;
@@ -943,6 +1469,14 @@ export interface components {
             items: components["schemas"]["SuggestionDto"][];
             nextCursor: string | null;
             total: number;
+        };
+        TabCountsDto: {
+            all: number;
+            blocked: number;
+            open: number;
+            published: number;
+            rejected: number;
+            stale: number;
         };
         TeamDto: {
             /** Format: uuid */
@@ -1021,6 +1555,13 @@ export interface components {
             /** Format: uuid */
             teamId: string | null;
         };
+        UserRefDto: {
+            /** Format: uuid */
+            id: string;
+            /** @enum {string} */
+            kind: "human" | "agent";
+            name: string;
+        };
         UsersDto: {
             items: components["schemas"]["UserDto"][];
             /** Format: uuid */
@@ -1029,12 +1570,33 @@ export interface components {
         VersionDto: {
             /** Format: date-time */
             capturedAt: string;
+            publication: components["schemas"]["VersionPublicationDto"] | null;
             sha256: string;
             versionLabel: string;
+        };
+        VersionPublicationDto: {
+            auto: boolean;
+            /** Format: date-time */
+            decidedAt: string;
+            proposalSlug: string;
+            /** Format: date-time */
+            publishedAt: string;
+            /** @enum {string} */
+            reviewerKind: "agent" | "person";
+            sectionTitle: string | null;
+            title: string;
         };
         VersionRefInput: {
             path: string;
             versionLabel: string;
+        };
+        WithdrawInput: {
+            reason?: string;
+        };
+        WithdrawnDto: {
+            /** Format: date-time */
+            at: string;
+            reason: string;
         };
     };
     responses: never;
@@ -1531,6 +2093,59 @@ export interface operations {
             };
             /** @description LAST_OWNER | EMAIL_TAKEN */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+        };
+    };
+    AuditController_audit: {
+        parameters: {
+            query?: {
+                action?: string;
+                actorId?: string;
+                cursor?: string;
+                limit?: number;
+                subjectId?: string;
+                subjectType?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AuditPageDto"];
+                };
+            };
+            /** @description VALIDATION_FAILED */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description UNAUTHENTICATED */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description FORBIDDEN | ACCOUNT_DISABLED */
+            403: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -2696,6 +3311,44 @@ export interface operations {
             };
         };
     };
+    EventsController_stream: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description One `event: <type>` + `data: EventDto` message per state change */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/event-stream": components["schemas"]["EventDto"];
+                };
+            };
+            /** @description UNAUTHENTICATED */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description FORBIDDEN | ACCOUNT_DISABLED */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+        };
+    };
     HealthController_report: {
         parameters: {
             query?: never;
@@ -2788,6 +3441,604 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["MetaDto"];
+                };
+            };
+        };
+    };
+    OpsController_blocked: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BlockedListDto"];
+                };
+            };
+            /** @description UNAUTHENTICATED */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description FORBIDDEN | ACCOUNT_DISABLED | CSRF_INVALID */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+        };
+    };
+    OpsController_resolve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ResolutionInput"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProposalDetailDto"];
+                };
+            };
+            /** @description VALIDATION_FAILED */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description UNAUTHENTICATED */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description FORBIDDEN | ACCOUNT_DISABLED | CSRF_INVALID */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description NOT_FOUND */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description PRECONDITION_FAILED */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description STORAGE_ERROR */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+        };
+    };
+    ProposalsController_list: {
+        parameters: {
+            query?: {
+                cursor?: string;
+                limit?: number;
+                state?: "pending" | "approved" | "published" | "rejected" | "stale";
+                tab?: "open" | "stale" | "blocked" | "published" | "rejected" | "all";
+                targetPath?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProposalListDto"];
+                };
+            };
+            /** @description VALIDATION_FAILED */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description UNAUTHENTICATED */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description FORBIDDEN | ACCOUNT_DISABLED | CSRF_INVALID */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+        };
+    };
+    ProposalsController_detail: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProposalDetailDto"];
+                };
+            };
+            /** @description VALIDATION_FAILED */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description UNAUTHENTICATED */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description FORBIDDEN | ACCOUNT_DISABLED | CSRF_INVALID */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description NOT_FOUND */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+        };
+    };
+    ProposalsController_conflict: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConflictInput"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConflictResultDto"];
+                };
+            };
+            /** @description VALIDATION_FAILED */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description UNAUTHENTICATED */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description FORBIDDEN | ACCOUNT_DISABLED | CSRF_INVALID */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description NOT_FOUND */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description PRECONDITION_FAILED | ALREADY_EXISTS | SOURCE_CHANGED | STALE_BASE */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description PAYLOAD_TOO_LARGE */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+        };
+    };
+    ProposalsController_decide: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DecisionInput"];
+            };
+        };
+        responses: {
+            /** @description Replay of an already recorded decision */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProposalDetailDto"];
+                };
+            };
+            /** @description Decision recorded (and, with AUTO_PUBLISH, the publish attempted) */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProposalDetailDto"];
+                };
+            };
+            /** @description VALIDATION_FAILED */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description UNAUTHENTICATED */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description FORBIDDEN | ACCOUNT_DISABLED | CSRF_INVALID */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description NOT_FOUND */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description PRECONDITION_FAILED | NOT_ASSIGNED | SELF_REVIEW | DISPUTED | DECISION_BINDING_MISMATCH | DISCUSSION_CHANGED | STALE_BASE | SOURCE_CHANGED | TARGET_BLOCKED | ESCALATION_REQUIRED */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description STORAGE_ERROR */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+        };
+    };
+    ProposalsController_diff: {
+        parameters: {
+            query?: {
+                against?: "base" | "current";
+            };
+            header?: never;
+            path: {
+                slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProposalDiffDto"];
+                };
+            };
+            /** @description VALIDATION_FAILED */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description UNAUTHENTICATED */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description FORBIDDEN | ACCOUNT_DISABLED | CSRF_INVALID */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description NOT_FOUND */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+        };
+    };
+    ProposalsController_publish: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Published, stale or blocked: see publication */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProposalDetailDto"];
+                };
+            };
+            /** @description VALIDATION_FAILED */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description UNAUTHENTICATED */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description FORBIDDEN | ACCOUNT_DISABLED | CSRF_INVALID */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description NOT_FOUND */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description PRECONDITION_FAILED | TARGET_BLOCKED */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description STORAGE_ERROR */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+        };
+    };
+    ProposalsController_withdraw: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WithdrawInput"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProposalDetailDto"];
+                };
+            };
+            /** @description VALIDATION_FAILED */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description UNAUTHENTICATED */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description FORBIDDEN | ACCOUNT_DISABLED | CSRF_INVALID */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description NOT_FOUND */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description PRECONDITION_FAILED */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
                 };
             };
         };

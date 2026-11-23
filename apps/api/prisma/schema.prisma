@@ -51,21 +51,28 @@ model Team {
 }
 
 model User {
-  id           String       @id @default(uuid(7)) @db.Uuid
-  email        String       @unique @db.Citext
+  id           String               @id @default(uuid(7)) @db.Uuid
+  email        String               @unique @db.Citext
   name         String
   kind         UserKind
   roles        Role[]
-  teamId       String?      @db.Uuid
-  team         Team?        @relation(fields: [teamId], references: [id])
+  teamId       String?              @db.Uuid
+  team         Team?                @relation(fields: [teamId], references: [id])
   passwordHash String?
-  disabledAt   DateTime?    @db.Timestamptz(3)
-  createdAt    DateTime     @default(now()) @db.Timestamptz(3)
+  disabledAt   DateTime?            @db.Timestamptz(3)
+  createdAt    DateTime             @default(now()) @db.Timestamptz(3)
   sessions     Session[]
   tokens       ApiToken[]
   events       AuditEvent[]
   drafts       Draft[]
   proposals    Proposal[]
+  assignments  Assignment[]         @relation("assignee")
+  assigned     Assignment[]         @relation("assignedBy")
+  decisions    Decision[]
+  publications Publication[]
+  resolutions  Resolution[]
+  conflicts    ConflictResolution[]
+  withdrawals  Withdrawal[]
 }
 
 model Session {
@@ -217,15 +224,15 @@ model Draft {
 }
 
 model Proposal {
-  id             String         @id @default(uuid(7)) @db.Uuid
-  slug           String         @unique
+  id             String               @id @default(uuid(7)) @db.Uuid
+  slug           String               @unique
   title          String
   targetPath     String
   section        String?
-  submitterId    String         @db.Uuid
-  submitter      User           @relation(fields: [submitterId], references: [id])
+  submitterId    String               @db.Uuid
+  submitter      User                 @relation(fields: [submitterId], references: [id])
   origin         ProposalOrigin
-  state          ProposalState  @default(pending)
+  state          ProposalState        @default(pending)
   reason         String
   bundleHash     String
   manifest       Bytes
@@ -234,11 +241,18 @@ model Proposal {
   artifact       Bytes?
   artifactHash   String?
   baseSha256     String?
-  baseSnapshotId String?        @db.Uuid
-  baseSnapshot   Snapshot?      @relation(fields: [baseSnapshotId], references: [id], onDelete: Restrict)
-  createdAt      DateTime       @default(now()) @db.Timestamptz(3)
-  updatedAt      DateTime       @default(now()) @db.Timestamptz(3)
+  baseSnapshotId String?              @db.Uuid
+  baseSnapshot   Snapshot?            @relation(fields: [baseSnapshotId], references: [id], onDelete: Restrict)
+  createdAt      DateTime             @default(now()) @db.Timestamptz(3)
+  updatedAt      DateTime             @default(now()) @db.Timestamptz(3)
   refs           ProposalRef[]
+  assignments    Assignment[]
+  decision       Decision?
+  publications   Publication[]
+  conflict       ConflictResolution?  @relation("conflicted")
+  replaces       ConflictResolution[] @relation("replacement")
+  withdrawal     Withdrawal?
+  outbox         PublishOutbox[]
 
   @@index([submitterId, createdAt])
   @@index([targetPath, state])
@@ -255,4 +269,168 @@ model ProposalRef {
   ord        Int
 
   @@unique([proposalId, role, snapshotId])
+}
+
+// Phase 5 — Review and publish (system-logic §7.4.1)
+enum PublicationPhase {
+  prepared
+  writing
+  written
+  done
+  unknown
+  stale
+  not_written
+}
+
+enum ResolutionOutcome {
+  written
+  not_written
+}
+
+enum ConflictOutcome {
+  keep_current
+  use_incoming
+  merge
+}
+
+enum ReviewerKind {
+  agent
+  person
+}
+
+enum OutboxKind {
+  approval
+  retry
+}
+
+model Assignment {
+  id          String    @id @default(uuid(7)) @db.Uuid
+  proposalId  String    @db.Uuid
+  proposal    Proposal  @relation(fields: [proposalId], references: [id], onDelete: Restrict)
+  assigneeId  String    @db.Uuid
+  assignee    User      @relation("assignee", fields: [assigneeId], references: [id], onDelete: Restrict)
+  reason      String
+  trigger     String?
+  createdById String?   @db.Uuid
+  createdBy   User?     @relation("assignedBy", fields: [createdById], references: [id], onDelete: Restrict)
+  createdAt   DateTime  @default(now()) @db.Timestamptz(3)
+  closedAt    DateTime? @db.Timestamptz(3)
+
+  @@index([proposalId])
+  @@index([assigneeId, closedAt])
+}
+
+model Decision {
+  id                String          @id @db.Uuid
+  proposalId        String          @unique @db.Uuid
+  proposal          Proposal        @relation(fields: [proposalId], references: [id], onDelete: Restrict)
+  reviewerId        String          @db.Uuid
+  reviewer          User            @relation(fields: [reviewerId], references: [id], onDelete: Restrict)
+  reviewerKind      ReviewerKind
+  approve           Boolean
+  reason            String
+  bundleHash        String
+  artifactHash      String
+  previewAt         DateTime        @db.Timestamptz(3)
+  discussionVersion Int
+  disputeVersion    Int
+  createdAt         DateTime        @default(now()) @db.Timestamptz(3)
+  publications      Publication[]
+  outbox            PublishOutbox[]
+}
+
+model Publication {
+  id           String             @id @default(uuid(7)) @db.Uuid
+  proposalId   String             @db.Uuid
+  proposal     Proposal           @relation(fields: [proposalId], references: [id], onDelete: Restrict)
+  attempt      Int
+  targetPath   String
+  decisionId   String             @db.Uuid
+  decision     Decision           @relation(fields: [decisionId], references: [id], onDelete: Restrict)
+  phase        PublicationPhase
+  auto         Boolean
+  actorId      String?            @db.Uuid
+  actor        User?              @relation(fields: [actorId], references: [id], onDelete: Restrict)
+  baseSha256   String?
+  artifactHash String
+  condition    Json
+  receipt      Json?
+  error        String?
+  versionLabel String?
+  startedAt    DateTime           @default(now()) @db.Timestamptz(3)
+  writtenAt    DateTime?          @db.Timestamptz(3)
+  finishedAt   DateTime?          @db.Timestamptz(3)
+  updatedAt    DateTime           @default(now()) @db.Timestamptz(3)
+  resolution   Resolution?
+  sections     PublishedSection[]
+
+  @@unique([proposalId, attempt])
+  @@index([targetPath, phase])
+}
+
+model Resolution {
+  id            String            @id @default(uuid(7)) @db.Uuid
+  publicationId String            @unique @db.Uuid
+  publication   Publication       @relation(fields: [publicationId], references: [id], onDelete: Restrict)
+  proposalId    String            @db.Uuid
+  actorId       String            @db.Uuid
+  actor         User              @relation(fields: [actorId], references: [id], onDelete: Restrict)
+  outcome       ResolutionOutcome
+  evidence      String
+  diskSha256    String?
+  createdAt     DateTime          @default(now()) @db.Timestamptz(3)
+}
+
+model ConflictResolution {
+  id            String          @id @default(uuid(7)) @db.Uuid
+  proposalId    String          @unique @db.Uuid
+  proposal      Proposal        @relation("conflicted", fields: [proposalId], references: [id], onDelete: Restrict)
+  actorId       String          @db.Uuid
+  actor         User            @relation(fields: [actorId], references: [id], onDelete: Restrict)
+  outcome       ConflictOutcome
+  baseSha256    String?
+  currentSha256 String?
+  replacementId String?         @db.Uuid
+  replacement   Proposal?       @relation("replacement", fields: [replacementId], references: [id], onDelete: Restrict)
+  reason        String
+  createdAt     DateTime        @default(now()) @db.Timestamptz(3)
+}
+
+model Withdrawal {
+  id         String   @id @default(uuid(7)) @db.Uuid
+  proposalId String   @unique @db.Uuid
+  proposal   Proposal @relation(fields: [proposalId], references: [id], onDelete: Restrict)
+  actorId    String   @db.Uuid
+  actor      User     @relation(fields: [actorId], references: [id], onDelete: Restrict)
+  reason     String
+  createdAt  DateTime @default(now()) @db.Timestamptz(3)
+}
+
+model PublishOutbox {
+  id          String     @id @default(uuid(7)) @db.Uuid
+  proposalId  String     @db.Uuid
+  proposal    Proposal   @relation(fields: [proposalId], references: [id], onDelete: Restrict)
+  decisionId  String     @db.Uuid
+  decision    Decision   @relation(fields: [decisionId], references: [id], onDelete: Restrict)
+  kind        OutboxKind
+  attempts    Int        @default(0)
+  lastError   String?
+  createdAt   DateTime   @default(now()) @db.Timestamptz(3)
+  processedAt DateTime?  @db.Timestamptz(3)
+
+  @@index([processedAt])
+}
+
+model PublishedSection {
+  publicationId String       @db.Uuid
+  publication   Publication  @relation(fields: [publicationId], references: [id], onDelete: Restrict)
+  path          String
+  versionLabel  String
+  anchor        String
+  sectionHash   String
+  reviewerKind  ReviewerKind
+  reviewedAt    DateTime     @db.Timestamptz(3)
+
+  @@id([publicationId, anchor])
+  @@index([path, anchor, sectionHash])
 }

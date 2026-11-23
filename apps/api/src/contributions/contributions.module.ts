@@ -11,5 +11,6 @@ import { ContributionViews } from './views.js';
   imports: [PrismaModule, WikiModule],
   controllers: [DraftsController, ContributionsController],
   providers: [ContributionViews, ProposalFreezer, DraftsService, ContributionsService],
+  exports: [ContributionViews, ProposalFreezer, ContributionsService],
 })
 export class ContributionsModule {}

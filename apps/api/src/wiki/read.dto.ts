@@ -184,10 +184,22 @@ export class ContextDto {
 class CursorDto {
   @ApiProperty(nullableString) nextCursor!: string | null;
 }
+/** The reviewed publication that produced a version (system-logic §7.4.10). */
+export class VersionPublicationDto {
+  @ApiProperty({ type: String }) proposalSlug!: string;
+  @ApiProperty({ type: String }) title!: string;
+  @ApiProperty(nullableString) sectionTitle!: string | null;
+  @ApiProperty({ enum: ['agent', 'person'] }) reviewerKind!: 'agent' | 'person';
+  @ApiProperty(timestamp) decidedAt!: string;
+  @ApiProperty(timestamp) publishedAt!: string;
+  @ApiProperty({ type: Boolean }) auto!: boolean;
+}
 class VersionDto {
   @ApiProperty({ type: String }) versionLabel!: string;
   @ApiProperty({ type: String }) sha256!: string;
   @ApiProperty(timestamp) capturedAt!: string;
+  @ApiProperty({ type: VersionPublicationDto, nullable: true })
+  publication!: VersionPublicationDto | null;
 }
 export class HistoryDto extends CursorDto {
   @ApiProperty({ type: [VersionDto] }) items!: VersionDto[];
@@ -198,6 +210,9 @@ class RecentChangeDto {
   @ApiProperty({ type: String }) versionLabel!: string;
   @ApiProperty(timestamp) at!: string;
   @ApiProperty({ type: Boolean }) changedOutsideReview!: boolean;
+  @ApiProperty(nullableString) proposalSlug!: string | null;
+  @ApiProperty(nullableString) sectionTitle!: string | null;
+  @ApiProperty(nullableString) summary!: string | null;
 }
 export class RecentDto extends CursorDto {
   @ApiProperty({ type: [RecentChangeDto] }) items!: RecentChangeDto[];
