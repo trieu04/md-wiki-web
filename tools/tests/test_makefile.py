@@ -1,3 +1,4 @@
+import hashlib
 import json
 import os
 import shlex
@@ -9,6 +10,12 @@ from pathlib import Path
 import pytest
 
 ROOT = Path(__file__).resolve().parents[2]
+
+
+def tunnel_sock(repo):
+    """Mirror of the Makefile's TUNNEL_SOCK (short /tmp path keyed by checkout path)."""
+    digest = hashlib.sha1(str(repo).encode()).hexdigest()[:12]
+    return f"/tmp/mw-tunnel-{digest}.sock"
 
 
 @pytest.mark.parametrize("local", [False, True])
@@ -58,7 +65,7 @@ def test_docker_target_and_ports(tmp_path, local):
     if local:
         assert ssh_args == []
     else:
-        socket_arg = ["-S", str(config_dir / "tunnel.sock")]
+        socket_arg = ["-S", tunnel_sock(config_dir.parent)]
         assert ssh_args == [
             socket_arg + ["-O", "check", "fd"],
             ["-f", "-N", "-M", *socket_arg, "-o", "ExitOnForwardFailure=yes", "-o",
@@ -137,7 +144,7 @@ def test_tunnel_reuses_matching_forwards_and_reopens_changed_ones(tmp_path, port
 
     calls = [json.loads(line) for line in trace.read_text().splitlines()]
     config_dir = tmp_path / ".docker-local"
-    socket_arg = ["-S", str(config_dir / "tunnel.sock")]
+    socket_arg = ["-S", tunnel_sock(config_dir.parent)]
     check = socket_arg + ["-O", "check", "fd"]
     exit_master = socket_arg + ["-O", "exit", "fd"]
     launch = ["-f", "-N", "-M", *socket_arg, "-o", "ExitOnForwardFailure=yes", "-o",

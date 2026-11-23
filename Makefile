@@ -10,7 +10,8 @@ TUNNEL_SSH := ssh $(if $(MW_TUNNEL_PORT),-p "$(MW_TUNNEL_PORT)")
 PG_HOST_PORT ?= $(if $(strip $(MW_DOCKER_HOST)),55432,5432)
 REDIS_HOST_PORT ?= $(if $(strip $(MW_DOCKER_HOST)),56379,6379)
 LOCAL_DOCKER_CONFIG := $(CURDIR)/.docker-local
-TUNNEL_SOCK := $(LOCAL_DOCKER_CONFIG)/tunnel.sock
+# Unix sockets are limited to ~104 bytes, so the SSH control socket lives in /tmp, keyed by checkout path.
+TUNNEL_SOCK := /tmp/mw-tunnel-$(shell printf '%s' '$(CURDIR)' | shasum | cut -c1-12).sock
 TUNNEL_SPEC := $(LOCAL_DOCKER_CONFIG)/tunnel.spec
 export PG_HOST_PORT REDIS_HOST_PORT
 
