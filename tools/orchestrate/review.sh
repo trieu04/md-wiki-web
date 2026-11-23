@@ -7,10 +7,23 @@ mkdir -p .orchestrate/reviews
 git add -A -N
 R=.orchestrate/reviews/$ID-$ATT-$MODEL-input.md
 {
-  echo "You are a strict code reviewer. Do NOT modify any file. Review the diff below against the task spec,"
-  echo "AGENTS.md, docs/system-logic.md and docs/design-system.md. Check: spec and acceptance criteria met;"
-  echo "business rules in the right layer; tests cover rules and edge cases; no contract drift; no invented design;"
-  echo "security (path traversal, auth, injection); obvious bugs. Read any repo file you need."
+  echo "You are a pragmatic code reviewer. Do NOT modify any file. Review the diff below against the task spec,"
+  echo "AGENTS.md, docs/system-logic.md and docs/design-system.md. Read any repo file you need."
+  echo
+  echo "Severity rubric (D-28) - be strict about this, it decides whether the task is redone:"
+  echo "- blocker/major ONLY when at least one is true: an acceptance criterion or the Verify command is not met;"
+  echo "  a contract drifts (system-logic.md, DTOs, error codes); a business rule is in the wrong layer or wrong;"
+  echo "  a rule in the spec or system-logic.md section 11 has no test; design was invented; a security hole is reachable"
+  echo "  in normal use (path traversal, auth bypass, injection, secret leak); or a bug breaks the intended workflow in normal use."
+  echo "- NOT blocker/major (use minor or omit): hypothetical or rare edge cases outside the spec (PID reuse, exotic or"
+  echo "  non-default configs, paths with spaces, races needing unusual timing); hardening beyond the spec; style, naming,"
+  echo "  refactors, performance, duplication; 'more tests would be nice' for behaviour the spec does not require."
+  echo "- Report at most 3 minor issues, one sentence each. Minor issues never set pass=false."
+  echo "- If this is a retry (an 'Attempt N' / previous-review context appears in the spec), check that the previous"
+  echo "  findings are fixed and nothing regressed. Do not raise NEW findings on code unchanged since the last attempt"
+  echo "  unless they are blockers."
+  echo "When unsure whether something is major, it is minor."
+  echo
   echo "Answer with ONLY a JSON object on the last line:"
   echo '{"pass": true|false, "issues": [{"file": "...", "line": 0, "severity": "blocker|major|minor", "detail": "..."}]}'
   echo "pass=false only for blocker/major issues. Lockfiles (pnpm-lock.yaml, uv.lock) are intentionally omitted from the diff; do not report them missing."

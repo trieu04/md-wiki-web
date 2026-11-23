@@ -307,6 +307,7 @@ Reversible; each is used as written until a human changes it.
 | D-25 | Dev launcher env precedence: one rule for all children — process environment overrides `.env` (standard dotenv semantics) | P0-03 review |
 | D-26 | **User instruction (2026-11-23):** luna is raised to sol because of too many failed reviews (P0-01 and P0-03 each failed 3 luna attempts). All remaining luna tasks go to sol; their reviewer becomes astra; ladder is sol → astra → OPUS | user |
 | D-27 | **User instruction (2026-11-23), resolves Q-P-1:** commit after each task passes its gate and review — one commit per task, message `<type>(<ID>): <title>` with implementer/reviewer in the body, only that task's files (+ the orchestrator's progress/decision notes). No pushes | user |
+| D-28 | **User instruction (2026-11-23):** reviewers must not fail tasks over small issues. Review rubric: blocker/major only for unmet acceptance criteria/verify, contract drift, wrong/misplaced rule, missing required test, invented design, security hole reachable in normal use, or a bug breaking normal use. Edge cases outside the spec, hardening, style → minor (max 3), never a retry. Retry reviews check only prior findings + regressions. Minors are logged as follow-ups in progress.md, not sent back | user |
 | D-13 | Before Phase 9, Home/Page regions whose data does not exist are not rendered (no placeholders) | §4 Phase 3 |
 
 ### 6.1 Decisions on former open questions (2026-11-23, by the orchestrator under the user's delegation)
