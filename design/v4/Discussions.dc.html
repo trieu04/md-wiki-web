@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Discussions</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#F6F7F9}
+a{color:#2453D6}a:hover{color:#1C42AE}
+button{font-family:inherit;cursor:pointer}
+a:focus-visible,button:focus-visible,textarea:focus-visible,input:focus-visible{outline:2px solid #2453D6;outline-offset:2px}
+</style>
+</helmet>
+<div style="font-family: Inter, system-ui, sans-serif; font-size: 14px; line-height: 1.5; color: #14161B; background: #F6F7F9; min-height: 1000px; display: flex; flex-direction: column">
+  <div style="display: flex"><dc-import name="TopBar" active="workspace" hint-size="1440px,56px"></dc-import></div>
+  <div style="flex: 1 1 auto; display: flex; flex-wrap: wrap; align-items: stretch">
+  <div style="flex: 1 1 220px; max-width: 260px; display: flex"><dc-import name="WorkNav" active="discussions" hint-size="220px,1000px"></dc-import></div>
+
+  <main style="flex: 999 1 640px; min-width: 0; box-sizing: border-box; padding: 20px 28px 40px; display: flex; flex-direction: column; gap: 16px">
+    <div style="display: flex; flex-wrap: wrap; gap: 12px 24px; align-items: flex-end; justify-content: space-between">
+      <div style="display: flex; flex-direction: column; gap: 2px">
+        <h1 style="margin: 0; font-size: 24px; font-weight: 700">Discussions</h1>
+        <span style="color: #545B68">Topics on a page section. A topic that holds a proposal blocks its approval until it is closed.</span>
+      </div>
+      <button type="button" style="padding: 8px 14px; border: 0; border-radius: 8px; background: #2453D6; color: #FFFFFF; font-size: 14px; font-weight: 600">New topic</button>
+    </div>
+
+    <div style="display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-start">
+      <section aria-label="Topics" style="flex: 1 1 340px; min-width: 0; background: #FFFFFF; border: 1px solid #E4E7EC; border-radius: 10px; overflow: hidden">
+        <div style="display: flex; flex-wrap: wrap; gap: 6px; padding: 10px 12px; border-bottom: 1px solid #EEF0F3">
+          <sc-for list="{{ filters }}" as="f" hint-placeholder-count="4">
+            <button type="button" aria-pressed="{{ f.on }}" onClick="{{ f.pick }}" style="{{ f.style }}">{{ f.label }}</button>
+          </sc-for>
+        </div>
+        <sc-for list="{{ topics }}" as="t" hint-placeholder-count="4">
+          <button type="button" aria-pressed="{{ t.on }}" onClick="{{ t.pick }}" style="{{ t.row }}">
+            <span style="font-weight: 600; text-align: left">{{ t.title }}</span>
+            <span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #545B68; text-align: left">{{ t.where }}</span>
+            <span style="display: flex; gap: 10px; font-size: 12px; color: #545B68"><span style="display: inline-flex; gap: 6px; align-items: center"><span style="{{ t.dot }}"></span>{{ t.status }}</span><span>{{ t.meta }}</span></span>
+          </button>
+        </sc-for>
+      </section>
+
+      <section aria-label="Thread" style="flex: 2 1 520px; min-width: 0; background: #FFFFFF; border: 1px solid #E4E7EC; border-radius: 10px; display: flex; flex-direction: column">
+        <div style="padding: 16px 18px; border-bottom: 1px solid #EEF0F3; display: flex; flex-wrap: wrap; gap: 10px 20px; justify-content: space-between; align-items: flex-start">
+          <div style="display: flex; flex-direction: column; gap: 4px">
+            <h2 style="margin: 0; font-size: 18px">{{ cur.title }}</h2>
+            <span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #545B68">{{ cur.where }}</span>
+          </div>
+          <div style="display: flex; flex-wrap: wrap; gap: 8px">
+            <a href="Page.dc.html" style="padding: 6px 12px; border: 1px solid #D5D9E0; border-radius: 7px; color: #14161B; text-decoration: none; font-weight: 500; font-size: 13px">Open section</a>
+            <a href="Review.dc.html" style="padding: 6px 12px; border: 1px solid #D5D9E0; border-radius: 7px; color: #14161B; text-decoration: none; font-weight: 500; font-size: 13px">Held proposal</a>
+          </div>
+        </div>
+        <dl style="margin: 0; padding: 12px 18px; display: grid; grid-template-columns: 120px minmax(0, 1fr); gap: 6px 12px; font-size: 13px; border-bottom: 1px solid #EEF0F3">
+          <sc-for list="{{ cur.props }}" as="p" hint-placeholder-count="3"><dt style="color: #545B68">{{ p.k }}</dt><dd style="margin: 0">{{ p.v }}</dd></sc-for>
+        </dl>
+        <ol style="margin: 0; padding: 8px 18px; list-style: none; display: flex; flex-direction: column">
+          <sc-for list="{{ cur.posts }}" as="m" hint-placeholder-count="3">
+            <li style="display: flex; gap: 12px; padding: 12px 0; border-bottom: 1px solid #F1F2F5">
+              <span style="flex: 0 0 30px; height: 30px; border-radius: 15px; background: {{ m.bg }}; color: #14161B; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 600">{{ m.ini }}</span>
+              <div style="flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 2px">
+                <span style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center"><strong style="font-weight: 600">{{ m.who }}</strong><span style="font-size: 12px; color: #545B68">{{ m.role }} · {{ m.t }}</span><sc-if value="{{ m.ai }}" hint-placeholder-val="{{ false }}"><span style="font-size: 11px; font-weight: 600; color: #5B3FB8; border: 1px solid #CDBFF0; border-radius: 4px; padding: 0 5px">AI</span></sc-if></span>
+                <span style="color: #2A2F38">{{ m.text }}</span>
+              </div>
+            </li>
+          </sc-for>
+        </ol>
+        <div style="padding: 14px 18px; display: flex; flex-direction: column; gap: 10px; border-top: 1px solid #EEF0F3; margin-top: auto">
+          <label for="reply" style="font-weight: 600; font-size: 13px">Reply</label>
+          <textarea id="reply" rows="3" placeholder="Write a reply. Posting a reply locks open review decisions until reviewers reread." style="font: inherit; font-size: 13px; padding: 8px 10px; border: 1px solid #D5D9E0; border-radius: 8px; resize: vertical"></textarea>
+          <div style="display: flex; flex-wrap: wrap; gap: 8px; justify-content: space-between; align-items: center">
+            <div style="display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-size: 13px">
+              <span style="color: #545B68">Close as</span>
+              <button type="button" style="padding: 6px 10px; border: 1px solid #D5D9E0; border-radius: 7px; background: #FFFFFF; font-size: 13px">Resolved</button>
+              <button type="button" style="padding: 6px 10px; border: 1px solid #D5D9E0; border-radius: 7px; background: #FFFFFF; font-size: 13px">Rejected</button>
+              <button type="button" style="padding: 6px 10px; border: 1px solid #D5D9E0; border-radius: 7px; background: #FFFFFF; font-size: 13px">On hold</button>
+            </div>
+            <button type="button" style="padding: 8px 16px; border: 0; border-radius: 8px; background: #2453D6; color: #FFFFFF; font-size: 14px; font-weight: 600">Post reply</button>
+          </div>
+          <span style="font-size: 12px; color: #545B68">Closing needs a rationale. When this topic closes, the reviewer agent reviews psf-fwhm-table again.</span>
+        </div>
+      </section>
+    </div>
+  </main>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1000}}'>
+class Component extends DCLogic {
+  state = { filter: 'open', sel: 0 };
+  renderVals() {
+    const d = (c) => 'width: 8px; height: 8px; border-radius: 4px; background: ' + c;
+    const all = [
+      { f: 'open', title: 'Lateral FWHM differs between two pages', where: 'point-spread-function.md#fwhm', dot: d('#C25A0A'), status: 'Holds psf-fwhm-table', meta: '3 replies · 3 h',
+        props: [ { k: 'Opened by', v: 'reviewer-agent, as an escalation' }, { k: 'Participants', v: 'm.nguyen, h.pham (page authors)' }, { k: 'Also about', v: 'deconvolution.md#psf-model' }, { k: 'Version', v: 'discussion v2' } ],
+        posts: [
+          { ini: 'RA', bg: '#EDE8FA', who: 'reviewer-agent', role: 'agent', t: '22 h', ai: true, text: 'psf-fwhm-table states lateral FWHM = 0.51 λ/NA. deconvolution.md#psf-model states 0.61 λ/NA. I can’t approve while the pages disagree.' },
+          { ini: 'HP', bg: '#E7ECFA', who: 'h.pham', role: 'page author', t: '5 h', ai: false, text: '0.61 is the Rayleigh distance, not FWHM. Both are right, but deconvolution.md should say which one it means.' },
+          { ini: 'MN', bg: '#E7ECFA', who: 'm.nguyen', role: 'page author', t: '3 h', ai: false, text: 'Agreed. I’ll propose a wording fix on deconvolution.md and we can resolve this.' }
+        ] },
+      { f: 'open', title: 'Is the claim general?', where: 'confocal-microscopy.md#principle', dot: d('#C25A0A'), status: 'Dispute on fix-pinhole-units', meta: '1 reply · 20 min',
+        props: [ { k: 'Opened by', v: 'h.pham' }, { k: 'Kind', v: 'Semantic dispute (holds approval)' }, { k: 'Version', v: 'dispute v1' } ],
+        posts: [ { ini: 'HP', bg: '#E7ECFA', who: 'h.pham', role: 'page author', t: '20 min', ai: false, text: '§2.4 covers the 1.4 NA case only. Is “little extra sectioning” true for water objectives?' } ] },
+      { f: 'open', title: 'Pinhole wording outdated', where: 'confocal-microscopy.md#principle', dot: d('#B07C00'), status: 'Report, not confirmed', meta: '0 replies · 1 d',
+        props: [ { k: 'Opened by', v: 'Report from Light-sheet team' }, { k: 'Kind', v: 'Report: outdated' } ],
+        posts: [ { ini: 'LT', bg: '#F1F2F5', who: 'l.tran', role: 'reader · Light-sheet', t: '1 d', ai: false, text: 'The pinhole size wording predates the hybrid detector we now use.' } ] },
+      { f: 'closed', title: 'Should STED page cite vendor docs?', where: 'sted-microscopy.md#principle', dot: d('#8A909C'), status: 'Resolved', meta: '4 replies · 3 d',
+        props: [ { k: 'Closed by', v: 'h.pham · resolved' }, { k: 'Rationale', v: 'Use the 2019 review article instead.' } ],
+        posts: [ { ini: 'AT', bg: '#E7ECFA', who: 'a.tran', role: 'contributor', t: '3 d', ai: false, text: 'Is the vendor application note a good enough source?' } ] }
+    ];
+    const fdefs = [ { id: 'open', label: 'Open 3' }, { id: 'mine', label: 'Mine 2' }, { id: 'closed', label: 'Closed 41' }, { id: 'all', label: 'All' } ];
+    const filters = fdefs.map(f => {
+      const on = this.state.filter === f.id;
+      return { ...f, on, pick: () => this.setState({ filter: f.id, sel: 0 }),
+        style: 'padding: 5px 10px; border-radius: 7px; font-size: 13px; border: 1px solid ' + (on ? '#2453D6' : '#D5D9E0') + '; background: ' + (on ? '#EEF2FC' : '#FFFFFF') + '; color: #14161B; font-weight: ' + (on ? '600' : '500') };
+    });
+    let list = all.filter(t => this.state.filter === 'all' || t.f === this.state.filter || (this.state.filter === 'mine' && t.f === 'open'));
+    if (this.state.filter === 'mine') list = list.slice(0, 2);
+    const sel = Math.min(this.state.sel, list.length - 1);
+    const topics = list.map((t, n) => ({ ...t, on: n === sel, pick: () => this.setState({ sel: n }),
+      row: 'width: 100%; display: flex; flex-direction: column; gap: 3px; align-items: flex-start; padding: 12px 14px; border: 0; border-bottom: 1px solid #EEF0F3; color: #14161B; background: ' + (n === sel ? '#EEF2FC' : '#FFFFFF') }));
+    return { filters, topics, cur: list[sel] };
+  }
+}
+</script>
+</body>
+</html>

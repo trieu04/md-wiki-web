@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Suggest an edit</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#F6F7F9}
+a{color:#2453D6}a:hover{color:#1C42AE}
+button{font-family:inherit;cursor:pointer}
+a:focus-visible,button:focus-visible,textarea:focus-visible,input:focus-visible{outline:2px solid #2453D6;outline-offset:2px}
+</style>
+</helmet>
+<div style="font-family: Inter, system-ui, sans-serif; font-size: 14px; line-height: 1.5; color: #14161B; background: #F6F7F9; min-height: 1100px; display: flex; flex-direction: column">
+  <div style="display: flex"><dc-import name="TopBar" active="none" hint-size="1440px,56px"></dc-import></div>
+  <div style="flex: 1 1 auto; display: flex; flex-wrap: wrap; align-items: stretch">
+
+  <main style="flex: 1 1 640px; min-width: 0; max-width: 1400px; margin: 0 auto; box-sizing: border-box; padding: 20px 28px 40px; display: flex; flex-direction: column; gap: 16px">
+    <div style="display: flex; flex-direction: column; gap: 6px">
+      <span style="font-size: 13px; color: #545B68"><a href="Page.dc.html" style="color: #545B68">confocal-microscopy.md</a> / Propose edit</span>
+      <div style="display: flex; flex-wrap: wrap; gap: 12px 24px; align-items: flex-start; justify-content: space-between">
+        <div style="display: flex; flex-direction: column; gap: 4px">
+          <h1 style="margin: 0; font-size: 24px; font-weight: 700">Suggest an edit · Principle</h1>
+          <span style="color: #545B68">Draft saved 10:42 · editing from version {{ baseLabel }} · section #principle</span>
+        </div>
+        <div style="display: flex; flex-wrap: wrap; gap: 8px">
+          <button type="button" style="padding: 7px 12px; border: 1px solid #D5D9E0; border-radius: 8px; background: #FFFFFF; font-size: 14px; font-weight: 500">Discard draft</button>
+          <button type="button" style="padding: 7px 12px; border: 1px solid #D5D9E0; border-radius: 8px; background: #FFFFFF; font-size: 14px; font-weight: 500">Export .contribution.md</button>
+          <button type="button" style="padding: 7px 12px; border: 1px solid #D5D9E0; border-radius: 8px; background: #FFFFFF; font-size: 14px; font-weight: 500">Whole page</button>
+        </div>
+      </div>
+    </div>
+
+    <sc-if value="{{ baseChanged }}" hint-placeholder-val="{{ false }}">
+      <div role="alert" style="display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; justify-content: space-between; padding: 12px 16px; background: #FFFFFF; border: 1px solid #F0C2BF; border-radius: 10px">
+        <span><strong>The page changed since you started.</strong> Version 20261123-2 touched #principle. Rebase before submitting; your text is kept.</span>
+        <a href="Conflict.dc.html" style="font-weight: 600">Compare and rebase</a>
+      </div>
+    </sc-if>
+
+    <div style="display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-start">
+      <section aria-label="Editor" style="flex: 999 1 520px; min-width: 0; background: #FFFFFF; border: 1px solid #E4E7EC; border-radius: 10px; overflow: hidden; display: flex; flex-direction: column">
+        <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 6px; padding: 0 10px; border-bottom: 1px solid #E4E7EC">
+          <div role="tablist" aria-label="Mode" style="display: flex; gap: 2px">
+            <sc-for list="{{ tabs }}" as="t" hint-placeholder-count="3">
+              <button type="button" role="tab" aria-selected="{{ t.on }}" onClick="{{ t.pick }}" style="{{ t.style }}">{{ t.label }}</button>
+            </sc-for>
+          </div>
+          <div aria-label="Formatting" style="display: flex; gap: 2px; padding: 6px 0">
+            <sc-for list="{{ tools }}" as="b" hint-placeholder-count="6">
+              <button type="button" aria-label="{{ b.aria }}" style="min-width: 30px; padding: 4px 8px; border: 0; border-radius: 6px; background: transparent; font-size: 13px; color: #3A404C; font-weight: 600">{{ b.label }}</button>
+            </sc-for>
+          </div>
+        </div>
+        <sc-if value="{{ isWrite }}" hint-placeholder-val="{{ true }}">
+          <div style="display: flex; font-family: 'JetBrains Mono', monospace; font-size: 13px; line-height: 1.8">
+            <div aria-hidden="true" style="padding: 14px 10px 14px 16px; color: #8A909C; text-align: right; background: #FAFBFC; border-right: 1px solid #EEF0F3">10<br>11<br>12<br>13<br>14<br>15<br>16<br>17<br>18</div>
+            <label for="src" style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Markdown source</label>
+            <textarea id="src" spellcheck="false" style="flex: 1 1 auto; min-height: 330px; border: 0; padding: 14px 16px; font: inherit; color: #14161B; resize: vertical; outline-offset: -2px">## Principle
+
+A laser is scanned across the sample. Emitted fluorescence returns
+through the objective and the same scanning optics to a point detector.
+Closing the pinhole below about 1 Airy unit (AU) gives little extra
+sectioning and reduces the detected signal.[^4]
+
+[^4]: sources/pawley-handbook.md, §2.4
+</textarea>
+          </div>
+        </sc-if>
+        <sc-if value="{{ isPreview }}" hint-placeholder-val="{{ false }}">
+          <div style="padding: 20px 26px; font-family: 'Source Serif 4', Georgia, serif; font-size: 17px; line-height: 1.7">
+            <h2 style="margin: 0 0 8px; font-size: 22px; font-weight: 600">Principle</h2>
+            <p style="margin: 0">A laser is scanned across the sample. Emitted fluorescence returns through the objective and the same scanning optics to a point detector. Closing the pinhole below about 1 Airy unit (AU) gives little extra sectioning and reduces the detected signal.<sup><a href="#fn4">4</a></sup></p>
+          </div>
+        </sc-if>
+        <sc-if value="{{ isDiff }}" hint-placeholder-val="{{ false }}">
+          <div style="font-family: 'JetBrains Mono', monospace; font-size: 13px; line-height: 1.75; padding: 10px 0">
+            <div style="display: flex; background: #FCEDEC; color: #7D1B16"><span style="width: 44px; text-align: right; padding-right: 14px">14</span><span style="width: 18px">−</span><span style="flex: 1; min-width: 0">Closing the pinhole improves sectioning and reduces the detected signal.</span></div>
+            <div style="display: flex; background: #E6F4EC; color: #11512E"><span style="width: 44px; text-align: right; padding-right: 14px">14</span><span style="width: 18px">+</span><span style="flex: 1; min-width: 0">Closing the pinhole below about 1 Airy unit (AU) gives little extra sectioning and reduces the detected signal.[^4]</span></div>
+            <div style="display: flex; background: #E6F4EC; color: #11512E"><span style="width: 44px; text-align: right; padding-right: 14px">18</span><span style="width: 18px">+</span><span style="flex: 1; min-width: 0">[^4]: sources/pawley-handbook.md, §2.4</span></div>
+          </div>
+        </sc-if>
+        <div style="display: flex; flex-wrap: wrap; gap: 12px; padding: 8px 16px; border-top: 1px solid #EEF0F3; font-size: 12px; color: #545B68; margin-top: auto">
+          <span>Markdown</span><span>1 line changed · 1 footnote added</span><span>Only #principle is in scope</span>
+        </div>
+      </section>
+
+      <aside aria-label="Submission" style="flex: 1 1 380px; min-width: 0; max-width: 480px; display: flex; flex-direction: column; gap: 12px">
+        <section style="background: #FFFFFF; border: 1px solid #E4E7EC; border-radius: 10px; padding: 16px 18px; display: flex; flex-direction: column; gap: 8px">
+          <label for="why" style="margin: 0; font-size: 14px; font-weight: 700">Reason (required)</label>
+          <textarea id="why" rows="2" style="font: inherit; font-size: 13px; padding: 8px 10px; border: 1px solid #D5D9E0; border-radius: 8px; resize: vertical">State the pinhole size in Airy units as the handbook does.</textarea>
+          <span style="font-size: 12px; color: #545B68">Reviewers compare the reason with the change. Say every claim you add.</span>
+        </section>
+
+        <section style="background: #FFFFFF; border: 1px solid #E4E7EC; border-radius: 10px; padding: 16px 18px; display: flex; flex-direction: column; gap: 10px">
+          <div style="display: flex; justify-content: space-between; align-items: center"><h2 style="margin: 0; font-size: 14px">Sources you read</h2><button type="button" style="padding: 4px 10px; border: 1px solid #D5D9E0; border-radius: 7px; background: #FFFFFF; font-size: 13px">Add source</button></div>
+          <ul style="margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 8px">
+            <sc-for list="{{ sources }}" as="s" hint-placeholder-count="2">
+              <li style="display: flex; flex-direction: column; gap: 2px; padding: 8px 10px; border: 1px solid #EEF0F3; border-radius: 8px">
+                <span style="font-family: 'JetBrains Mono', monospace; font-size: 12px">{{ s.path }}</span>
+                <span style="font-size: 12px; color: #545B68">{{ s.meta }}</span>
+              </li>
+            </sc-for>
+          </ul>
+          <span style="font-size: 12px; color: #545B68">Pinned at the version you read. If one changes before review, the proposal goes stale.</span>
+        </section>
+
+        <section style="background: #FFFFFF; border: 1px solid #E4E7EC; border-radius: 10px; padding: 16px 18px; display: flex; flex-direction: column; gap: 8px">
+          <h2 style="margin: 0; font-size: 14px">What happens to evidence</h2>
+          <dl style="margin: 0; display: grid; grid-template-columns: 110px minmax(0, 1fr); gap: 6px 12px; font-size: 13px">
+            <dt style="color: #545B68">#principle</dt><dd style="margin: 0">Under re-check → not reviewed until your change is reviewed</dd>
+            <dt style="color: #545B68">Source checks</dt><dd style="margin: 0">1 check on the old text stops counting</dd>
+            <dt style="color: #545B68">Linked from</dt><dd style="margin: 0">9 pages see a “source section changed” note</dd>
+          </dl>
+        </section>
+
+        <section style="background: #FFFFFF; border: 1px solid #E4E7EC; border-radius: 10px; padding: 16px 18px; display: flex; flex-direction: column; gap: 8px">
+          <div style="display: flex; justify-content: space-between; align-items: center"><h2 style="margin: 0; font-size: 14px; display: flex; gap: 8px; align-items: center">Self-check <span style="font-size: 11px; font-weight: 600; color: #5B3FB8; border: 1px solid #CDBFF0; border-radius: 4px; padding: 0 5px">AI</span></h2><button type="button" style="padding: 4px 10px; border: 1px solid #D5D9E0; border-radius: 7px; background: #FFFFFF; font-size: 13px">Run again</button></div>
+          <ul style="margin: 0; padding-left: 18px; font-size: 13px; color: #3A404C; display: flex; flex-direction: column; gap: 3px">
+            <li>Line 14 adds a claim (“little extra sectioning”) that the reason doesn’t mention.</li>
+            <li>This will be escalated: it adds a claim to a sentence that cites a source.</li>
+          </ul>
+          <span style="font-size: 12px; color: #6B7280">Advice only. It doesn’t block submitting.</span>
+        </section>
+
+        <section style="background: #FFFFFF; border: 1px solid #C9D3F2; border-radius: 10px; padding: 16px 18px; display: flex; flex-direction: column; gap: 10px">
+          <h2 style="margin: 0; font-size: 14px">After you submit</h2>
+          <ol style="margin: 0; padding-left: 18px; font-size: 13px; color: #3A404C; display: flex; flex-direction: column; gap: 3px">
+            <li>Quality check (about 2 min)</li>
+            <li>reviewer-agent decides, or escalates to m.nguyen, h.pham</li>
+            <li>If approved: published automatically</li>
+          </ol>
+          <button type="button" disabled="{{ baseChanged }}" style="{{ submitStyle }}">{{ submitLabel }}</button>
+        </section>
+      </aside>
+    </div>
+  </main>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"baseChanged":{"editor":"boolean","default":false},"$preview":{"width":1440,"height":1100}}'>
+class Component extends DCLogic {
+  state = { tab: 'write' };
+  renderVals() {
+    const bc = !!this.props.baseChanged;
+    const tdefs = [ { id: 'write', label: 'Write' }, { id: 'preview', label: 'Preview' }, { id: 'diff', label: 'Changes' } ];
+    const tabs = tdefs.map(t => {
+      const on = this.state.tab === t.id;
+      return { ...t, on, pick: () => this.setState({ tab: t.id }),
+        style: 'padding: 10px 12px; border: 0; border-bottom: 2px solid ' + (on ? '#2453D6' : 'transparent') + '; margin-bottom: -1px; background: transparent; font-size: 14px; color: ' + (on ? '#14161B' : '#545B68') + '; font-weight: ' + (on ? '600' : '500') };
+    });
+    const tools = [ { label: 'B', aria: 'Bold' }, { label: 'I', aria: 'Italic' }, { label: 'H', aria: 'Heading' }, { label: '[ ]', aria: 'Link' }, { label: '¹', aria: 'Footnote' }, { label: '⊞', aria: 'Table' } ];
+    const sources = [
+      { path: 'sources/pawley-handbook.md §2.4', meta: 'Version 20261118-1 · handbook tier · not retracted' },
+      { path: 'confocal-microscopy.md (target)', meta: 'Version 20261120-1 · read when you opened the editor' }
+    ];
+    return {
+      tabs, tools, sources, baseChanged: bc,
+      baseLabel: '20261120-1',
+      isWrite: this.state.tab === 'write', isPreview: this.state.tab === 'preview', isDiff: this.state.tab === 'diff',
+      submitLabel: bc ? 'Rebase before submitting' : 'Submit proposal',
+      submitStyle: bc ? 'padding: 10px 16px; border: 0; border-radius: 8px; background: #E4E7EC; color: #545B68; font-size: 14px; font-weight: 600; cursor: not-allowed' : 'padding: 10px 16px; border: 0; border-radius: 8px; background: #2453D6; color: #FFFFFF; font-size: 14px; font-weight: 600'
+    };
+  }
+}
+</script>
+</body>
+</html>

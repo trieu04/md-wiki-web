@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Inbox</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#F6F7F9}
+a{color:#2453D6}a:hover{color:#1C42AE}
+button{font-family:inherit;cursor:pointer}
+a:focus-visible,button:focus-visible{outline:2px solid #2453D6;outline-offset:2px}
+</style>
+</helmet>
+<div style="font-family: Inter, system-ui, sans-serif; font-size: 14px; line-height: 1.5; color: #14161B; background: #F6F7F9; min-height: 1000px; display: flex; flex-direction: column">
+  <div style="display: flex"><dc-import name="TopBar" active="workspace" hint-size="1440px,56px"></dc-import></div>
+  <div style="flex: 1 1 auto; display: flex; flex-wrap: wrap; align-items: stretch">
+  <div style="flex: 1 1 220px; max-width: 260px; display: flex"><dc-import name="WorkNav" active="inbox" hint-size="220px,1000px"></dc-import></div>
+
+  <main style="flex: 999 1 640px; min-width: 0; box-sizing: border-box; padding: 20px 28px 40px; display: flex; flex-direction: column; gap: 16px">
+    <div style="display: flex; flex-wrap: wrap; gap: 12px 24px; align-items: flex-end; justify-content: space-between">
+      <div style="display: flex; flex-direction: column; gap: 2px">
+        <h1 style="margin: 0; font-size: 24px; font-weight: 700">Inbox</h1>
+        <span style="color: #545B68">Things assigned to you as page author of <span style="font-family: 'JetBrains Mono', monospace; font-size: 13px">bioimaging/</span>. The reviewer agent handles the rest and publishes what it approves.</span>
+      </div>
+      <div style="display: flex; flex-wrap: wrap; gap: 8px">
+        <button type="button" style="display: inline-flex; gap: 6px; align-items: center; padding: 7px 12px; border: 1px solid #D5D9E0; border-radius: 8px; background: #FFFFFF; font-size: 14px; font-weight: 500"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 12l5 5L20 6"></path></svg>Mark updates read</button>
+        <button type="button" style="display: inline-flex; gap: 6px; align-items: center; padding: 7px 12px; border: 1px solid #D5D9E0; border-radius: 8px; background: #FFFFFF; font-size: 14px; font-weight: 500"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M6 9a6 6 0 0 1 12 0c0 5 2 6 2 6H4s2-1 2-6zM10 19a2 2 0 0 0 4 0"></path></svg>Reminders: every 3 days</button>
+      </div>
+    </div>
+
+    <div role="tablist" aria-label="Inbox filter" style="display: flex; flex-wrap: wrap; gap: 2px; border-bottom: 1px solid #E4E7EC">
+      <sc-for list="{{ tabs }}" as="t" hint-placeholder-count="6">
+        <button type="button" role="tab" aria-selected="{{ t.on }}" onClick="{{ t.pick }}" style="{{ t.style }}">{{ t.label }} <span style="color: #6B7280; font-weight: 500">{{ t.count }}</span></button>
+      </sc-for>
+    </div>
+
+    <div style="display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-start">
+      <section aria-label="Items" style="flex: 1 1 420px; min-width: 0; background: #FFFFFF; border: 1px solid #E4E7EC; border-radius: 10px; overflow: hidden">
+        <sc-for list="{{ items }}" as="it" hint-placeholder-count="5">
+          <button type="button" aria-pressed="{{ it.on }}" onClick="{{ it.pick }}" style="{{ it.row }}">
+            <span style="display: flex; justify-content: space-between; gap: 8px; width: 100%">
+              <span style="display: inline-flex; gap: 8px; align-items: center; font-size: 12px; font-weight: 600; color: #3A404C; text-transform: uppercase; letter-spacing: 0.04em"><span style="{{ it.dot }}"></span>{{ it.type }}</span>
+              <span style="font-size: 12px; color: #6B7280">{{ it.age }}</span>
+            </span>
+            <span style="font-weight: 600; font-size: 14px; text-align: left">{{ it.title }}</span>
+            <span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #545B68">{{ it.where }}</span>
+          </button>
+        </sc-for>
+      </section>
+
+      <section aria-label="Selected item" style="flex: 1.3 1 440px; min-width: 0; background: #FFFFFF; border: 1px solid #E4E7EC; border-radius: 10px; padding: 20px; display: flex; flex-direction: column; gap: 18px">
+        <div style="display: flex; flex-direction: column; gap: 6px">
+          <span style="display: inline-flex; gap: 8px; align-items: center; font-size: 12px; font-weight: 600; color: #3A404C; text-transform: uppercase; letter-spacing: 0.04em"><span style="{{ cur.dot }}"></span>{{ cur.type }}</span>
+          <h2 style="margin: 0; font-size: 19px; line-height: 1.3">{{ cur.title }}</h2>
+          <p style="margin: 0; color: #3A404C">{{ cur.why }}</p>
+        </div>
+
+        <dl style="margin: 0; display: grid; grid-template-columns: 140px minmax(0, 1fr); gap: 8px 14px; font-size: 13px; padding: 14px 0; border-top: 1px solid #EEF0F3; border-bottom: 1px solid #EEF0F3">
+          <sc-for list="{{ cur.props }}" as="p" hint-placeholder-count="5">
+            <dt style="color: #545B68">{{ p.k }}</dt><dd style="margin: 0">{{ p.v }}</dd>
+          </sc-for>
+        </dl>
+
+        <sc-if value="{{ cur.hasAi }}" hint-placeholder-val="{{ true }}">
+          <div style="display: flex; flex-direction: column; gap: 6px">
+            <span style="display: inline-flex; gap: 8px; align-items: center; font-weight: 600">Agent’s notes <span style="font-size: 11px; font-weight: 600; color: #5B3FB8; border: 1px solid #CDBFF0; border-radius: 4px; padding: 0 5px">AI</span></span>
+            <ul style="margin: 0; padding-left: 18px; color: #3A404C; display: flex; flex-direction: column; gap: 3px">
+              <sc-for list="{{ cur.ai }}" as="n" hint-placeholder-count="2"><li>{{ n }}</li></sc-for>
+            </ul>
+          </div>
+        </sc-if>
+
+        <div style="display: flex; flex-wrap: wrap; gap: 8px">
+          <a href="{{ cur.href }}" style="padding: 9px 16px; border-radius: 8px; background: #2453D6; color: #FFFFFF; font-weight: 600; text-decoration: none">{{ cur.primary }}</a>
+          <sc-for list="{{ cur.secondary }}" as="s" hint-placeholder-count="2">
+            <button type="button" style="padding: 8px 14px; border: 1px solid #D5D9E0; border-radius: 8px; background: #FFFFFF; font-size: 14px; font-weight: 500">{{ s }}</button>
+          </sc-for>
+        </div>
+      </section>
+    </div>
+  </main>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1000}}'>
+class Component extends DCLogic {
+  state = { tab: 'all', sel: 0 };
+  renderVals() {
+    const dot = (c, sq) => 'width: 8px; height: 8px; border-radius: ' + (sq ? '1px' : '4px') + '; background: ' + c;
+    const all = [
+      { cat: 'decide', type: 'Re-review', dot: dot('#C25A0A'), age: '2 h', title: 'Pinhole claim added to a sourced sentence', where: 'confocal-microscopy.md#principle · fix-pinhole-units',
+        why: 'The reviewer agent may not approve this: it adds a claim to a sentence that cites a source. Either page author can decide.',
+        props: [ { k: 'Proposal', v: 'fix-pinhole-units by lab-agent (agent)' }, { k: 'Trigger', v: 'Adds a claim to a sourced sentence' }, { k: 'Assigned to', v: 'm.nguyen, h.pham' }, { k: 'Quality check', v: '1 finding (medium)' }, { k: 'Publishes', v: 'Automatically on approval' } ],
+        hasAi: true, ai: ['Units match pawley-handbook.md §2.4.', '§2.4 shows the effect for a 1.4 NA oil objective only.'],
+        primary: 'Open review', href: 'Review.dc.html', secondary: ['Assign to h.pham', 'Snooze 1 day'] },
+      { cat: 'decide', type: 'Discussion', dot: dot('#C25A0A'), age: '22 h', title: 'Lateral FWHM differs between two pages', where: 'point-spread-function.md#fwhm ↔ deconvolution.md#psf-model',
+        why: 'The agent found a possible contradiction while reviewing psf-fwhm-table. Approval is held until the discussion is resolved.',
+        props: [ { k: 'Proposal held', v: 'psf-fwhm-table by lab-agent' }, { k: 'Values', v: '0.51 λ/NA vs 0.61 λ/NA' }, { k: 'Participants', v: 'm.nguyen, h.pham, reviewer-agent' }, { k: 'Replies', v: '2 · last 3 h ago' } ],
+        hasAi: true, ai: ['0.61 λ/NA is the Rayleigh criterion; 0.51 λ/NA is FWHM. They may both be right with different definitions.'],
+        primary: 'Open discussion', href: 'Discussions.dc.html', secondary: ['Reply here'] },
+      { cat: 'check', type: 'Source retracted', dot: dot('#C33027', true), age: '2 d', title: 'A cited article was retracted', where: 'deconvolution.md#richardson-lucy',
+        why: 'Smith et al. 2019 was retracted on 18 Nov. The section shows “Under re-check” until someone records a new source check.',
+        props: [ { k: 'Detected by', v: 'Retraction check (Crossref), 21 Nov 06:00' }, { k: 'Also flagged', v: 'denoising.md#iterations, psf-guide.md#tuning (derived)' }, { k: 'Previous check', v: '2 Oct, no longer counts' } ],
+        hasAi: false, ai: [], primary: 'Record source check', href: 'Credibility.dc.html', secondary: ['Propose correction'] },
+      { cat: 'check', type: 'Report', dot: dot('#C25A0A'), age: '1 d', title: 'Reported as outdated', where: 'confocal-microscopy.md#principle',
+        why: '“The pinhole wording predates the hybrid detector we now use.” Nothing changes for readers until a page author confirms.',
+        props: [ { k: 'From', v: 'Someone in Light-sheet team' }, { k: 'Kind', v: 'Outdated' }, { k: 'Topic', v: 'principle-pinhole-detector' }, { k: 'Related', v: 'fix-pinhole-units is waiting on the same section' } ],
+        hasAi: false, ai: [], primary: 'Confirm report', href: 'Credibility.dc.html', secondary: ['Confirm as error', 'Dismiss'] },
+      { cat: 'spot', type: 'Spot check', dot: dot('#2453D6'), age: '3 h', title: 'Check an agent approval', where: 'point-spread-function.md · na-table-typo',
+        why: 'Picked at random from the reviewer agent’s approvals on your pages (10%). A failed check is recorded as a confirmed error.',
+        props: [ { k: 'Published', v: 'Today 09:12 as 20261123-1' }, { k: 'Decided by', v: 'reviewer-agent' }, { k: 'Change', v: '1 line, table value 1.40 → 1.4' } ],
+        hasAi: false, ai: [], primary: 'Looks right', href: 'Review.dc.html', secondary: ['Report a problem', 'View diff'] }
+    ];
+    const cats = [ { id: 'all', label: 'All' }, { id: 'decide', label: 'Decide' }, { id: 'check', label: 'Check' }, { id: 'spot', label: 'Spot checks' }, { id: 'mentions', label: 'Mentions' }, { id: 'done', label: 'Done' } ];
+    const counts = { all: 5, decide: 2, check: 2, spot: 1, mentions: 0, done: 31 };
+    const tabs = cats.map(c => {
+      const on = this.state.tab === c.id;
+      return { label: c.label, count: counts[c.id], on, pick: () => this.setState({ tab: c.id, sel: 0 }),
+        style: 'padding: 9px 12px; border: 0; border-bottom: 2px solid ' + (on ? '#2453D6' : 'transparent') + '; margin-bottom: -1px; background: transparent; font-size: 14px; color: ' + (on ? '#14161B' : '#545B68') + '; font-weight: ' + (on ? '600' : '500') };
+    });
+    let list = all.filter(i => this.state.tab === 'all' || i.cat === this.state.tab);
+    if (!list.length) list = all;
+    const sel = Math.min(this.state.sel, list.length - 1);
+    const items = list.map((i, n) => ({ ...i, on: n === sel, pick: () => this.setState({ sel: n }),
+      row: 'width: 100%; display: flex; flex-direction: column; gap: 4px; align-items: flex-start; padding: 14px 16px; border: 0; border-bottom: 1px solid #EEF0F3; background: ' + (n === sel ? '#EEF2FC' : '#FFFFFF') + '; color: #14161B' }));
+    return { tabs, items, cur: list[sel] };
+  }
+}
+</script>
+</body>
+</html>

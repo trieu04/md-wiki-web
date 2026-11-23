@@ -1,0 +1,208 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Confocal microscopy</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#F6F7F9}
+a{color:#2453D6}a:hover{color:#1C42AE}
+button{font-family:inherit;cursor:pointer}
+a:focus-visible,button:focus-visible{outline:2px solid #2453D6;outline-offset:2px}
+</style>
+</helmet>
+<div style="font-family: Inter, system-ui, sans-serif; font-size: 14px; line-height: 1.5; color: #14161B; background: #F6F7F9; min-height: 1350px; display: flex; flex-direction: column">
+  <div style="display: flex"><dc-import name="TopBar" active="browse" hint-size="1440px,56px"></dc-import></div>
+
+  <div style="width: 100%; max-width: 1400px; margin: 0 auto; box-sizing: border-box; padding: 24px 24px 48px; display: flex; flex-wrap: wrap; gap: 24px; align-items: flex-start">
+
+    <nav aria-label="Pages and contents" style="flex: 1 1 220px; max-width: 250px; display: flex; flex-direction: column; gap: 20px; font-size: 13px">
+      <div style="display: flex; flex-direction: column; gap: 2px">
+        <span style="padding: 0 8px 4px; font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #545B68">Microscopy techniques</span>
+        <sc-for list="{{ siblings }}" as="p" hint-placeholder-count="5">
+          <a href="Page.dc.html" aria-current="{{ p.current }}" style="{{ p.style }}"><svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true" style="flex: 0 0 12px"><path d="{{ p.t.p1 }}" fill="{{ p.t.f1 }}" stroke="{{ p.t.s1 }}" stroke-width="1.5"></path><path d="{{ p.t.p2 }}" fill="{{ p.t.f2 }}" stroke="{{ p.t.s2 }}" stroke-width="1.5" stroke-linecap="round"></path></svg>{{ p.name }}</a>
+        </sc-for>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 2px">
+        <span style="padding: 0 8px 4px; font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #545B68">On this page</span>
+        <sc-for list="{{ sections }}" as="s" hint-placeholder-count="5">
+          <button type="button" onClick="{{ s.pick }}" aria-current="{{ s.current }}" style="{{ s.tocStyle }}"><svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true" style="flex: 0 0 12px"><path d="{{ s.t.p1 }}" fill="{{ s.t.f1 }}" stroke="{{ s.t.s1 }}" stroke-width="1.5"></path><path d="{{ s.t.p2 }}" fill="{{ s.t.f2 }}" stroke="{{ s.t.s2 }}" stroke-width="1.5" stroke-linecap="round"></path></svg><span style="flex: 1 1 auto">{{ s.title }}</span></button>
+        </sc-for>
+      </div>
+    </nav>
+
+    <article style="flex: 999 1 560px; min-width: 0; max-width: 820px; background: #FFFFFF; border: 1px solid #E4E7EC; border-radius: 12px; padding: 28px 40px 36px; box-sizing: border-box; display: flex; flex-direction: column; gap: 22px">
+      <header style="display: flex; flex-direction: column; gap: 10px; padding-bottom: 18px; border-bottom: 1px solid #EEF0F3">
+        <span style="font-size: 13px; color: #545B68"><a href="Main.dc.html" style="color: #545B68">Home</a> / Microscopy techniques</span>
+        <h1 style="margin: 0; font-family: 'Source Serif 4', Georgia, serif; font-size: 36px; font-weight: 700; line-height: 1.15">Confocal microscopy</h1>
+        <span style="color: #545B68; font-size: 13px">Maintained by m.nguyen and h.pham · updated 23 Nov · used by 4 teams</span>
+        <div style="display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center">
+          <a href="Trust.dc.html" style="display: inline-flex; gap: 8px; align-items: center; color: #14161B; text-decoration: none; font-weight: 600"><svg width="14" height="14" viewBox="0 0 12 12" aria-hidden="true"><path d="M6 .8 11.4 10.8H.6z" fill="#C25A0A"></path><path d="M6 4.6v2.8M6 8.6v.5" stroke="#FFFFFF" stroke-width="1.5" stroke-linecap="round"></path></svg>1 section under re-check</a>
+          <div role="img" aria-label="5 sections: 1 checked, 2 reviewed, 1 under re-check, 1 not reviewed" style="display: flex; width: 120px; height: 6px; gap: 2px; border-radius: 3px; overflow: hidden"><span style="flex: 1; background: #1E7F45"></span><span style="flex: 2; background: #B07C00"></span><span style="flex: 1; background: #C25A0A"></span><span style="flex: 1; background: #C5C9D1"></span></div>
+          <span style="font-size: 13px; color: #3A404C">1 checked · 2 reviewed · 1 not reviewed</span>
+        </div>
+        <div style="display: flex; flex-wrap: wrap; gap: 8px; padding-top: 4px">
+          <button type="button" aria-pressed="{{ following }}" onClick="{{ toggleFollow }}" style="{{ followStyle }}">{{ followLabel }}</button>
+          <a href="Editor.dc.html" style="padding: 7px 12px; border: 1px solid #D5D9E0; border-radius: 8px; background: #FFFFFF; color: #14161B; font-weight: 500; text-decoration: none">Suggest an edit</a>
+          <a href="Discussions.dc.html" style="padding: 7px 12px; border: 1px solid #D5D9E0; border-radius: 8px; background: #FFFFFF; color: #14161B; font-weight: 500; text-decoration: none">Ask a question</a>
+          <a href="#history" style="padding: 7px 12px; border: 1px solid #D5D9E0; border-radius: 8px; background: #FFFFFF; color: #14161B; font-weight: 500; text-decoration: none">History</a>
+        </div>
+      </header>
+
+      <sc-for list="{{ sections }}" as="s" hint-placeholder-count="5">
+        <section aria-label="{{ s.title }}" style="{{ s.box }}">
+          <div style="display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; justify-content: space-between">
+            <h2 style="margin: 0; font-family: 'Source Serif 4', Georgia, serif; font-size: 23px; font-weight: 600">{{ s.title }}</h2>
+            <button type="button" onClick="{{ s.pick }}" aria-label="{{ s.aria }}" style="display: inline-flex; gap: 7px; align-items: center; padding: 4px 9px; border: 1px solid #E4E7EC; border-radius: 6px; background: #FFFFFF; font-size: 12px; color: #14161B">
+              <svg width="13" height="13" viewBox="0 0 12 12" aria-hidden="true"><path d="{{ s.t.p1 }}" fill="{{ s.t.f1 }}" stroke="{{ s.t.s1 }}" stroke-width="1.5"></path><path d="{{ s.t.p2 }}" fill="{{ s.t.f2 }}" stroke="{{ s.t.s2 }}" stroke-width="1.5" stroke-linecap="round"></path></svg>{{ s.t.label }}
+            </button>
+          </div>
+          <sc-if value="{{ s.warn }}" hint-placeholder-val="{{ false }}">
+            <div role="note" style="display: flex; flex-direction: column; gap: 4px; padding: 10px 14px; background: #FDF1E7; border-radius: 8px; color: #5E2A03; font-size: 13px">
+              <strong style="font-weight: 600">Use with care: this section is being re-checked.</strong>
+              <span>A reader reported the pinhole wording is outdated; m.nguyen confirmed it on 22 Nov. A fix is being reviewed. <a href="Review.dc.html" style="color: #8A3D05; font-weight: 600">See the proposed fix</a></span>
+            </div>
+          </sc-if>
+          <p style="margin: 0; font-family: 'Source Serif 4', Georgia, serif; font-size: 17.5px; line-height: 1.7; color: #22252B">{{ s.body }}<sup style="font-family: Inter, sans-serif; font-size: 11px"><a href="#sources">{{ s.fn }}</a></sup></p>
+          <sc-if value="{{ s.on }}" hint-placeholder-val="{{ false }}">
+            <div style="display: flex; flex-wrap: wrap; gap: 6px; align-items: center; padding-top: 4px; font-size: 13px">
+              <span style="color: #545B68; margin-right: 4px">This section:</span>
+              <a href="Trust.dc.html" style="padding: 5px 10px; border: 1px solid #D5D9E0; border-radius: 7px; color: #14161B; text-decoration: none">Useful</a>
+              <a href="Trust.dc.html" style="padding: 5px 10px; border: 1px solid #D5D9E0; border-radius: 7px; color: #14161B; text-decoration: none">I checked a source</a>
+              <a href="Trust.dc.html" style="padding: 5px 10px; border: 1px solid #D5D9E0; border-radius: 7px; color: #14161B; text-decoration: none">I used it in practice</a>
+              <a href="Trust.dc.html" style="padding: 5px 10px; border: 1px solid #D5D9E0; border-radius: 7px; color: #14161B; text-decoration: none">Report a problem</a>
+            </div>
+          </sc-if>
+        </section>
+      </sc-for>
+
+      <section id="sources" aria-labelledby="src-h" style="display: flex; flex-direction: column; gap: 8px; padding-top: 18px; border-top: 1px solid #EEF0F3">
+        <h2 id="src-h" style="margin: 0; font-size: 15px">Sources</h2>
+        <ol style="margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 6px; font-size: 13px">
+          <sc-for list="{{ sources }}" as="f" hint-placeholder-count="4">
+            <li><span>{{ f.cite }}</span> <span style="color: #545B68">· {{ f.status }}</span></li>
+          </sc-for>
+        </ol>
+      </section>
+
+      <section aria-label="Feedback on this page" style="display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center; justify-content: space-between; padding: 14px 16px; background: #F6F7F9; border-radius: 10px">
+        <span style="font-weight: 600">{{ helpedQuestion }}</span>
+        <div style="display: flex; gap: 6px">
+          <sc-for list="{{ helped }}" as="h" hint-placeholder-count="3">
+            <button type="button" aria-pressed="{{ h.on }}" onClick="{{ h.pick }}" style="{{ h.style }}">{{ h.label }}</button>
+          </sc-for>
+        </div>
+      </section>
+    </article>
+
+    <aside aria-label="About this page" style="flex: 1 1 300px; min-width: 0; max-width: 340px; display: flex; flex-direction: column; gap: 14px">
+      <section style="background: #FFFFFF; border: 1px solid #E4E7EC; border-radius: 12px; padding: 16px 18px; display: flex; flex-direction: column; gap: 12px">
+        <h2 style="margin: 0; font-size: 15px">Why “{{ cur.title }}” has this label</h2>
+        <span style="display: inline-flex; gap: 8px; align-items: center; font-weight: 600"><svg width="14" height="14" viewBox="0 0 12 12" aria-hidden="true"><path d="{{ cur.t.p1 }}" fill="{{ cur.t.f1 }}" stroke="{{ cur.t.s1 }}" stroke-width="1.5"></path><path d="{{ cur.t.p2 }}" fill="{{ cur.t.f2 }}" stroke="{{ cur.t.s2 }}" stroke-width="1.5" stroke-linecap="round"></path></svg>{{ cur.t.label }}</span>
+        <ul style="margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 9px">
+          <sc-for list="{{ cur.evidence }}" as="e" hint-placeholder-count="3">
+            <li style="display: flex; flex-direction: column; font-size: 13px"><span>{{ e.what }}</span><span style="color: #545B68; font-size: 12px">{{ e.meta }}</span></li>
+          </sc-for>
+        </ul>
+        <span style="font-size: 12px; color: #545B68; padding-top: 8px; border-top: 1px solid #F1F2F5">{{ cur.changes }}</span>
+        <a href="Trust.dc.html" style="font-size: 13px; font-weight: 500">Full evidence and history</a>
+      </section>
+
+      <section style="background: #FFFFFF; border: 1px solid #E4E7EC; border-radius: 12px; padding: 16px 18px; display: flex; flex-direction: column; gap: 10px">
+        <h2 style="margin: 0; font-size: 15px">People who rely on it</h2>
+        <span style="font-size: 13px; color: #3A404C">{{ countsText }}</span>
+        <button type="button" onClick="{{ reveal }}" style="align-self: flex-start; padding: 0; border: 0; background: transparent; color: #2453D6; font-size: 13px; font-weight: 500">{{ revealLabel }}</button>
+        <span style="font-size: 12px; color: #545B68">Shown as team counts, never names. For content quality only, not to rate people.</span>
+      </section>
+
+      <section style="background: #FFFFFF; border: 1px solid #E4E7EC; border-radius: 12px; padding: 16px 18px; display: flex; flex-direction: column; gap: 10px">
+        <h2 style="margin: 0; font-size: 15px">Maintained by</h2>
+        <div style="display: flex; flex-direction: column; gap: 8px">
+          <span style="display: flex; gap: 10px; align-items: center"><span style="width: 28px; height: 28px; border-radius: 14px; background: #E7ECFA; color: #1C42AE; font-size: 11px; font-weight: 600; display: inline-flex; align-items: center; justify-content: center">MN</span>m.nguyen <span style="color: #545B68; font-size: 12px">Imaging core</span></span>
+          <span style="display: flex; gap: 10px; align-items: center"><span style="width: 28px; height: 28px; border-radius: 14px; background: #E7ECFA; color: #1C42AE; font-size: 11px; font-weight: 600; display: inline-flex; align-items: center; justify-content: center">HP</span>h.pham <span style="color: #545B68; font-size: 12px">Imaging core</span></span>
+        </div>
+        <dl style="margin: 0; display: grid; grid-template-columns: 110px minmax(0, 1fr); gap: 6px 10px; font-size: 13px; padding-top: 8px; border-top: 1px solid #F1F2F5">
+          <dt style="color: #545B68">Changes in review</dt><dd style="margin: 0"><a href="Review.dc.html">1 on Principle</a></dd>
+          <dt style="color: #545B68">Open questions</dt><dd style="margin: 0"><a href="Discussions.dc.html">2</a></dd>
+          <dt style="color: #545B68">Linked from</dt><dd style="margin: 0">14 pages</dd>
+          <dt style="color: #545B68">Version</dt><dd style="margin: 0">20261123-2</dd>
+        </dl>
+      </section>
+    </aside>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1350}}'>
+class Component extends DCLogic {
+  state = { sel: 'principle', following: true, helped: '', revealed: false };
+  renderVals() {
+    const TL = {
+      checked: { label: 'Checked against source', p1: 'M.5 6a5.5 5.5 0 1 0 11 0a5.5 5.5 0 1 0-11 0', f1: '#1E7F45', s1: 'none', p2: 'M3.5 6.2 5.2 7.8 8.5 4.4', f2: 'none', s2: '#FFFFFF' },
+      reviewed: { label: 'Reviewed', p1: 'M1 6a5 5 0 1 0 10 0a5 5 0 1 0-10 0', f1: 'none', s1: '#7A5A00', p2: 'M6 1a5 5 0 0 1 0 10z', f2: '#7A5A00', s2: 'none' },
+      none: { label: 'Not reviewed', p1: 'M1.25 6a4.75 4.75 0 1 0 9.5 0a4.75 4.75 0 1 0-9.5 0', f1: 'none', s1: '#6B7280', p2: '', f2: 'none', s2: 'none' },
+      recheck: { label: 'Under re-check', p1: 'M6 .8 11.4 10.8H.6z', f1: '#C25A0A', s1: 'none', p2: 'M6 4.6v2.8M6 8.6v.5', f2: 'none', s2: '#FFFFFF' },
+      error: { label: 'Confirmed error', p1: 'M4 .8h4L11.2 4v4L8 11.2H4L.8 8V4z', f1: '#C33027', s1: 'none', p2: 'M4.3 4.3l3.4 3.4M7.7 4.3 4.3 7.7', f2: 'none', s2: '#FFFFFF' }
+    };
+    const data = [
+      { id: 'overview', k: 'reviewed', title: 'Overview', fn: '1', body: 'A confocal microscope places a pinhole in a plane conjugate to the focus to reject out-of-focus light, so thick samples can be imaged as thin optical sections.',
+        evidence: [ { what: 'Approved by the reviewer agent', meta: '23 Nov · change lightsheet-lead-2' }, { what: 'An agent compared it with Pawley §1.2: matches', meta: 'Not enough on its own: a person must check it' } ],
+        changes: 'Becomes Checked against source when a person checks a source on this version.', counts: '1 team found it useful.' },
+      { id: 'principle', k: 'recheck', title: 'Principle', fn: '2', warn: true, body: 'A laser is scanned across the sample. Emitted fluorescence returns through the objective and the same scanning optics to a point detector. Closing the pinhole improves sectioning and reduces the detected signal.',
+        evidence: [ { what: 'Report confirmed: outdated', meta: 'Reported by a reader in Light-sheet team · confirmed by m.nguyen, 22 Nov' }, { what: 'Approved by a page author', meta: '4 Sep · this version' }, { what: 'A fix is being reviewed', meta: 'Escalated to the page authors because it adds a claim' } ],
+        changes: 'Goes back to Reviewed when the fix is published, or when the page authors close the report.', counts: '3 teams used it in practice · 1 confirmed report.' },
+      { id: 'resolution', k: 'checked', title: 'Resolution', fn: '3', body: 'Lateral resolution is about 0.51 λ / NA with a pinhole of one Airy unit. Axial resolution is two to three times worse.',
+        evidence: [ { what: 'Checked against Pawley Table 2.1 by a person', meta: '12 Nov · archived copy · this version' }, { what: 'Agrees with Point spread function › FWHM', meta: 'Independent source, confirmed by a reviewer' }, { what: 'Linked from 14 pages', meta: 'Shows reach only. Links never count as evidence.' } ],
+        changes: 'Any edit to this section resets it until it is reviewed again.', counts: '2 people in 2 teams checked this version · 1 used it in practice.' },
+      { id: 'detectors', k: 'reviewed', title: 'Detectors', fn: '4', body: 'Photomultiplier tubes remain common. Hybrid detectors (HyD) offer higher quantum efficiency and lower noise. See Detectors for models on our instruments.',
+        evidence: [ { what: 'Approved by the reviewer agent', meta: '23 Nov · 5 h ago' }, { what: 'Source could not be checked', meta: 'The vendor page changed; no archived copy' }, { what: '3 people checked the previous version', meta: 'They don’t count for this version' } ],
+        changes: 'Becomes Checked against source when a person checks a source on this version.', counts: '3 checks on the previous version · none yet on this one.' },
+      { id: 'history', k: 'none', title: 'History', fn: '5', body: 'Minsky patented the principle in 1957. Commercial laser scanning systems followed in the 1980s.',
+        evidence: [ { what: 'Written before review started', meta: 'Imported in 2023; never reviewed' } ],
+        changes: 'Gets reviewed when someone suggests an edit with a source.', counts: 'No one has said they rely on it.' }
+    ];
+    const sel = this.state.sel;
+    const sections = data.map(d => {
+      const on = d.id === sel;
+      return { ...d, t: TL[d.k], on, warn: !!d.warn, current: on ? 'location' : 'false',
+        aria: d.title + ': ' + TL[d.k].label + '. Why this label',
+        pick: () => this.setState({ sel: d.id, revealed: false }),
+        box: 'display: flex; flex-direction: column; gap: 10px; padding: 10px 14px; margin: 0 -14px; border-radius: 10px; background: ' + (on ? '#F4F6FB' : 'transparent'),
+        tocStyle: 'display: flex; gap: 9px; align-items: center; width: 100%; padding: 6px 8px; border: 0; border-radius: 6px; text-align: left; font-size: 13px; color: #14161B; background: ' + (on ? '#E9EDF5' : 'transparent') + '; font-weight: ' + (on ? '600' : '450') };
+    });
+    const cur = sections.find(s => s.on);
+    const siblings = [ { name: 'Confocal microscopy', k: 'recheck', cur: true }, { name: 'Light-sheet microscopy', k: 'reviewed' }, { name: 'Spinning disk confocal', k: 'none' }, { name: 'STED microscopy', k: 'none' }, { name: 'Widefield fluorescence', k: 'checked' } ].map(p => ({ ...p, t: TL[p.k], current: p.cur ? 'page' : 'false',
+      style: 'display: flex; gap: 9px; align-items: center; padding: 6px 8px; border-radius: 6px; text-decoration: none; color: #14161B; background: ' + (p.cur ? '#E9EDF5' : 'transparent') + '; font-weight: ' + (p.cur ? '600' : '450') }));
+    const sources = [
+      { cite: 'Pawley, Handbook of Biological Confocal Microscopy, ch. 1', status: 'handbook · archived copy' },
+      { cite: 'Pawley, ch. 2 §2.4', status: 'handbook · archived copy' },
+      { cite: 'Pawley, Table 2.1', status: 'handbook · checked by a person 12 Nov' },
+      { cite: 'Vendor detector overview (web page)', status: 'vendor · page changed, no archived copy' },
+      { cite: 'Minsky, US patent 3,013,467', status: 'primary · archived copy' }
+    ];
+    const hdefs = [ { id: 'yes', label: 'Yes' }, { id: 'partly', label: 'Partly' }, { id: 'no', label: 'No' } ];
+    const helped = hdefs.map(h => {
+      const on = this.state.helped === h.id;
+      return { ...h, on, pick: () => this.setState({ helped: h.id }),
+        style: 'min-width: 64px; padding: 7px 12px; border-radius: 8px; font-size: 13px; font-weight: 500; color: #14161B; border: 1px solid ' + (on ? '#2453D6' : '#D5D9E0') + '; background: ' + (on ? '#EEF2FC' : '#FFFFFF') };
+    });
+    const hq = { '': 'Did this page help with your work?', yes: 'Thanks. Counted for your team.', partly: 'Thanks. What was missing? Report it on the section.', no: 'Sorry. Report the section that let you down so it gets fixed.' };
+    const f = this.state.following;
+    return {
+      sections, cur, siblings, sources, helped, helpedQuestion: hq[this.state.helped],
+      following: f, toggleFollow: () => this.setState({ following: !f }),
+      followLabel: f ? 'Following' : 'Follow',
+      followStyle: 'padding: 7px 12px; border-radius: 8px; font-size: 14px; font-weight: 500; border: 1px solid ' + (f ? '#2453D6' : '#D5D9E0') + '; background: ' + (f ? '#EEF2FC' : '#FFFFFF') + '; color: #14161B',
+      countsText: this.state.revealed ? cur.counts : 'Hidden until you say whether you used or checked this section, so your answer isn’t swayed.',
+      revealLabel: this.state.revealed ? 'Hide' : 'Show anyway',
+      reveal: () => this.setState({ revealed: !this.state.revealed })
+    };
+  }
+}
+</script>
+</body>
+</html>

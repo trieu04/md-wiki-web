@@ -1,0 +1,225 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Credibility</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#F6F7F9}
+a{color:#2453D6}a:hover{color:#1C42AE}
+button{font-family:inherit;cursor:pointer}
+a:focus-visible,button:focus-visible,textarea:focus-visible{outline:2px solid #2453D6;outline-offset:2px}
+</style>
+</helmet>
+<div style="font-family: Inter, system-ui, sans-serif; font-size: 14px; line-height: 1.5; color: #14161B; background: #F6F7F9; min-height: 1150px; display: flex; flex-direction: column">
+  <div style="display: flex"><dc-import name="TopBar" active="workspace" hint-size="1440px,56px"></dc-import></div>
+  <div style="flex: 1 1 auto; display: flex; flex-wrap: wrap; align-items: stretch">
+  <div style="flex: 1 1 220px; max-width: 260px; display: flex"><dc-import name="WorkNav" active="recheck" hint-size="220px,1150px"></dc-import></div>
+
+  <main style="flex: 999 1 640px; min-width: 0; box-sizing: border-box; padding: 20px 28px 40px; display: flex; flex-direction: column; gap: 16px">
+    <div style="display: flex; flex-wrap: wrap; gap: 12px 24px; align-items: flex-end; justify-content: space-between">
+      <div style="display: flex; flex-direction: column; gap: 2px">
+        <h1 style="margin: 0; font-size: 24px; font-weight: 700">Credibility</h1>
+        <span style="color: #545B68">What readers see across bioimaging/, and the sections that need a person to look.</span>
+      </div>
+      <div style="display: flex; flex-wrap: wrap; gap: 8px">
+        <button type="button" style="padding: 7px 12px; border: 1px solid #D5D9E0; border-radius: 8px; background: #FFFFFF; font-size: 14px; font-weight: 500">Run retraction check now</button>
+        <button type="button" style="padding: 7px 12px; border: 1px solid #D5D9E0; border-radius: 8px; background: #FFFFFF; font-size: 14px; font-weight: 500">Export</button>
+      </div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px">
+      <sc-for list="{{ stats }}" as="s" hint-placeholder-count="5">
+        <div style="background: #FFFFFF; border: 1px solid #E4E7EC; border-radius: 10px; padding: 12px 14px; display: flex; flex-direction: column; gap: 2px">
+          <span style="display: inline-flex; gap: 7px; align-items: center; font-size: 13px; color: #3A404C"><svg width="13" height="13" viewBox="0 0 12 12" aria-hidden="true"><path d="{{ s.t.p1 }}" fill="{{ s.t.f1 }}" stroke="{{ s.t.s1 }}" stroke-width="1.5"></path><path d="{{ s.t.p2 }}" fill="{{ s.t.f2 }}" stroke="{{ s.t.s2 }}" stroke-width="1.5" stroke-linecap="round"></path></svg>{{ s.t.label }}</span>
+          <span style="font-size: 22px; font-weight: 700">{{ s.n }}</span>
+          <span style="font-size: 12px; color: #545B68">{{ s.delta }}</span>
+        </div>
+      </sc-for>
+    </div>
+
+    <div style="background: #FFFFFF; border: 1px solid #E4E7EC; border-radius: 10px; overflow: hidden">
+      <div role="tablist" aria-label="View" style="display: flex; flex-wrap: wrap; gap: 2px; padding: 0 10px; border-bottom: 1px solid #E4E7EC">
+        <sc-for list="{{ tabs }}" as="t" hint-placeholder-count="3">
+          <button type="button" role="tab" aria-selected="{{ t.on }}" onClick="{{ t.pick }}" style="{{ t.style }}">{{ t.label }} <span style="color: #545B68; font-weight: 500">{{ t.n }}</span></button>
+        </sc-for>
+      </div>
+
+      <sc-if value="{{ isQueue }}" hint-placeholder-val="{{ true }}">
+        <div style="display: flex; flex-wrap: wrap; align-items: stretch">
+          <div style="flex: 1 1 360px; min-width: 0; border-right: 1px solid #EEF0F3">
+            <span style="display: block; padding: 10px 14px; font-size: 12px; color: #545B68; border-bottom: 1px solid #EEF0F3">Ordered by reach: pages linking to it and teams using it. Not yet tuned (gate E8d).</span>
+            <sc-for list="{{ queue }}" as="q" hint-placeholder-count="5">
+              <button type="button" aria-pressed="{{ q.on }}" onClick="{{ q.pick }}" style="{{ q.row }}">
+                <span style="display: inline-flex; gap: 7px; align-items: center; font-size: 12px; color: #3A404C"><svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="{{ q.t.p1 }}" fill="{{ q.t.f1 }}" stroke="{{ q.t.s1 }}" stroke-width="1.5"></path><path d="{{ q.t.p2 }}" fill="{{ q.t.f2 }}" stroke="{{ q.t.s2 }}" stroke-width="1.5" stroke-linecap="round"></path></svg>{{ q.kind }}<sc-if value="{{ q.ai }}" hint-placeholder-val="{{ false }}"><span style="font-size: 11px; font-weight: 600; color: #5B3FB8; border: 1px solid #CDBFF0; border-radius: 4px; padding: 0 5px">AI</span></sc-if></span>
+                <span style="font-weight: 600; text-align: left">{{ q.where }}</span>
+                <span style="font-size: 12px; color: #545B68; text-align: left">{{ q.reach }}</span>
+              </button>
+            </sc-for>
+          </div>
+
+          <div style="flex: 2 1 460px; min-width: 0; padding: 18px 20px; display: flex; flex-direction: column; gap: 14px">
+            <div style="display: flex; flex-direction: column; gap: 4px">
+              <span style="font-size: 13px; color: #545B68">{{ cur.kind }}</span>
+              <h2 style="margin: 0; font-size: 18px">{{ cur.where }}</h2>
+              <span style="color: #3A404C">{{ cur.why }}</span>
+            </div>
+            <dl style="margin: 0; display: grid; grid-template-columns: 140px minmax(0, 1fr); gap: 7px 14px; font-size: 13px">
+              <sc-for list="{{ cur.props }}" as="p" hint-placeholder-count="4"><dt style="color: #545B68">{{ p.k }}</dt><dd style="margin: 0">{{ p.v }}</dd></sc-for>
+            </dl>
+            <div style="display: flex; flex-direction: column; gap: 6px">
+              <h3 style="margin: 0; font-size: 13px">Affected downstream</h3>
+              <ul style="margin: 0; padding-left: 18px; font-size: 13px; color: #3A404C; display: flex; flex-direction: column; gap: 2px">
+                <sc-for list="{{ cur.down }}" as="d" hint-placeholder-count="2"><li>{{ d }}</li></sc-for>
+              </ul>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 10px; padding: 14px 16px; border: 1px solid #C9D3F2; border-radius: 10px">
+              <h3 style="margin: 0; font-size: 14px">{{ cur.decideTitle }}</h3>
+              <div role="radiogroup" aria-label="Outcome" style="display: flex; flex-direction: column; gap: 6px">
+                <sc-for list="{{ outcomes }}" as="o" hint-placeholder-count="3">
+                  <button type="button" role="radio" aria-checked="{{ o.on }}" onClick="{{ o.pick }}" style="{{ o.style }}"><span style="{{ o.ring }}"></span><span style="display: flex; flex-direction: column; text-align: left"><strong style="font-weight: 600">{{ o.label }}</strong><span style="color: #545B68">{{ o.hint }}</span></span></button>
+                </sc-for>
+              </div>
+              <label for="cred-reason" style="font-weight: 600; font-size: 13px">Reason (shown in the section’s evidence)</label>
+              <textarea id="cred-reason" rows="2" style="font: inherit; font-size: 13px; padding: 8px 10px; border: 1px solid #D5D9E0; border-radius: 8px; resize: vertical"></textarea>
+              <div style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: space-between">
+                <span style="font-size: 12px; color: #545B68">Readers see the new label as soon as you save.</span>
+                <button type="button" style="padding: 9px 16px; border: 0; border-radius: 8px; background: #2453D6; color: #FFFFFF; font-size: 14px; font-weight: 600">Save decision</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isCoverage }}" hint-placeholder-val="{{ false }}">
+        <div style="overflow-x: auto">
+          <table style="width: 100%; min-width: 820px; border-collapse: collapse">
+            <thead><tr style="text-align: left; font-size: 12px; color: #545B68"><th scope="col" style="padding: 10px 16px; font-weight: 600">Page</th><th scope="col" style="padding: 10px 12px; font-weight: 600">Readers see</th><th scope="col" style="padding: 10px 12px; font-weight: 600">Sections</th><th scope="col" style="padding: 10px 12px; font-weight: 600">Oldest unchecked</th><th scope="col" style="padding: 10px 16px; font-weight: 600">Readers, 30 days</th></tr></thead>
+            <tbody>
+              <sc-for list="{{ coverage }}" as="c" hint-placeholder-count="6">
+                <tr style="border-top: 1px solid #F1F2F5">
+                  <td style="padding: 11px 16px"><a href="Page.dc.html" style="font-weight: 600; text-decoration: none">{{ c.page }}</a></td>
+                  <td style="padding: 11px 12px"><span style="display: inline-flex; gap: 7px; align-items: center"><svg width="13" height="13" viewBox="0 0 12 12" aria-hidden="true"><path d="{{ c.t.p1 }}" fill="{{ c.t.f1 }}" stroke="{{ c.t.s1 }}" stroke-width="1.5"></path><path d="{{ c.t.p2 }}" fill="{{ c.t.f2 }}" stroke="{{ c.t.s2 }}" stroke-width="1.5" stroke-linecap="round"></path></svg>{{ c.t.label }}</span></td>
+                  <td style="padding: 11px 12px"><div role="img" aria-label="{{ c.aria }}" style="display: flex; width: 160px; height: 8px; gap: 2px; border-radius: 4px; overflow: hidden"><span style="flex: {{ c.a }}; background: #1E7F45"></span><span style="flex: {{ c.b }}; background: #B07C00"></span><span style="flex: {{ c.c }}; background: #C25A0A"></span><span style="flex: {{ c.d }}; background: #C5C9D1"></span></div><span style="font-size: 12px; color: #545B68">{{ c.aria }}</span></td>
+                  <td style="padding: 11px 12px; color: #3A404C">{{ c.oldest }}</td>
+                  <td style="padding: 11px 16px; color: #3A404C">{{ c.readers }}</td>
+                </tr>
+              </sc-for>
+            </tbody>
+          </table>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isSources }}" hint-placeholder-val="{{ false }}">
+        <div style="overflow-x: auto">
+          <table style="width: 100%; min-width: 820px; border-collapse: collapse">
+            <thead><tr style="text-align: left; font-size: 12px; color: #545B68"><th scope="col" style="padding: 10px 16px; font-weight: 600">Source</th><th scope="col" style="padding: 10px 12px; font-weight: 600">Tier</th><th scope="col" style="padding: 10px 12px; font-weight: 600">Status</th><th scope="col" style="padding: 10px 12px; font-weight: 600">Cited by</th><th scope="col" style="padding: 10px 16px; font-weight: 600">Last checked</th></tr></thead>
+            <tbody>
+              <sc-for list="{{ sources }}" as="s" hint-placeholder-count="5">
+                <tr style="border-top: 1px solid #F1F2F5">
+                  <td style="padding: 11px 16px; font-family: 'JetBrains Mono', monospace; font-size: 12px">{{ s.path }}</td>
+                  <td style="padding: 11px 12px">{{ s.tier }}</td>
+                  <td style="padding: 11px 12px"><span style="display: inline-flex; gap: 7px; align-items: center"><span style="{{ s.dot }}"></span>{{ s.status }}</span></td>
+                  <td style="padding: 11px 12px; color: #3A404C">{{ s.cited }}</td>
+                  <td style="padding: 11px 16px; color: #545B68">{{ s.checked }}</td>
+                </tr>
+              </sc-for>
+            </tbody>
+          </table>
+        </div>
+      </sc-if>
+    </div>
+  </main>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1150}}'>
+class Component extends DCLogic {
+  state = { tab: 'queue', sel: 0, outcome: 0 };
+  renderVals() {
+    const TL = {
+      checked: { label: 'Checked against source', p1: 'M.5 6a5.5 5.5 0 1 0 11 0a5.5 5.5 0 1 0-11 0', f1: '#1E7F45', s1: 'none', p2: 'M3.5 6.2 5.2 7.8 8.5 4.4', f2: 'none', s2: '#FFFFFF' },
+      reviewed: { label: 'Reviewed', p1: 'M1 6a5 5 0 1 0 10 0a5 5 0 1 0-10 0', f1: 'none', s1: '#7A5A00', p2: 'M6 1a5 5 0 0 1 0 10z', f2: '#7A5A00', s2: 'none' },
+      none: { label: 'Not reviewed', p1: 'M1.25 6a4.75 4.75 0 1 0 9.5 0a4.75 4.75 0 1 0-9.5 0', f1: 'none', s1: '#6B7280', p2: '', f2: 'none', s2: 'none' },
+      recheck: { label: 'Under re-check', p1: 'M6 .8 11.4 10.8H.6z', f1: '#C25A0A', s1: 'none', p2: 'M6 4.6v2.8M6 8.6v.5', f2: 'none', s2: '#FFFFFF' },
+      error: { label: 'Confirmed error', p1: 'M4 .8h4L11.2 4v4L8 11.2H4L.8 8V4z', f1: '#C33027', s1: 'none', p2: 'M4.3 4.3l3.4 3.4M7.7 4.3 4.3 7.7', f2: 'none', s2: '#FFFFFF' }
+    };
+    const stats = [
+      { t: TL.checked, n: '427', delta: '41% · +6 this week' },
+      { t: TL.reviewed, n: '479', delta: '46% · 22 by the agent this week' },
+      { t: TL.recheck, n: '31', delta: '3% · 2 assigned to you' },
+      { t: TL.error, n: '1', delta: 'Readers see a warning' },
+      { t: TL.none, n: '104', delta: '10% · mostly imported in 2023' }
+    ];
+    const Q = [
+      { t: TL.recheck, kind: 'Source retracted', ai: false, where: 'Deconvolution › Richardson–Lucy', reach: 'Linked from 6 pages · used by 3 teams · copied once',
+        why: 'Crossref marks Okafor et al. 2019 as retracted (21 Nov). The iteration count in this section comes from that paper.',
+        props: [ { k: 'Found by', v: 'retraction_check job, 21 Nov 02:10' }, { k: 'Readers see', v: 'Under re-check, since 21 Nov' }, { k: 'Source checks', v: '2 on this version, now not counting' }, { k: 'Assigned to', v: 'm.nguyen, h.pham' } ],
+        down: [ 'Protocols › Deconvolution steps (copy of this section)', 'Image processing › Restoration overview (links here)' ],
+        decideTitle: 'Decide what readers should see', outcomes: [ { label: 'Still correct with another source', hint: 'Record a source check against a replacement; back to its earlier label' }, { label: 'Wrong: mark as confirmed error', hint: 'Readers see a red warning until someone fixes it' }, { label: 'Keep under re-check', hint: 'Needs more work; stays on this list' } ] },
+      { t: TL.recheck, kind: 'New report: wrong', ai: false, where: 'Sample mounting › Refractive index', reach: 'Linked from 9 pages · used by 4 teams',
+        why: 'A reader in Cell biology says the glycerol 80% value should be 1.44, not 1.47. Marked “blocking my work”.',
+        props: [ { k: 'Reported by', v: 's.vo · Cell biology · 40 min ago' }, { k: 'Readers see', v: 'Reviewed (unchanged until you confirm)' }, { k: 'Quote', v: '“80% glycerol: n = 1.47”' } ],
+        down: [ 'Confocal microscopy › Resolution uses this table' ],
+        decideTitle: 'Confirm or dismiss the report', outcomes: [ { label: 'Confirm', hint: 'Section goes under re-check for everyone; the reporter is told' }, { label: 'Confirm and fix now', hint: 'Opens the editor with the quote selected' }, { label: 'Dismiss with a reason', hint: 'The reporter sees your reason and can reply' } ] },
+      { t: TL.reviewed, kind: 'Possible copy', ai: true, where: 'Light-sheet microscopy › Overview', reach: 'Matches Confocal microscopy › Overview at 82%',
+        why: 'The first two sentences match closely. If it is a copy, it should follow changes to the original and not count as independent support.',
+        props: [ { k: 'Found by', v: 'copy_candidates job · claude-sonnet-5-5' }, { k: 'Effect if confirmed', v: 'Corroboration between the two stops counting' } ],
+        down: [ 'No reader-visible change' ],
+        decideTitle: 'Is this a copy?', outcomes: [ { label: 'Yes, it is copied from the original', hint: 'Records a copy link' }, { label: 'No, written independently', hint: 'The pair is not suggested again' }, { label: 'Not sure, ask the authors', hint: 'Opens a discussion' } ] },
+      { t: TL.reviewed, kind: 'Possible contradiction', ai: true, where: 'Point spread function › FWHM', reach: 'Disagrees with Deconvolution › PSF model',
+        why: 'One says FWHM = 0.51 λ/NA, the other 0.61 λ/NA. A discussion is already open.',
+        props: [ { k: 'Found by', v: 'relation_candidates job' }, { k: 'Discussion', v: 'Lateral FWHM differs between two pages (3 replies)' } ],
+        down: [ 'psf-fwhm-table is held until this is settled' ],
+        decideTitle: 'Do they really disagree?', outcomes: [ { label: 'Yes, one of them is wrong', hint: 'The wrong one goes under re-check' }, { label: 'No, they say different things', hint: 'Suggest clearer wording instead' }, { label: 'Leave to the discussion', hint: 'Decide when it closes' } ] },
+      { t: TL.recheck, kind: 'Report confirmed, fix in review', ai: false, where: 'Confocal microscopy › Principle', reach: 'Linked from 14 pages · used by 4 teams',
+        why: 'Outdated pinhole wording. The fix fix-pinhole-units is escalated to you.',
+        props: [ { k: 'Confirmed by', v: 'm.nguyen, 22 Nov' }, { k: 'Fix', v: 'fix-pinhole-units · escalated' } ],
+        down: [ 'Pinhole alignment › Choosing the size links here' ],
+        decideTitle: 'Close when the fix is published', outcomes: [ { label: 'Wait for the fix', hint: 'Closes itself when the fix is published' }, { label: 'Close: the text is fine after all', hint: 'Back to Reviewed' }, { label: 'Mark as confirmed error', hint: 'If the fix will take long' } ] }
+    ];
+    const sel = Math.min(this.state.sel, Q.length - 1);
+    const queue = Q.map((q, n) => ({ ...q, on: n === sel, pick: () => this.setState({ sel: n, outcome: 0 }),
+      row: 'width: 100%; display: flex; flex-direction: column; gap: 3px; align-items: flex-start; padding: 12px 14px; border: 0; border-bottom: 1px solid #EEF0F3; color: #14161B; background: ' + (n === sel ? '#EEF2FC' : '#FFFFFF') }));
+    const cur = Q[sel];
+    const outcomes = cur.outcomes.map((o, n) => {
+      const on = this.state.outcome === n;
+      return { ...o, on, pick: () => this.setState({ outcome: n }),
+        style: 'display: flex; gap: 10px; align-items: flex-start; padding: 8px 10px; border-radius: 8px; font-size: 13px; color: #14161B; background: ' + (on ? '#EEF2FC' : '#FFFFFF') + '; border: 1px solid ' + (on ? '#2453D6' : '#E4E7EC'),
+        ring: 'flex: 0 0 14px; height: 14px; margin-top: 2px; box-sizing: border-box; border-radius: 7px; border: ' + (on ? '4px solid #2453D6' : '1.5px solid #8A909C') };
+    });
+    const cov = [
+      { page: 'Confocal microscopy', k: 'recheck', a: 1, b: 2, c: 1, d: 1, oldest: 'History (2023)', readers: '212 · 4 teams' },
+      { page: 'Deconvolution', k: 'recheck', a: 0, b: 3, c: 1, d: 0, oldest: 'Wiener filter (Mar)', readers: '140 · 3 teams' },
+      { page: 'Sample mounting', k: 'reviewed', a: 1, b: 4, c: 0, d: 0, oldest: 'Clearing (Jun)', readers: '188 · 5 teams' },
+      { page: 'Point spread function', k: 'reviewed', a: 2, b: 3, c: 0, d: 0, oldest: 'Measuring (Aug)', readers: '96 · 2 teams' },
+      { page: 'STED microscopy', k: 'none', a: 0, b: 1, c: 0, d: 3, oldest: '3 sections (new page)', readers: '18 · 1 team' },
+      { page: 'Booking and access', k: 'checked', a: 4, b: 0, c: 0, d: 0, oldest: '—', readers: '402 · 9 teams' }
+    ];
+    const coverage = cov.map(c => ({ ...c, t: TL[c.k], aria: c.a + ' checked · ' + c.b + ' reviewed · ' + c.c + ' re-check · ' + c.d + ' not reviewed' }));
+    const dot = (col) => 'width: 8px; height: 8px; border-radius: 4px; background: ' + col;
+    const sources = [
+      { path: 'sources/okafor-2019-rl.md', tier: 'Peer-reviewed', status: 'Retracted 21 Nov', dot: dot('#C33027'), cited: '1 section · 1 copy', checked: 'Crossref, today 02:10' },
+      { path: 'sources/pawley-handbook.md', tier: 'Handbook', status: 'OK · archived copy', dot: dot('#1E7F45'), cited: '23 sections', checked: 'Crossref, today 02:10' },
+      { path: 'sources/zeiss-lsm980-manual.md', tier: 'Vendor manual', status: 'OK · archived copy', dot: dot('#1E7F45'), cited: '17 sections', checked: 'Link check, today' },
+      { path: 'sources/vendor-detectors-web.md', tier: 'Vendor web page', status: 'Changed since cited', dot: dot('#B07C00'), cited: '2 sections', checked: 'Link check, today' },
+      { path: 'sources/lab-notebook-2024-03.md', tier: 'Internal data', status: 'OK', dot: dot('#1E7F45'), cited: '4 sections', checked: 'Not checkable automatically' }
+    ];
+    const tdefs = [ { id: 'queue', label: 'Needs a person', n: '5' }, { id: 'coverage', label: 'Pages', n: '128' }, { id: 'sources', label: 'Sources', n: '86' } ];
+    const tabs = tdefs.map(t => {
+      const on = this.state.tab === t.id;
+      return { ...t, on, pick: () => this.setState({ tab: t.id }),
+        style: 'padding: 10px 12px; border: 0; border-bottom: 2px solid ' + (on ? '#2453D6' : 'transparent') + '; margin-bottom: -1px; background: transparent; font-size: 14px; color: ' + (on ? '#14161B' : '#545B68') + '; font-weight: ' + (on ? '600' : '500') };
+    });
+    return { stats, tabs, queue, cur, outcomes, coverage, sources,
+      isQueue: this.state.tab === 'queue', isCoverage: this.state.tab === 'coverage', isSources: this.state.tab === 'sources' };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Your activity</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#F6F7F9}
+a{color:#2453D6}a:hover{color:#1C42AE}
+button{font-family:inherit;cursor:pointer}
+a:focus-visible,button:focus-visible,input:focus-visible{outline:2px solid #2453D6;outline-offset:2px}
+</style>
+</helmet>
+<div style="font-family: Inter, system-ui, sans-serif; font-size: 14px; line-height: 1.5; color: #14161B; background: #F6F7F9; min-height: 950px; display: flex; flex-direction: column">
+  <div style="display: flex"><dc-import name="TopBar" active="you" hint-size="1440px,56px"></dc-import></div>
+
+  <main style="width: 100%; max-width: 1240px; margin: 0 auto; box-sizing: border-box; padding: 28px 24px 48px; display: flex; flex-direction: column; gap: 18px">
+    <div style="display: flex; flex-wrap: wrap; gap: 12px 24px; justify-content: space-between; align-items: flex-end">
+      <div style="display: flex; flex-direction: column; gap: 2px">
+        <h1 style="margin: 0; font-size: 24px; font-weight: 700">You</h1>
+        <span style="color: #545B68">m.nguyen · Imaging core. Pages you follow, and what happened to your checks, reports and suggestions.</span>
+      </div>
+    </div>
+
+    <div style="display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-start">
+      <section style="flex: 999 1 600px; min-width: 0; background: #FFFFFF; border: 1px solid #E4E7EC; border-radius: 12px; overflow: hidden">
+        <div role="tablist" aria-label="Your activity" style="display: flex; flex-wrap: wrap; gap: 2px; padding: 0 12px; border-bottom: 1px solid #E4E7EC">
+          <sc-for list="{{ tabs }}" as="t" hint-placeholder-count="3">
+            <button type="button" role="tab" aria-selected="{{ t.on }}" onClick="{{ t.pick }}" style="{{ t.style }}">{{ t.label }} <span style="color: #545B68; font-weight: 500">{{ t.n }}</span></button>
+          </sc-for>
+        </div>
+        <div style="overflow-x: auto">
+          <table style="width: 100%; min-width: 680px; border-collapse: collapse">
+            <thead><tr style="text-align: left; font-size: 12px; color: #545B68"><sc-for list="{{ cols }}" as="c" hint-placeholder-count="4"><th scope="col" style="padding: 10px 16px; font-weight: 600">{{ c }}</th></sc-for></tr></thead>
+            <tbody>
+              <sc-for list="{{ rows }}" as="r" hint-placeholder-count="5">
+                <tr style="border-top: 1px solid #F1F2F5; vertical-align: top">
+                  <td style="padding: 12px 16px"><a href="Page.dc.html" style="font-weight: 600; text-decoration: none">{{ r.page }}</a><div style="font-size: 12px; color: #545B68">{{ r.section }}</div></td>
+                  <td style="padding: 12px 16px; color: #3A404C">{{ r.what }}</td>
+                  <td style="padding: 12px 16px"><span style="display: inline-flex; gap: 7px; align-items: center"><svg width="14" height="14" viewBox="0 0 12 12" aria-hidden="true"><path d="{{ r.t.p1 }}" fill="{{ r.t.f1 }}" stroke="{{ r.t.s1 }}" stroke-width="1.5"></path><path d="{{ r.t.p2 }}" fill="{{ r.t.f2 }}" stroke="{{ r.t.s2 }}" stroke-width="1.5" stroke-linecap="round"></path></svg>{{ r.status }}</span><div style="font-size: 12px; color: #545B68">{{ r.detail }}</div></td>
+                  <td style="padding: 12px 16px; white-space: nowrap"><a href="{{ r.href }}" style="font-weight: 500">{{ r.action }}</a></td>
+                </tr>
+              </sc-for>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <aside style="flex: 1 1 300px; min-width: 0; max-width: 380px; display: flex; flex-direction: column; gap: 16px">
+        <section style="background: #FFFFFF; border: 1px solid #E4E7EC; border-radius: 12px; padding: 16px 18px; display: flex; flex-direction: column; gap: 10px">
+          <h2 style="margin: 0; font-size: 15px">Tell me when</h2>
+          <sc-for list="{{ prefs }}" as="p" hint-placeholder-count="4">
+            <button type="button" role="switch" aria-checked="{{ p.on }}" onClick="{{ p.pick }}" style="display: flex; gap: 12px; align-items: center; justify-content: space-between; padding: 6px 0; border: 0; background: transparent; text-align: left; font-size: 13px; color: #14161B">
+              <span>{{ p.label }}</span><span style="{{ p.track }}"><span style="{{ p.knob }}"></span></span>
+            </button>
+          </sc-for>
+          <label style="display: flex; flex-direction: column; gap: 4px; font-size: 13px; padding-top: 8px; border-top: 1px solid #F1F2F5"><span style="font-weight: 600">How</span>
+            <select style="padding: 7px 10px; border: 1px solid #D5D9E0; border-radius: 8px; font: inherit; background: #FFFFFF"><option>In the wiki and a daily email</option><option>In the wiki only</option><option>Slack or Teams message</option></select>
+          </label>
+        </section>
+        <section style="background: #FFFFFF; border: 1px solid #E4E7EC; border-radius: 12px; padding: 16px 18px; display: flex; flex-direction: column; gap: 8px">
+          <h2 style="margin: 0; font-size: 15px">Your part this year</h2>
+          <dl style="margin: 0; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px 12px; font-size: 13px">
+            <dt style="color: #3A404C">Source checks still counting</dt><dd style="margin: 0; font-weight: 600">9</dd>
+            <dt style="color: #3A404C">Reports confirmed</dt><dd style="margin: 0; font-weight: 600">3 of 4</dd>
+            <dt style="color: #3A404C">Suggestions published</dt><dd style="margin: 0; font-weight: 600">5</dd>
+          </dl>
+          <span style="font-size: 12px; color: #545B68">Only you see this. It is not used to rate people.</span>
+        </section>
+      </aside>
+    </div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":950}}'>
+class Component extends DCLogic {
+  state = { tab: 'following', prefs: { recheck: true, changed: true, report: true, digest: false } };
+  renderVals() {
+    const TL = {
+      checked: { label: 'Checked against source', p1: 'M.5 6a5.5 5.5 0 1 0 11 0a5.5 5.5 0 1 0-11 0', f1: '#1E7F45', s1: 'none', p2: 'M3.5 6.2 5.2 7.8 8.5 4.4', f2: 'none', s2: '#FFFFFF' },
+      reviewed: { label: 'Reviewed', p1: 'M1 6a5 5 0 1 0 10 0a5 5 0 1 0-10 0', f1: 'none', s1: '#7A5A00', p2: 'M6 1a5 5 0 0 1 0 10z', f2: '#7A5A00', s2: 'none' },
+      none: { label: 'Not reviewed', p1: 'M1.25 6a4.75 4.75 0 1 0 9.5 0a4.75 4.75 0 1 0-9.5 0', f1: 'none', s1: '#6B7280', p2: '', f2: 'none', s2: 'none' },
+      recheck: { label: 'Under re-check', p1: 'M6 .8 11.4 10.8H.6z', f1: '#C25A0A', s1: 'none', p2: 'M6 4.6v2.8M6 8.6v.5', f2: 'none', s2: '#FFFFFF' },
+      error: { label: 'Confirmed error', p1: 'M4 .8h4L11.2 4v4L8 11.2H4L.8 8V4z', f1: '#C33027', s1: 'none', p2: 'M4.3 4.3l3.4 3.4M7.7 4.3 4.3 7.7', f2: 'none', s2: '#FFFFFF' }
+    };
+    const D = {
+      following: { cols: ['Page', 'Last change', 'Trust now', ''], rows: [
+        { page: 'Confocal microscopy', section: 'You used Principle, Resolution', what: 'Principle went under re-check (22 Nov)', t: TL.recheck, status: '1 section under re-check', detail: 'Fix being reviewed', action: 'Open', href: 'Page.dc.html' },
+        { page: 'Deconvolution', section: 'You used Richardson–Lucy', what: 'A cited source was retracted (21 Nov)', t: TL.recheck, status: '1 section under re-check', detail: 'Page authors re-checking', action: 'Open', href: 'Page.dc.html' },
+        { page: 'Point spread function', section: 'Whole page', what: 'NA table value corrected (3 h ago)', t: TL.reviewed, status: 'Reviewed', detail: 'Your old check on #table stopped counting', action: 'Check again', href: 'Trust.dc.html' },
+        { page: 'Pinhole alignment', section: 'Whole page', what: 'Step 4 checked against the manual', t: TL.checked, status: 'Checked against source', detail: 'All 6 sections', action: 'Open', href: 'Page.dc.html' },
+        { page: 'Booking and access', section: 'Whole page', what: 'No change in 30 days', t: TL.checked, status: 'Checked against source', detail: '', action: 'Unfollow', href: '#unfollow' }
+      ] },
+      trust: { cols: ['Section', 'What you did', 'Outcome', ''], rows: [
+        { page: 'Confocal microscopy', section: 'Resolution', what: 'Checked a source: supports (12 Nov)', t: TL.checked, status: 'Counting', detail: 'Section is Checked against source', action: 'View', href: 'Trust.dc.html' },
+        { page: 'Point spread function', section: 'NA table', what: 'Checked a source: supports (2 Nov)', t: TL.none, status: 'Stopped counting', detail: 'The section was edited 3 h ago', action: 'Check again', href: 'Trust.dc.html' },
+        { page: 'Light-sheet microscopy', section: 'Sample mounting', what: 'Reported: outdated (18 Nov)', t: TL.reviewed, status: 'Fixed and published', detail: 'Confirmed by a.tran · fixed 20 Nov', action: 'View', href: 'Page.dc.html' },
+        { page: 'Sample mounting', section: 'Refractive index', what: 'Reported: wrong (9 Nov)', t: TL.none, status: 'Dismissed', detail: '“The table is for 20 °C; noted in the text.”', action: 'Reply', href: 'Discussions.dc.html' },
+        { page: 'Confocal microscopy', section: 'Principle', what: 'Used in practice: setting up acquisition', t: TL.recheck, status: 'Section now under re-check', detail: 'You may want to look at your settings', action: 'Open', href: 'Page.dc.html' }
+      ] },
+      suggestions: { cols: ['Page', 'Your suggestion', 'Status', ''], rows: [
+        { page: 'Confocal microscopy', section: 'Detectors', what: 'Detector comparison table', t: TL.recheck, status: 'Needs your attention', detail: 'The page changed under it', action: 'Resolve', href: 'Conflict.dc.html' },
+        { page: 'STED microscopy', section: 'Principle', what: 'Depletion wavelength', t: TL.reviewed, status: 'Published', detail: 'Approved by h.pham · 1 d ago', action: 'View', href: 'Page.dc.html' },
+        { page: 'Confocal microscopy', section: 'Principle', what: 'Draft: pinhole units', t: TL.none, status: 'Draft', detail: 'Saved 10:42', action: 'Continue', href: 'Editor.dc.html' }
+      ] }
+    };
+    const tdefs = [ { id: 'following', label: 'Followed pages', n: '6' }, { id: 'trust', label: 'Your checks and reports', n: '14' }, { id: 'suggestions', label: 'Your suggestions', n: '3' } ];
+    const tabs = tdefs.map(t => {
+      const on = this.state.tab === t.id;
+      return { ...t, on, pick: () => this.setState({ tab: t.id }),
+        style: 'padding: 11px 12px; border: 0; border-bottom: 2px solid ' + (on ? '#2453D6' : 'transparent') + '; margin-bottom: -1px; background: transparent; font-size: 14px; color: ' + (on ? '#14161B' : '#545B68') + '; font-weight: ' + (on ? '600' : '500') };
+    });
+    const p = this.state.prefs;
+    const pdefs = [ { id: 'recheck', label: 'A section I used goes under re-check' }, { id: 'changed', label: 'A section I checked is edited' }, { id: 'report', label: 'My report is confirmed, dismissed or fixed' }, { id: 'digest', label: 'Weekly summary of followed pages' } ];
+    const prefs = pdefs.map(x => {
+      const on = !!p[x.id];
+      return { ...x, on, pick: () => this.setState({ prefs: { ...p, [x.id]: !on } }),
+        track: 'flex: 0 0 36px; height: 20px; border-radius: 10px; padding: 2px; box-sizing: border-box; display: flex; justify-content: ' + (on ? 'flex-end' : 'flex-start') + '; background: ' + (on ? '#2453D6' : '#C5C9D1'),
+        knob: 'width: 16px; height: 16px; border-radius: 8px; background: #FFFFFF' };
+    });
+    const cur = D[this.state.tab];
+    return { tabs, cols: cur.cols, rows: cur.rows, prefs };
+  }
+}
+</script>
+</body>
+</html>

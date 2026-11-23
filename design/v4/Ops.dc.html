@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Operations</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#F6F7F9}
+a{color:#2453D6}a:hover{color:#1C42AE}
+button{font-family:inherit;cursor:pointer}
+a:focus-visible,button:focus-visible,textarea:focus-visible{outline:2px solid #2453D6;outline-offset:2px}
+</style>
+</helmet>
+<div style="font-family: Inter, system-ui, sans-serif; font-size: 14px; line-height: 1.5; color: #14161B; background: #F6F7F9; min-height: 1100px; display: flex; flex-direction: column">
+  <div style="display: flex"><dc-import name="TopBar" active="workspace" hint-size="1440px,56px"></dc-import></div>
+  <div style="flex: 1 1 auto; display: flex; flex-wrap: wrap; align-items: stretch">
+  <div style="flex: 1 1 220px; max-width: 260px; display: flex"><dc-import name="WorkNav" active="ops" hint-size="220px,1100px"></dc-import></div>
+
+  <main style="flex: 999 1 640px; min-width: 0; box-sizing: border-box; padding: 20px 28px 40px; display: flex; flex-direction: column; gap: 16px">
+    <div style="display: flex; flex-wrap: wrap; gap: 12px 24px; align-items: flex-end; justify-content: space-between">
+      <div style="display: flex; flex-direction: column; gap: 2px">
+        <h1 style="margin: 0; font-size: 24px; font-weight: 700">Operations</h1>
+        <span style="color: #545B68">Health of publishing, the reviewer agent and background jobs. Owner only.</span>
+      </div>
+      <div style="display: flex; flex-wrap: wrap; gap: 8px">
+        <button type="button" style="padding: 7px 12px; border: 1px solid #D5D9E0; border-radius: 8px; background: #FFFFFF; font-size: 14px; font-weight: 500">Audit log</button>
+        <button type="button" style="padding: 7px 12px; border: 1px solid #F0C2BF; border-radius: 8px; background: #FFFFFF; color: #A1261F; font-size: 14px; font-weight: 600">Pause the reviewer agent</button>
+      </div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px">
+      <sc-for list="{{ health }}" as="h" hint-placeholder-count="5">
+        <div style="background: #FFFFFF; border: 1px solid #E4E7EC; border-radius: 10px; padding: 12px 14px; display: flex; flex-direction: column; gap: 2px">
+          <span style="display: inline-flex; gap: 7px; align-items: center; font-size: 13px; color: #3A404C"><span style="{{ h.dot }}"></span>{{ h.label }}</span>
+          <span style="font-size: 18px; font-weight: 700">{{ h.value }}</span>
+          <span style="font-size: 12px; color: #545B68">{{ h.note }}</span>
+        </div>
+      </sc-for>
+    </div>
+
+    <section style="background: #FFFFFF; border: 1px solid #F0C2BF; border-radius: 10px; padding: 16px 18px; display: flex; flex-direction: column; gap: 12px">
+      <div style="display: flex; flex-wrap: wrap; gap: 8px; justify-content: space-between; align-items: center">
+        <h2 style="margin: 0; font-size: 15px">Blocked: publish outcome unknown</h2>
+        <span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #545B68">deconv-iterations → deconvolution.md · since 09:31</span>
+      </div>
+      <p style="margin: 0; color: #3A404C">The write timed out. Nobody can publish to this page until you say what is on disk. Compare the file with both versions:</p>
+      <div style="display: flex; flex-wrap: wrap; gap: 8px">
+        <button type="button" style="padding: 7px 12px; border: 1px solid #D5D9E0; border-radius: 8px; background: #FFFFFF; font-size: 14px; font-weight: 500">On disk = the new version (mark published)</button>
+        <button type="button" style="padding: 7px 12px; border: 1px solid #D5D9E0; border-radius: 8px; background: #FFFFFF; font-size: 14px; font-weight: 500">On disk = the old version (retry)</button>
+        <button type="button" style="padding: 7px 12px; border: 1px solid #D5D9E0; border-radius: 8px; background: #FFFFFF; font-size: 14px; font-weight: 500">Neither (restore from backup)</button>
+      </div>
+      <span style="font-size: 12px; color: #545B68">File hash on disk 7b21e0c4 · expected new 7b21e0c4 · old 3f90aa12</span>
+    </section>
+
+    <div style="display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-start">
+      <section style="flex: 1 1 360px; min-width: 0; background: #FFFFFF; border: 1px solid #E4E7EC; border-radius: 10px; padding: 16px 18px; display: flex; flex-direction: column; gap: 10px">
+        <h2 style="margin: 0; font-size: 15px; display: flex; gap: 8px; align-items: center">Reviewer agent · last 7 days <span style="font-size: 11px; font-weight: 600; color: #5B3FB8; border: 1px solid #CDBFF0; border-radius: 4px; padding: 0 5px">AI</span></h2>
+        <dl style="margin: 0; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 7px 14px; font-size: 13px">
+          <sc-for list="{{ agent }}" as="a" hint-placeholder-count="6"><dt style="color: #3A404C">{{ a.k }}</dt><dd style="margin: 0; font-weight: 600; text-align: right">{{ a.v }}</dd></sc-for>
+        </dl>
+        <span style="font-size: 12px; color: #545B68">Spot checks fail → the agent’s approvals drop to 0% auto-publish until you turn it back on.</span>
+      </section>
+
+      <section style="flex: 2 1 520px; min-width: 0; background: #FFFFFF; border: 1px solid #E4E7EC; border-radius: 10px; overflow: hidden">
+        <h2 style="margin: 0; padding: 14px 18px; font-size: 15px; border-bottom: 1px solid #EEF0F3">Background jobs</h2>
+        <div style="overflow-x: auto">
+          <table style="width: 100%; min-width: 600px; border-collapse: collapse; font-size: 13px">
+            <thead><tr style="text-align: left; font-size: 12px; color: #545B68"><th scope="col" style="padding: 9px 18px; font-weight: 600">Job</th><th scope="col" style="padding: 9px 12px; font-weight: 600">Last run</th><th scope="col" style="padding: 9px 12px; font-weight: 600">Result</th><th scope="col" style="padding: 9px 18px; font-weight: 600">Queue</th></tr></thead>
+            <tbody>
+              <sc-for list="{{ jobs }}" as="j" hint-placeholder-count="6">
+                <tr style="border-top: 1px solid #F1F2F5">
+                  <td style="padding: 10px 18px; font-family: 'JetBrains Mono', monospace; font-size: 12px">{{ j.name }}</td>
+                  <td style="padding: 10px 12px; color: #3A404C">{{ j.last }}</td>
+                  <td style="padding: 10px 12px"><span style="display: inline-flex; gap: 7px; align-items: center"><span style="{{ j.dot }}"></span>{{ j.result }}</span></td>
+                  <td style="padding: 10px 18px; color: #3A404C">{{ j.queue }}</td>
+                </tr>
+              </sc-for>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+  </main>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1100}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const dot = (c) => 'width: 8px; height: 8px; border-radius: 4px; background: ' + c;
+    const g = dot('#1E7F45'), a = dot('#B07C00'), r = dot('#C33027');
+    const health = [
+      { dot: g, label: 'API and storage', value: 'OK', note: 'Last write 3 min ago' },
+      { dot: r, label: 'Blocked targets', value: '1', note: 'deconvolution.md' },
+      { dot: g, label: 'Worker queue', value: '3 jobs', note: 'Oldest 40 s' },
+      { dot: a, label: 'Model provider', value: 'Slow', note: 'p95 38 s · claude-sonnet-5-5' },
+      { dot: g, label: 'Backups', value: 'OK', note: 'Nightly, 02:00' }
+    ];
+    const agent = [
+      { k: 'Proposals decided', v: '86' }, { k: 'Approved and auto-published', v: '61' }, { k: 'Sent back for revision', v: '14' },
+      { k: 'Escalated to page authors', v: '11' }, { k: 'Approvals refused by triggers', v: '9' }, { k: 'Spot checks passed', v: '6 of 6' }, { k: 'Reverted after publishing', v: '0' }
+    ];
+    const jobs = [
+      { name: 'quality_check', last: '10:07 · 1 min 40 s', result: 'OK', dot: g, queue: '1 waiting' },
+      { name: 'agent_review', last: '10:09 · 52 s', result: 'OK', dot: g, queue: '0' },
+      { name: 'retraction_check', last: '02:10 · 86 sources', result: '1 retraction found', dot: a, queue: 'Daily' },
+      { name: 'copy_candidates', last: '03:00', result: '1 candidate', dot: g, queue: 'Daily' },
+      { name: 'relation_candidates', last: '03:20', result: '1 candidate', dot: g, queue: 'Daily' },
+      { name: 'credibility_score', last: '03:40 · shadow', result: 'OK, not shown to readers', dot: g, queue: 'Daily' }
+    ];
+    return { health, agent, jobs };
+  }
+}
+</script>
+</body>
+</html>

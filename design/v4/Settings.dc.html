@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Settings</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#F6F7F9}
+a{color:#2453D6}a:hover{color:#1C42AE}
+button{font-family:inherit;cursor:pointer}
+a:focus-visible,button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid #2453D6;outline-offset:2px}
+</style>
+</helmet>
+<div style="font-family: Inter, system-ui, sans-serif; font-size: 14px; line-height: 1.5; color: #14161B; background: #F6F7F9; min-height: 1100px; display: flex; flex-direction: column">
+  <div style="display: flex"><dc-import name="TopBar" active="workspace" hint-size="1440px,56px"></dc-import></div>
+  <div style="flex: 1 1 auto; display: flex; flex-wrap: wrap; align-items: stretch">
+  <div style="flex: 1 1 220px; max-width: 260px; display: flex"><dc-import name="WorkNav" active="settings" hint-size="220px,1100px"></dc-import></div>
+
+  <main style="flex: 999 1 640px; min-width: 0; box-sizing: border-box; padding: 20px 28px 40px; display: flex; flex-direction: column; gap: 16px">
+    <div style="display: flex; flex-direction: column; gap: 2px">
+      <h1 style="margin: 0; font-size: 24px; font-weight: 700">Settings</h1>
+      <span style="color: #545B68">Owner only. Every change is written to the audit log.</span>
+    </div>
+
+    <div style="background: #FFFFFF; border: 1px solid #E4E7EC; border-radius: 10px; overflow: hidden">
+      <div role="tablist" aria-label="Settings" style="display: flex; flex-wrap: wrap; gap: 2px; padding: 0 10px; border-bottom: 1px solid #E4E7EC">
+        <sc-for list="{{ tabs }}" as="t" hint-placeholder-count="6">
+          <button type="button" role="tab" aria-selected="{{ t.on }}" onClick="{{ t.pick }}" style="{{ t.style }}">{{ t.label }}</button>
+        </sc-for>
+      </div>
+
+      <div style="padding: 6px 22px 22px">
+        <sc-for list="{{ rows }}" as="r" hint-placeholder-count="7">
+          <div style="display: flex; flex-wrap: wrap; gap: 8px 24px; padding: 14px 0; border-bottom: 1px solid #F1F2F5">
+            <div style="flex: 1 1 300px; min-width: 0; display: flex; flex-direction: column; gap: 2px">
+              <span style="font-weight: 600">{{ r.label }}</span>
+              <span style="font-size: 13px; color: #545B68">{{ r.help }}</span>
+            </div>
+            <div style="flex: 1 1 320px; min-width: 0; display: flex; flex-direction: column; gap: 6px">
+              <sc-if value="{{ r.isText }}" hint-placeholder-val="{{ true }}"><span style="padding: 7px 10px; border: 1px solid #D5D9E0; border-radius: 8px; background: #FFFFFF">{{ r.value }}</span></sc-if>
+              <sc-if value="{{ r.isLocked }}" hint-placeholder-val="{{ false }}"><span style="padding: 7px 10px; border-radius: 8px; background: #F1F2F5; font-family: 'JetBrains Mono', monospace; font-size: 13px">{{ r.value }}</span></sc-if>
+              <sc-if value="{{ r.isList }}" hint-placeholder-val="{{ false }}">
+                <ul style="margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 4px">
+                  <sc-for list="{{ r.items }}" as="i" hint-placeholder-count="4">
+                    <li style="display: flex; gap: 10px; align-items: flex-start; font-size: 13px"><span style="{{ i.box }}"><svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true"><path d="M2 5.2 4.1 7.2 8 3" fill="none" stroke="#FFFFFF" stroke-width="1.6"></path></svg></span><span>{{ i.t }}<span style="color: #545B68">{{ i.note }}</span></span></li>
+                  </sc-for>
+                </ul>
+              </sc-if>
+              <span style="font-size: 12px; color: #545B68">{{ r.note }}</span>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+  </main>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1100}}'>
+class Component extends DCLogic {
+  state = { tab: 'trust' };
+  renderVals() {
+    const on = 'flex: 0 0 16px; height: 16px; margin-top: 1px; box-sizing: border-box; border-radius: 4px; display: inline-flex; align-items: center; justify-content: center; background: #2453D6';
+    const off = 'flex: 0 0 16px; height: 16px; margin-top: 1px; box-sizing: border-box; border-radius: 4px; border: 1.5px solid #8A909C; background: #FFFFFF';
+    const lk = (label, help, value, note) => ({ label, help, value, note: note || '', isLocked: true, isText: false, isList: false, items: [] });
+    const tx = (label, help, value, note) => ({ label, help, value, note: note || '', isLocked: false, isText: true, isList: false, items: [] });
+    const ls = (label, help, items, note) => ({ label, help, value: '', note: note || '', isLocked: false, isText: false, isList: true, items });
+    const T = {
+      review: [
+        tx('Review model', 'Who decides proposals by default.', 'Self-managed: the reviewer agent decides, page authors take escalations'),
+        lk('Auto-publish', 'Set by the server environment.', 'AUTO_PUBLISH=true', 'Every approval is published at once through the normal conditional write.'),
+        ls('Always escalate to page authors when', 'The API refuses an agent approval if any of these apply.', [
+          { t: 'An open dispute, hold or report', note: ' · built-in', box: on }, { t: 'A high-severity quality finding', note: ' · built-in', box: on },
+          { t: 'A number, unit or negation changes in a sentence with a source', note: ' · built-in', box: on }, { t: 'A claim is added to a sentence with a source', note: ' · built-in', box: on },
+          { t: 'A retracted or low-tier source is cited', note: ' · built-in', box: on }, { t: 'An agent edits a page written by people', note: '', box: on }, { t: 'Any change under wiki-meta/', note: ' · built-in', box: on } ]),
+        tx('Page authors', 'Who gets escalations for a page.', 'wiki-meta/owners.md, then people whose changes were published, then the owner'),
+        tx('Spot checks', 'Share of agent approvals sent to page authors after publishing.', '10%', 'A failed spot check is recorded as a confirmed error.'),
+        tx('Reminders', 'Nothing is ever decided by timeout.', 'Every 3 days, then weekly'),
+        tx('Quality check', 'Runs before the reviewer agent.', 'On every submission')
+      ],
+      trust: [
+        lk('How labels are decided', 'Fixed rules, worst section wins. Not changeable here.', 'confirmed error > under re-check > not reviewed > checked > reviewed', 'Shown to readers as words plus an icon, never a number.'),
+        ls('What readers can do', 'Buttons shown on every section.', [ { t: 'Useful', note: '', box: on }, { t: 'I checked a source', note: ' · needed for Checked against source', box: on }, { t: 'I used it in practice', note: ' · recorded, not counted yet (E8b)', box: on }, { t: 'Report a problem', note: '', box: on } ]),
+        ls('What readers see of others', 'Keeps answers independent.', [ { t: 'Hide counts until the reader has answered', note: '', box: on }, { t: 'Show team counts only, never names', note: ' · always on', box: on }, { t: 'Show the shadow score to page authors', note: ' · off until E8d', box: off } ]),
+        tx('Report urgency', 'When page authors hear about a report.', 'Daily summary; at once when the reader marks it blocking'),
+        tx('Who can confirm a report', 'Confirming puts a section under re-check for everyone.', 'Page authors of that page, and the owner'),
+        tx('Retraction check', 'Looks up cited papers in Crossref.', 'Daily at 02:10'),
+        tx('Keep attestation history', 'Raw events, for measuring whether they predict accuracy.', '90 days')
+      ],
+      people: [
+        tx('Sign-in', 'Local accounts for now.', 'Email and password · SSO later'),
+        tx('Teams', 'Used for team counts on attestations.', 'Imaging core, Light-sheet, Cell biology, Image analysis, +5'),
+        tx('Roles', 'Everyone can read and suggest. Roles add the Workspace.', 'reader · contributor · reviewer · owner')
+      ],
+      agents: [
+        tx('reviewer-agent', 'Decides proposals.', 'Token …9f2a · scopes review:decide, discuss:write'),
+        tx('lab-agent', 'Submits proposals through the API and MCP.', 'Token …41c0 · scopes proposals:write'),
+        tx('Token lifetime', '', '90 days, rotate from here')
+      ],
+      models: [
+        tx('Reviewer agent', '', 'claude-opus-5-5 · prompt v3'),
+        tx('Quality check and candidate jobs', '', 'claude-sonnet-5-5'),
+        tx('Local model', 'OpenAI-compatible endpoint, for teams that can’t send text out.', 'http://models.internal:8000 · qwen3.8')
+      ],
+      storage: [
+        lk('Wiki root', 'Markdown files on local disk. NestJS is the only writer.', '/srv/md-wiki/wiki'),
+        tx('Backups', '', 'Nightly at 02:00, kept 30 days')
+      ]
+    };
+    const tdefs = [ { id: 'review', label: 'Review and publishing' }, { id: 'trust', label: 'Trust labels' }, { id: 'people', label: 'People and teams' }, { id: 'agents', label: 'Agents and tokens' }, { id: 'models', label: 'Models' }, { id: 'storage', label: 'Storage' } ];
+    const tabs = tdefs.map(t => {
+      const sel = this.state.tab === t.id;
+      return { ...t, on: sel, pick: () => this.setState({ tab: t.id }),
+        style: 'padding: 10px 12px; border: 0; border-bottom: 2px solid ' + (sel ? '#2453D6' : 'transparent') + '; margin-bottom: -1px; background: transparent; font-size: 14px; color: ' + (sel ? '#14161B' : '#545B68') + '; font-weight: ' + (sel ? '600' : '500') };
+    });
+    return { tabs, rows: T[this.state.tab] };
+  }
+}
+</script>
+</body>
+</html>

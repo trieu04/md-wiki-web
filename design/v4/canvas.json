@@ -1,0 +1,36 @@
+{
+  "v": 3,
+  "createdOnFiles": {"v": 1, "at": "2026-11-23T14:00:00Z"},
+  "title": "md-wiki-web UI v4",
+  "launch": {"view": "canvas"},
+  "pages": [],
+  "boards": {
+    "Main.dc.html": {"x": 0, "y": 0, "w": 1440, "h": 1150, "title": "1 · Home", "expand": "fill", "is_interactive": true},
+    "Search.dc.html": {"x": 1520, "y": 0, "w": 1440, "h": 1050, "title": "2 · Search", "expand": "fill", "is_interactive": true},
+    "Page.dc.html": {"x": 3040, "y": 0, "w": 1440, "h": 1350, "title": "3 · Reading a page", "expand": "fill", "is_interactive": true},
+    "Trust.dc.html": {"x": 4560, "y": 0, "w": 1440, "h": 1000, "title": "4 · Trust: why, check, use, report", "expand": "fill", "is_interactive": true},
+    "You.dc.html": {"x": 6080, "y": 0, "w": 1440, "h": 950, "title": "5 · You: followed pages, your checks and reports", "expand": "fill", "is_interactive": true},
+    "Editor.dc.html": {"x": 0, "y": 1750, "w": 1440, "h": 1100, "title": "6 · Suggest an edit", "expand": "fill", "is_interactive": true},
+    "Conflict.dc.html": {"x": 1520, "y": 1750, "w": 1440, "h": 1000, "title": "7 · The page changed under you", "expand": "fill", "is_interactive": true},
+    "Inbox.dc.html": {"x": 0, "y": 3250, "w": 1440, "h": 1000, "title": "8 · Workspace inbox", "expand": "fill", "is_interactive": true},
+    "Proposals.dc.html": {"x": 1520, "y": 3250, "w": 1440, "h": 1000, "title": "9 · Proposals", "expand": "fill", "is_interactive": true},
+    "Review.dc.html": {"x": 3040, "y": 3250, "w": 1440, "h": 1250, "title": "10 · Review a proposal", "expand": "fill", "is_interactive": true},
+    "Discussions.dc.html": {"x": 4560, "y": 3250, "w": 1440, "h": 1000, "title": "11 · Discussions", "expand": "fill", "is_interactive": true},
+    "Credibility.dc.html": {"x": 6080, "y": 3250, "w": 1440, "h": 1150, "title": "12 · Credibility: re-check and coverage", "expand": "fill", "is_interactive": true},
+    "Ops.dc.html": {"x": 0, "y": 4900, "w": 1440, "h": 1100, "title": "13 · Operations", "expand": "fill", "is_interactive": true},
+    "Settings.dc.html": {"x": 1520, "y": 4900, "w": 1440, "h": 1100, "title": "14 · Settings", "expand": "fill", "is_interactive": true},
+    "TopBar.dc.html": {"x": 3040, "y": 4900, "w": 1440, "h": 56, "title": "Shared top bar", "is_interactive": true},
+    "WorkNav.dc.html": {"x": 3040, "y": 5076, "w": 220, "h": 1000, "title": "Workspace menu", "is_interactive": true}
+  },
+  "order": ["Main.dc.html", "Search.dc.html", "Page.dc.html", "Trust.dc.html", "You.dc.html", "Editor.dc.html", "Conflict.dc.html", "Inbox.dc.html", "Proposals.dc.html", "Review.dc.html", "Discussions.dc.html", "Credibility.dc.html", "Ops.dc.html", "Settings.dc.html", "TopBar.dc.html", "WorkNav.dc.html"],
+  "notes": {
+    "row1": {"x": 0, "y": -300, "text": "Reading the wiki: every employee", "kind": "title1", "maxW": 7520},
+    "row2": {"x": 0, "y": 1450, "text": "Suggesting a change: anyone", "kind": "title1", "maxW": 2960},
+    "row3": {"x": 0, "y": 2950, "text": "Workspace: page authors and reviewers", "kind": "title1", "maxW": 7520},
+    "row4": {"x": 0, "y": 4600, "text": "Running it: owner", "kind": "title1", "maxW": 4480},
+    "who": {"x": -760, "y": 0, "w": 600, "fill": "blue", "size": "m", "text": "v4: the wiki comes first\n\nMost visits are someone looking something up. So the default screen is the wiki: search, pages, and how much to trust each section.\n\n• Readers (everyone): Home, Search, Page, Trust actions, You.\n• Anyone can suggest an edit from a page.\n• Page authors and reviewers also see a Workspace link in the top bar. The review tools live there, out of readers' way.\n• Owner: Operations and Settings inside Workspace."},
+    "labels": {"x": -760, "y": 760, "w": 600, "fill": "gray", "size": "m", "text": "Trust labels, everywhere content appears\n\nSame icon + words on Home, Search results, the page table of contents, section headers and links.\n\n● Checked against source (a person checked this version)\n◐ Reviewed (approved, not source-checked)\n○ Not reviewed\n▲ Under re-check (report confirmed, retracted source…)\n⬣ Confirmed error\n\nPage label = its worst section, with the spread shown next to it."},
+    "reader": {"x": -760, "y": 1750, "w": 600, "fill": "green", "size": "m", "text": "What readers can do about trust\n\n1. See why: every label opens its evidence.\n2. I checked a source: records a source check on this exact version.\n3. I used it in practice: what for, did it work.\n4. Report a problem: wrong, outdated, unclear, bad source.\n5. Follow: hear when a section you used changes or goes under re-check.\n\nCounts stay hidden until you act; readers see team counts, never names."}
+  },
+  "designSystems": []
+}

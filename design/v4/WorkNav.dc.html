@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Workspace menu</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<nav aria-label="Workspace" style="font-family: Inter, system-ui, sans-serif; font-size: 14px; color: #14161B; box-sizing: border-box; width: 100%; min-height: 1000px; padding: 18px 12px; background: #FFFFFF; border-right: 1px solid #E4E7EC; display: flex; flex-direction: column; gap: 16px">
+  <div style="display: flex; flex-direction: column; gap: 2px; padding: 0 8px">
+    <strong style="font-size: 15px">Workspace</strong>
+    <span style="font-size: 12px; color: #545B68">For page authors and reviewers of bioimaging/</span>
+  </div>
+
+  <sc-for list="{{ groups }}" as="g" hint-placeholder-count="3">
+    <div style="display: flex; flex-direction: column; gap: 1px">
+      <span style="padding: 6px 10px 4px; font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #545B68">{{ g.title }}</span>
+      <sc-for list="{{ g.items }}" as="it" hint-placeholder-count="3">
+        <a href="{{ it.href }}" aria-current="{{ it.current }}" style="{{ it.style }}">
+          <span style="display: inline-flex; gap: 10px; align-items: center">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{ it.d1 }}"></path><path d="{{ it.d2 }}"></path></svg>
+            {{ it.label }}
+          </span>
+          <span style="{{ it.countStyle }}">{{ it.count }}</span>
+        </a>
+      </sc-for>
+    </div>
+  </sc-for>
+
+  <div style="margin-top: auto; padding: 12px 10px 0; border-top: 1px solid #E4E7EC; display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: #545B68">
+    <span>reviewer-agent is on · 14 published today</span>
+    <span>AUTO_PUBLISH on</span>
+  </div>
+</nav>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"active":{"editor":"enum","options":["inbox","proposals","discussions","recheck","mine","ops","settings"],"default":"inbox"},"$preview":{"width":220,"height":1000}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const active = this.props.active ?? 'inbox';
+    const c = (cx, cy, r) => 'M' + (cx - r) + ' ' + cy + 'a' + r + ' ' + r + ' 0 1 0 ' + (2 * r) + ' 0a' + r + ' ' + r + ' 0 1 0 ' + (-2 * r) + ' 0';
+    const groups = [
+      { title: 'Your work', items: [
+        { id: 'inbox', label: 'Inbox', href: 'Inbox.dc.html', count: '4', strong: true, d1: 'M3 13h5l1.5 2h5l1.5-2h5', d2: 'M5.5 5h13L21 13v6H3v-6z' },
+        { id: 'proposals', label: 'Proposals', href: 'Proposals.dc.html', count: '6', d1: c(6, 6, 2.5) + c(6, 18, 2.5) + c(18, 18, 2.5), d2: 'M6 8.5v7M18 15.5V9a3 3 0 0 0-3-3h-4' },
+        { id: 'discussions', label: 'Discussions', href: 'Discussions.dc.html', count: '3', d1: 'M4 5h16v11H9l-5 4z', d2: 'M8 9.5h8M8 12.5h5' }
+      ] },
+      { title: 'Trust', items: [
+        { id: 'recheck', label: 'Credibility', href: 'Credibility.dc.html', count: '2', strong: true, d1: 'M12 3l7 3v5c0 4.5-3 8-7 10-4-2-7-5.5-7-10V6z', d2: 'M9 12l2 2 4-4' }
+      ] },
+      { title: 'Owner', items: [
+        { id: 'ops', label: 'Operations', href: 'Ops.dc.html', count: '1', strong: true, d1: 'M3 12h4l3-7 4 14 3-7h4', d2: '' },
+        { id: 'settings', label: 'Settings', href: 'Settings.dc.html', count: '', d1: c(12, 12, 3), d2: 'M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M5.6 18.4l2.1-2.1M16.3 7.7l2.1-2.1' }
+      ] }
+    ].map(g => ({ ...g, items: g.items.map(it => {
+      const on = it.id === active;
+      return { ...it, current: on ? 'page' : 'false',
+        style: 'display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 8px 10px; border-radius: 7px; text-decoration: none; color: ' + (on ? '#14161B' : '#3A404C') + '; background: ' + (on ? '#EEF1F6' : 'transparent') + '; font-weight: ' + (on ? '600' : '450'),
+        countStyle: it.strong ? 'min-width: 20px; padding: 0 6px; height: 20px; box-sizing: border-box; border-radius: 10px; background: #14161B; color: #FFFFFF; font-size: 12px; font-weight: 600; display: inline-flex; align-items: center; justify-content: center' : 'font-size: 12px; color: #545B68' };
+    }) }));
+    return { groups };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Wiki home</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Source+Serif+4:opsz,wght@8..60,600;8..60,700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#F6F7F9}
+a{color:#2453D6}a:hover{color:#1C42AE}
+button{font-family:inherit;cursor:pointer}
+a:focus-visible,button:focus-visible,input:focus-visible{outline:2px solid #2453D6;outline-offset:2px}
+</style>
+</helmet>
+<div style="font-family: Inter, system-ui, sans-serif; font-size: 14px; line-height: 1.5; color: #14161B; background: #F6F7F9; min-height: 1150px; display: flex; flex-direction: column">
+  <div style="display: flex"><dc-import name="TopBar" active="home" hint-size="1440px,56px"></dc-import></div>
+
+  <main style="width: 100%; max-width: 1240px; margin: 0 auto; box-sizing: border-box; padding: 32px 24px 48px; display: flex; flex-direction: column; gap: 28px">
+    <section aria-label="Search" style="display: flex; flex-direction: column; gap: 14px; align-items: flex-start">
+      <h1 style="margin: 0; font-family: 'Source Serif 4', Georgia, serif; font-size: 34px; font-weight: 700; line-height: 1.2">Bioimaging core wiki</h1>
+      <p style="margin: 0; max-width: 680px; color: #3A404C; font-size: 16px">How we run the microscopes, prepare samples and process images. Every section shows how well it has been checked, so you know what you can rely on.</p>
+      <form role="search" style="width: 100%; max-width: 720px; display: flex; gap: 8px">
+        <label for="home-q" style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Search the wiki</label>
+        <input id="home-q" type="search" placeholder="What do you need to know? e.g. pinhole size for a 63x objective" style="flex: 1 1 auto; min-width: 0; height: 48px; box-sizing: border-box; padding: 0 16px; border: 1px solid #C9CED8; border-radius: 10px; background: #FFFFFF; font: inherit; font-size: 16px">
+        <a href="Search.dc.html" style="height: 48px; box-sizing: border-box; padding: 0 20px; border-radius: 10px; background: #2453D6; color: #FFFFFF; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center">Search</a>
+      </form>
+      <div style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center; font-size: 13px">
+        <span style="color: #545B68">Often searched:</span>
+        <sc-for list="{{ popular }}" as="p" hint-placeholder-count="4">
+          <a href="Search.dc.html" style="padding: 5px 10px; border: 1px solid #D5D9E0; border-radius: 999px; background: #FFFFFF; color: #14161B; text-decoration: none">{{ p }}</a>
+        </sc-for>
+      </div>
+    </section>
+
+    <div style="display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-start">
+      <div style="flex: 999 1 560px; min-width: 0; display: flex; flex-direction: column; gap: 20px">
+        <section aria-labelledby="notices-h" style="background: #FFFFFF; border: 1px solid #E4E7EC; border-radius: 12px; overflow: hidden">
+          <div style="display: flex; flex-wrap: wrap; gap: 8px; justify-content: space-between; align-items: center; padding: 14px 18px; border-bottom: 1px solid #EEF0F3">
+            <h2 id="notices-h" style="margin: 0; font-size: 16px">On pages you use</h2>
+            <a href="You.dc.html" style="font-size: 13px; font-weight: 500">Followed pages (6)</a>
+          </div>
+          <ul style="margin: 0; padding: 0; list-style: none">
+            <sc-for list="{{ notices }}" as="n" hint-placeholder-count="3">
+              <li style="display: flex; gap: 14px; padding: 14px 18px; border-bottom: 1px solid #F1F2F5">
+                <svg width="18" height="18" viewBox="0 0 12 12" aria-hidden="true" style="flex: 0 0 18px; margin-top: 2px"><path d="{{ n.t.p1 }}" fill="{{ n.t.f1 }}" stroke="{{ n.t.s1 }}" stroke-width="1.3"></path><path d="{{ n.t.p2 }}" fill="{{ n.t.f2 }}" stroke="{{ n.t.s2 }}" stroke-width="1.3" stroke-linecap="round"></path></svg>
+                <div style="flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 3px">
+                  <span style="font-weight: 600">{{ n.title }}</span>
+                  <span style="color: #3A404C">{{ n.text }}</span>
+                  <span style="display: flex; flex-wrap: wrap; gap: 14px; font-size: 13px; margin-top: 2px"><a href="{{ n.href }}" style="font-weight: 500">{{ n.action }}</a><span style="color: #6B7280">{{ n.when }}</span></span>
+                </div>
+              </li>
+            </sc-for>
+          </ul>
+        </section>
+
+        <section id="recent" aria-labelledby="recent-h" style="background: #FFFFFF; border: 1px solid #E4E7EC; border-radius: 12px; overflow: hidden">
+          <div style="display: flex; flex-wrap: wrap; gap: 8px; justify-content: space-between; align-items: center; padding: 14px 18px; border-bottom: 1px solid #EEF0F3">
+            <h2 id="recent-h" style="margin: 0; font-size: 16px">Recently updated</h2>
+            <div style="display: flex; gap: 4px">
+              <sc-for list="{{ scopes }}" as="s" hint-placeholder-count="2">
+                <button type="button" aria-pressed="{{ s.on }}" onClick="{{ s.pick }}" style="{{ s.style }}">{{ s.label }}</button>
+              </sc-for>
+            </div>
+          </div>
+          <div style="overflow-x: auto">
+            <table style="width: 100%; min-width: 640px; border-collapse: collapse">
+              <thead><tr style="text-align: left; font-size: 12px; color: #545B68"><th scope="col" style="padding: 10px 18px; font-weight: 600">Page</th><th scope="col" style="padding: 10px 12px; font-weight: 600">What changed</th><th scope="col" style="padding: 10px 12px; font-weight: 600">Trust now</th><th scope="col" style="padding: 10px 18px; font-weight: 600">When</th></tr></thead>
+              <tbody>
+                <sc-for list="{{ recent }}" as="r" hint-placeholder-count="5">
+                  <tr style="border-top: 1px solid #F1F2F5; vertical-align: top">
+                    <td style="padding: 12px 18px"><a href="Page.dc.html" style="font-weight: 600; text-decoration: none">{{ r.page }}</a><div style="font-size: 12px; color: #545B68">{{ r.section }}</div></td>
+                    <td style="padding: 12px; color: #3A404C">{{ r.change }}</td>
+                    <td style="padding: 12px; white-space: nowrap"><span style="display: inline-flex; gap: 7px; align-items: center"><svg width="14" height="14" viewBox="0 0 12 12" aria-hidden="true"><path d="{{ r.t.p1 }}" fill="{{ r.t.f1 }}" stroke="{{ r.t.s1 }}" stroke-width="1.5"></path><path d="{{ r.t.p2 }}" fill="{{ r.t.f2 }}" stroke="{{ r.t.s2 }}" stroke-width="1.5" stroke-linecap="round"></path></svg>{{ r.t.label }}</span></td>
+                    <td style="padding: 12px 18px; color: #545B68; white-space: nowrap">{{ r.when }}</td>
+                  </tr>
+                </sc-for>
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+
+      <aside style="flex: 1 1 320px; min-width: 0; max-width: 400px; display: flex; flex-direction: column; gap: 20px">
+        <section aria-labelledby="start-h" style="background: #FFFFFF; border: 1px solid #E4E7EC; border-radius: 12px; padding: 16px 18px; display: flex; flex-direction: column; gap: 10px">
+          <h2 id="start-h" style="margin: 0; font-size: 16px">Start here · Imaging core</h2>
+          <ul style="margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column">
+            <sc-for list="{{ start }}" as="s" hint-placeholder-count="5">
+              <li style="padding: 8px 0; border-top: 1px solid #F1F2F5; display: flex; flex-direction: column">
+                <a href="Page.dc.html" style="font-weight: 500; text-decoration: none">{{ s.page }}</a>
+                <span style="display: inline-flex; gap: 6px; align-items: center; font-size: 12px; color: #3A404C"><svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="{{ s.t.p1 }}" fill="{{ s.t.f1 }}" stroke="{{ s.t.s1 }}" stroke-width="1.5"></path><path d="{{ s.t.p2 }}" fill="{{ s.t.f2 }}" stroke="{{ s.t.s2 }}" stroke-width="1.5" stroke-linecap="round"></path></svg>{{ s.spread }}</span>
+              </li>
+            </sc-for>
+          </ul>
+        </section>
+
+        <section aria-labelledby="topics-h" style="background: #FFFFFF; border: 1px solid #E4E7EC; border-radius: 12px; padding: 16px 18px; display: flex; flex-direction: column; gap: 6px">
+          <h2 id="topics-h" style="margin: 0 0 4px; font-size: 16px">Browse by topic</h2>
+          <sc-for list="{{ topics }}" as="t" hint-placeholder-count="5">
+            <a href="Page.dc.html" style="display: flex; justify-content: space-between; padding: 7px 0; border-top: 1px solid #F1F2F5; color: #14161B; text-decoration: none"><span>{{ t.name }}</span><span style="color: #545B68">{{ t.n }}</span></a>
+          </sc-for>
+        </section>
+
+        <section aria-labelledby="labels-h" style="background: #FFFFFF; border: 1px solid #E4E7EC; border-radius: 12px; padding: 16px 18px; display: flex; flex-direction: column; gap: 12px">
+          <h2 id="labels-h" style="margin: 0; font-size: 16px">How to read trust labels</h2>
+          <ul style="margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 10px">
+            <sc-for list="{{ legend }}" as="l" hint-placeholder-count="5">
+              <li style="display: flex; gap: 10px"><svg width="14" height="14" viewBox="0 0 12 12" aria-hidden="true" style="flex: 0 0 14px; margin-top: 3px"><path d="{{ l.t.p1 }}" fill="{{ l.t.f1 }}" stroke="{{ l.t.s1 }}" stroke-width="1.5"></path><path d="{{ l.t.p2 }}" fill="{{ l.t.f2 }}" stroke="{{ l.t.s2 }}" stroke-width="1.5" stroke-linecap="round"></path></svg><span style="display: flex; flex-direction: column"><strong style="font-weight: 600; font-size: 13px">{{ l.t.label }}</strong><span style="font-size: 13px; color: #3A404C">{{ l.meaning }}</span></span></li>
+            </sc-for>
+          </ul>
+          <div style="display: flex; flex-direction: column; gap: 6px; padding-top: 12px; border-top: 1px solid #F1F2F5">
+            <span style="font-size: 13px; font-weight: 600">Across the wiki · 1,042 sections</span>
+            <div role="img" aria-label="41% checked against source, 46% reviewed, 3% under re-check, 10% not reviewed" style="display: flex; height: 8px; gap: 2px; border-radius: 4px; overflow: hidden">
+              <span style="flex: 41; background: #1E7F45"></span><span style="flex: 46; background: #B07C00"></span><span style="flex: 3; background: #C25A0A"></span><span style="flex: 10; background: #C5C9D1"></span>
+            </div>
+            <span style="font-size: 12px; color: #3A404C">41% checked · 46% reviewed · 3% under re-check · 10% not reviewed</span>
+            <a href="Trust.dc.html" style="font-size: 13px; font-weight: 500">How trust is decided</a>
+          </div>
+        </section>
+      </aside>
+    </div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1150}}'>
+class Component extends DCLogic {
+  state = { scope: 'mine' };
+  renderVals() {
+    const TL = {
+      checked: { label: 'Checked against source', p1: 'M.5 6a5.5 5.5 0 1 0 11 0a5.5 5.5 0 1 0-11 0', f1: '#1E7F45', s1: 'none', p2: 'M3.5 6.2 5.2 7.8 8.5 4.4', f2: 'none', s2: '#FFFFFF' },
+      reviewed: { label: 'Reviewed', p1: 'M1 6a5 5 0 1 0 10 0a5 5 0 1 0-10 0', f1: 'none', s1: '#7A5A00', p2: 'M6 1a5 5 0 0 1 0 10z', f2: '#7A5A00', s2: 'none' },
+      none: { label: 'Not reviewed', p1: 'M1.25 6a4.75 4.75 0 1 0 9.5 0a4.75 4.75 0 1 0-9.5 0', f1: 'none', s1: '#6B7280', p2: '', f2: 'none', s2: 'none' },
+      recheck: { label: 'Under re-check', p1: 'M6 .8 11.4 10.8H.6z', f1: '#C25A0A', s1: 'none', p2: 'M6 4.6v2.8M6 8.6v.5', f2: 'none', s2: '#FFFFFF' },
+      error: { label: 'Confirmed error', p1: 'M4 .8h4L11.2 4v4L8 11.2H4L.8 8V4z', f1: '#C33027', s1: 'none', p2: 'M4.3 4.3l3.4 3.4M7.7 4.3 4.3 7.7', f2: 'none', s2: '#FFFFFF' }
+    };
+    const popular = [ 'pinhole size', 'PSF FWHM', 'deconvolution iterations', 'booking the LSM 980', 'mounting media' ];
+    const notices = [
+      { t: TL.recheck, title: 'Confocal microscopy › Principle is under re-check', text: 'You used this section on 12 Nov. A reader reported the pinhole wording is outdated and a page author confirmed it. A fix is being reviewed.', action: 'Read the section', href: 'Page.dc.html', when: '22 Nov' },
+      { t: TL.recheck, title: 'A source in Deconvolution was retracted', text: 'The Richardson–Lucy section cites Okafor et al. 2019, retracted on 21 Nov. Don’t rely on the iteration count until the page authors re-check it.', action: 'See what is affected', href: 'Page.dc.html', when: '21 Nov' },
+      { t: TL.checked, title: 'Your source check counted', text: 'You checked Pawley Table 2.1 for Confocal microscopy › Resolution. The section is now Checked against source.', action: 'See the section', href: 'Page.dc.html', when: '12 Nov' }
+    ];
+    const allRecent = [
+      { mine: true, page: 'Point spread function', section: 'NA table', change: 'Corrected the 1.4 NA oil value', t: TL.reviewed, when: '3 h ago' },
+      { mine: true, page: 'Confocal microscopy', section: 'Detectors', change: 'Hybrid detectors named HyD; link to Detectors page', t: TL.reviewed, when: '5 h ago' },
+      { mine: false, page: 'Light-sheet microscopy', section: 'Overview', change: 'Lead reworded', t: TL.reviewed, when: '5 h ago' },
+      { mine: false, page: 'STED microscopy', section: 'New page', change: 'Principle, depletion wavelength, booking', t: TL.none, when: '1 d ago' },
+      { mine: true, page: 'Pinhole alignment', section: 'Steps', change: 'Step 4 checked against the service manual', t: TL.checked, when: '2 d ago' },
+      { mine: false, page: 'Sample mounting', section: 'Refractive index', change: 'Added glycerol mixtures table', t: TL.reviewed, when: '3 d ago' }
+    ];
+    const sdefs = [ { id: 'mine', label: 'Pages you use' }, { id: 'all', label: 'All pages' } ];
+    const scopes = sdefs.map(s => {
+      const on = this.state.scope === s.id;
+      return { ...s, on, pick: () => this.setState({ scope: s.id }),
+        style: 'padding: 5px 10px; border-radius: 7px; font-size: 13px; border: 1px solid ' + (on ? '#2453D6' : '#D5D9E0') + '; background: ' + (on ? '#EEF2FC' : '#FFFFFF') + '; color: #14161B; font-weight: ' + (on ? '600' : '500') };
+    });
+    const recent = allRecent.filter(r => this.state.scope === 'all' || r.mine);
+    const start = [
+      { page: 'Booking and access', t: TL.checked, spread: 'All 4 sections checked against source' },
+      { page: 'Confocal microscopy', t: TL.recheck, spread: '1 under re-check · 1 checked · 2 reviewed · 1 not reviewed' },
+      { page: 'Point spread function', t: TL.reviewed, spread: '3 reviewed · 2 checked' },
+      { page: 'Deconvolution', t: TL.recheck, spread: '1 under re-check (source retracted) · 3 reviewed' },
+      { page: 'Sample mounting', t: TL.reviewed, spread: '4 reviewed · 1 checked' }
+    ];
+    const topics = [ { name: 'Microscopy techniques', n: 24 }, { name: 'Image processing', n: 31 }, { name: 'Sample preparation', n: 18 }, { name: 'Instruments and booking', n: 22 }, { name: 'Protocols', n: 33 } ];
+    const legend = [
+      { t: TL.checked, meaning: 'A person compared this version with its source and it matched.' },
+      { t: TL.reviewed, meaning: 'A reviewer approved the change. Nobody has checked it against the source yet.' },
+      { t: TL.none, meaning: 'Written before review started, or never approved.' },
+      { t: TL.recheck, meaning: 'A problem was confirmed or a source was withdrawn. Use with care.' },
+      { t: TL.error, meaning: 'Known to be wrong. Don’t rely on it until it is fixed.' }
+    ];
+    return { popular, notices, scopes, recent, start, topics, legend };
+  }
+}
+</script>
+</body>
+</html>
