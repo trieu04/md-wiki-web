@@ -26,12 +26,12 @@ export class ProblemDto {
   @ApiPropertyOptional({ type: [FieldProblemDto] }) fields?: FieldProblemDto[];
 }
 
-export function ApiProblemResponse(code: ErrorCode) {
+export function ApiProblemResponse(code: ErrorCode, ...sameStatus: ErrorCode[]) {
   return applyDecorators(
     ApiExtraModels(ProblemDto),
     ApiResponse({
       status: ERROR_STATUS[code],
-      description: code,
+      description: [code, ...sameStatus].join(' | '),
       content: { 'application/problem+json': { schema: { $ref: getSchemaPath(ProblemDto) } } },
     }),
   );

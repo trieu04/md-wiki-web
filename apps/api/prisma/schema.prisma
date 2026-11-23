@@ -43,10 +43,11 @@ enum ActorKind {
 }
 
 model Team {
-  id    String @id @default(uuid(7)) @db.Uuid
-  name  String @unique
-  slug  String @unique
-  users User[]
+  id        String   @id @default(uuid(7)) @db.Uuid
+  name      String   @unique
+  slug      String   @unique
+  users     User[]
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
 }
 
 model User {
@@ -141,6 +142,8 @@ model AuditEvent {
   subjectId   String
   data        Json
   at          DateTime  @default(now()) @db.Timestamptz(3)
+
+  @@index([action, subjectId, at])
 }
 
 enum AiJobKind {

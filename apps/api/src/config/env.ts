@@ -10,6 +10,7 @@ const schema = z.object({
   DATABASE_URL: z.url({ protocol: /^postgres(ql)?$/ }),
   REDIS_URL: z.url({ protocol: /^rediss?$/ }),
   API_PORT: port,
+  API_HOST: z.union([z.hostname(), z.ipv6()]).default('127.0.0.1'),
   INTERNAL_PORT: port,
   INTERNAL_HOST: z.union([z.hostname(), z.ipv6()]).default('127.0.0.1'),
   SERVICE_TOKEN: z.string().min(1),

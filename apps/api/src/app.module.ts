@@ -1,5 +1,6 @@
 import { Controller, Get, Module } from '@nestjs/common';
 
+import { IdentityModule } from './auth/identity.module.js';
 import { ConfigModule } from './config/config.module.js';
 import { WikiModule } from './wiki/wiki.module.js';
 import { HealthModule } from './health/health.module.js';
@@ -22,6 +23,7 @@ export class InternalModule {}
 @Module({
   imports: [
     ConfigModule,
+    IdentityModule,
     HealthModule,
     WikiModule,
     ...(process.env.NODE_ENV === 'production' ? [] : [DevPingModule]),

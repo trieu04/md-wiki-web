@@ -2,6 +2,7 @@ import { spawn, spawnSync } from 'node:child_process';
 import { once } from 'node:events';
 import { readFileSync } from 'node:fs';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { testSchema } from './test-schema.js';
 import { apiPlaceholder } from '../src/index.js';
 
 let stop: (() => Promise<void>) | undefined;
@@ -32,11 +33,15 @@ describe('built API', () => {
   });
 
   it('serves real health probes and isolates the guarded internal listener', async () => {
+    const database = testSchema();
+    stop = () => database.drop();
+    database.migrate();
     const token = 'internal-test-token';
     const child = spawn(process.execPath, ['dist/main.js'], {
       env: {
         ...process.env,
         NODE_ENV: 'test',
+        DATABASE_URL: database.url,
         API_PORT: '0',
         INTERNAL_PORT: '0',
         SERVICE_TOKEN: token,
@@ -46,7 +51,11 @@ describe('built API', () => {
     const exited = once(child, 'exit');
     stop = async () => {
       child.kill('SIGTERM');
-      await exited;
+      try {
+        await exited;
+      } finally {
+        await database.drop();
+      }
     };
     let output = '';
     child.stdout.on('data', (chunk: Buffer) => {

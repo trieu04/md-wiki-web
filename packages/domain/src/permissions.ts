@@ -23,6 +23,13 @@ const policies = {
   'admin.*': ['owner', null],
 } as const satisfies Record<string, readonly [Role, Scope | null]>;
 
+export function roleAllowsScope(roles: readonly Role[], scope: Scope): boolean {
+  return Object.values(policies).some(
+    ([minimum, required]) =>
+      required === scope && roles.some((role) => rank[role] >= rank[minimum]),
+  );
+}
+
 type FamilyOrAction<T> = T extends `${infer Prefix}.*` ? `${Prefix}.${string}` : T;
 export type Action = FamilyOrAction<keyof typeof policies>;
 

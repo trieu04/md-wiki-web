@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { can, type Action, type PermissionActor, type Role, type Scope } from '../src/index.js';
+import {
+  can,
+  roleAllowsScope,
+  type Action,
+  type PermissionActor,
+  type Role,
+  type Scope,
+} from '../src/index.js';
 
 const reader: Role[] = ['reader', 'contributor', 'reviewer', 'publisher', 'owner'];
 const contributor = reader.slice(1);
@@ -55,6 +62,14 @@ for (let mask = 0; mask < 2 ** scopes.length; mask++) {
 }
 
 describe('§5.2 permissions', () => {
+  it('grants only scopes with an action available at the target role', () => {
+    for (const role of reader)
+      for (const scope of scopes)
+        expect(roleAllowsScope([role], scope)).toBe(
+          matrix.some((row) => row.scope === scope && row.roles.includes(role)),
+        );
+    expect(roleAllowsScope([], 'read')).toBe(false);
+  });
   for (const row of matrix) {
     it.each(row.actions)('%s: roles × credential scopes × actor kinds', (action) => {
       for (const role of reader)
