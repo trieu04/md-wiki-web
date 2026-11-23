@@ -192,9 +192,11 @@ Roles are cumulative: `reader < contributor < reviewer < publisher < owner`. Age
 | GET | `/search` | read | `?q&labels[]&topics[]&updated=any\|30d\|1y&sort=relevance\|trust\|recent&cursor&limit` | `{ total, pageCount, facets: { labels: Record<Label,int>, topics: {id,name,n}[] }, items: SearchHitDto[], nextCursor }` | `VALIDATION_FAILED` (q empty or > 200 chars) |
 | GET | `/context` | read (agents) | `?path` | `{ path, versionLabel, sha256, content, sections: SectionDto[] }` | |
 | POST | `/admin/reindex` | owner | | `{ scanned, changed, durationMs }` | |
-| GET/POST/PATCH | `/admin/users`, `/admin/users/{id}` | owner | `{ email, name, roles, teamId, password? }` | `UserDto` | `EMAIL_TAKEN`, `LAST_OWNER` |
+| GET/POST/PATCH | `/admin/users`, `/admin/users/{id}` | owner | POST `{ email, name, roles, teamId, password? }`; PATCH: any subset of those plus `disabled?: boolean` [D-38] | `UserDto` | `EMAIL_TAKEN`, `LAST_OWNER` |
 | GET/POST | `/admin/teams` | owner | `{ name }` | `TeamDto` | |
 | GET/POST/DELETE | `/admin/tokens`, `/admin/tokens/{id}` | owner | `{ userId, name, scopes, expiresAt? }` | create returns `{ token, ...ApiTokenDto }` once | |
+
+**Users [D-38].** `UserDto = { id, email, name, kind: 'human'|'agent', roles: Role[], teamId: string | null, disabled: boolean, createdAt }` — never a password hash. PATCH `disabled: true` sets `User.disabledAt = now` and deletes that user's sessions (tokens of a disabled user are rejected with `ACCOUNT_DISABLED` by the token guard); `disabled: false` clears `disabledAt`. `LAST_OWNER` (409) whenever a PATCH (removing `owner` from roles, or `disabled: true`) would leave no enabled user with the `owner` role. Audit events: `user.created`, `user.updated` (payload lists changed fields, never the password).
 
 DTOs:
 
