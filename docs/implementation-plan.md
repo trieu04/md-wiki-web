@@ -22,13 +22,13 @@ How to read this file: §1 rules for every task, §2 model assignment, §3 the t
 | --- | --- | --- |
 | `gpt-6.2-astra` | architecture-shaping code, core rules, state machines, storage, auth, publish flow, hard bugs | logic of sol tasks |
 | `gpt-6.2-sol` | features, endpoints, UI components and screens, API integration | logic of astra and luna tasks |
-| `gpt-6-luna` | scaffolding, configs, types, simple refactors, test suites | — |
+| ~~`gpt-6-luna`~~ | **retired by user (2026-11-23, D-26)** — its tasks moved to sol | — |
 | `gpt-6.1-terra` | visual verification of every UI task against reference renders | all UI tasks |
 | **OPUS** (this session) | spec tasks (`-00`), cross-cutting/ambiguous work, final escalation, phase gates | publish-flow and security reviews |
 
-Review pairing rule: the reviewer is never the implementer's model. Default: astra → reviewed by sol; sol → reviewed by astra; luna → reviewed by sol; UI → terra (visual) **and** astra (logic in `model.ts`, data binding).
+Review pairing rule: the reviewer is never the implementer's model. Default: astra → reviewed by sol; sol → reviewed by astra; (former luna tasks, now sol → reviewed by astra); UI → terra (visual) **and** astra (logic in `model.ts`, data binding).
 
-Escalation ladder: `luna → sol → astra → OPUS`. Two retries per rung with the exact failing output; then the next rung receives the spec, every attempt's diff and errors.
+Escalation ladder: `sol → astra → OPUS` (luna removed, D-26). Two retries per rung with the exact failing output; then the next rung receives the spec, every attempt's diff and errors.
 
 ## 3. Task table
 
@@ -46,13 +46,13 @@ Status lives in progress.md. `H-n` are human gates. Parallel groups (‖) touch 
 | P0-07 | Ping round trip (BullMQ → worker → internal API → DB → web dev page) | sol | astra | P0-06 | |
 | P0-08 | Design reference renderer (`pnpm design:shots`) | sol | terra | P0-01 | B |
 | P0-09 | App visual harness (`pnpm visual:shots`, pixel diff report) | sol | terra | P0-08 | |
-| P0-10 | CI workflow | luna | sol | P0-07 | |
+| P0-10 | CI workflow | sol (was luna, D-26) | astra | P0-07 | |
 | P0-G | Phase gate: clean-clone `make dev`, full checks, ping visible | OPUS | — | all P0 | |
 | **Phase 1 — Core logic: read side** ||||||
 | P1-01 | `domain/paths` | sol | astra | P0-G | C |
 | P1-02 | `domain/status-block` | sol | astra | P0-G | C |
 | P1-03 | `domain/sections` (split, anchors, hash, title) | astra | sol | P1-02 | |
-| P1-04 | `domain/snapshot-label` + `domain/time` | luna | sol | P0-G | C |
+| P1-04 | `domain/snapshot-label` + `domain/time` | sol (was luna, D-26) | astra | P0-G | C |
 | P1-05 | `domain/permissions` | astra | sol | P0-G | C |
 | P1-06 | `domain/labels` (`computeSectionLabel`, page label + spread) | astra | sol | P0-G | C |
 | P1-07 | `LocalFolderStorage` + `FixtureStorage` | astra | sol | P1-01 | |
@@ -63,11 +63,11 @@ Status lives in progress.md. `H-n` are human gates. Parallel groups (‖) touch 
 | P1-12 | Section search | sol | astra | P1-10 | |
 | P1-13 | Admin: users, teams, tokens, reindex | sol | astra | P1-09 | |
 | P1-14 | Web data layer: client, session, CSRF, error copy, query keys | sol | astra | P1-11 | |
-| P1-15 | API e2e suite on fixture wiki | luna | sol | P1-11..13 | |
+| P1-15 | API e2e suite on fixture wiki | sol (was luna, D-26) | astra | P1-11..13 | |
 | P1-G | Phase gate | OPUS | — | all P1 | |
 | **Phase 2 — Design system** (may run beside Phase 1 after H-1) ||||||
 | H-1 | Human: approve states addendum (design-system.md §6.1) and answer Q-UI-1..5 | human | — | — | |
-| P2-01 | Tokens: Tailwind theme, CSS variables, fonts | luna | terra | P0-09, H-1 | |
+| P2-01 | Tokens: Tailwind theme, CSS variables, fonts | sol (was luna, D-26) | terra | P0-09, H-1 | |
 | P2-02 | `TrustIcon`, `TrustBadge`, `SpreadBar`, label meta | sol | terra | P2-01 | D |
 | P2-03 | Action primitives: Button, PillToggle, Chip, CountBadge, AITag, Mono, Mark | sol | terra | P2-01 | D |
 | P2-04 | Form primitives: SearchInput, TextInput, Textarea, Select, Checkbox, Radio, RadioCards, Switch | sol | terra | P2-01 | D |
@@ -84,7 +84,7 @@ Status lives in progress.md. `H-n` are human gates. Parallel groups (‖) touch 
 | P3-05 | Login — derived screen (D-16) | sol | terra | P2-G | |
 | P3-06 | Page history — derived screen (D-16) | sol | terra | P3-04 | |
 | P3-07 | Settings › People and teams, Agents and tokens (F-14) | sol | terra + astra | P1-13, P2-08 | |
-| P3-08 | Playwright reader flow | luna | sol | P3-02..04 | |
+| P3-08 | Playwright reader flow | sol (was luna, D-26) | astra | P3-02..04 | |
 | P3-G | Phase gate | OPUS + terra | — | all P3 | |
 | **Phase 4 — Contribute** (plan.md Phase 2) ||||||
 | P4-00 | Spec expansion: contracts + full task briefs | OPUS | — | P3-G | |
@@ -105,13 +105,13 @@ Status lives in progress.md. `H-n` are human gates. Parallel groups (‖) touch 
 | P5-06 | Review (F-10: escalated/disputed/locked/publishing/blocked; Changes + History tabs) | sol | terra + astra | P5-05 | |
 | P5-07 | Conflict screen (F-07) | sol | terra + astra | P5-03 | |
 | P5-08 | Ops › Blocked publish (F-13 section) | sol | terra + astra | P5-02 | |
-| P5-09 | Playwright: edit → approve → auto-publish → label; forced timeout → blocked → recovery | luna | sol | P5-06..08 | |
+| P5-09 | Playwright: edit → approve → auto-publish → label; forced timeout → blocked → recovery | sol (was luna, D-26) | astra | P5-06..08 | |
 | P5-G | Gate | OPUS | — | | |
 | **Phase 6 — Discussions and MCP** (plan.md 4) | P6-00 spec (OPUS) · P6-01 topics/comments/holds/dispute log (astra) · P6-02 MCP server (sol) · P6-03 agent skill rewrite (sol) · P6-04 Discussions F-11 (sol) · P6-05 *Ask a question* entry points (sol) · P6-06 Review › Discussion tab (derived, D-16) · P6-G |||||
 | **Phase 7 — Quality check** (plan.md 5) | P7-00 spec · P7-01 provider interface (astra) · P7-02 `quality_check` job, fencing, quote verification (astra) · P7-03 findings API + re-run (sol) · P7-04 eval command (sol) · P7-05 Quality card in F-10 and self-check in F-06 (sol) · P7-06 Settings › Models (F-14) (sol) · P7-G |||||
 | **Phase 8 — Self-managed review** (plan.md 6) | P8-00 spec · P8-01 `domain/escalation-triggers` (astra) · P8-02 `agent_review` job (astra) · P8-03 escalation, page-author resolution, reminders (astra) · P8-04 spot checks + digests (sol) · P8-05 stop switches, agent metrics (sol) · P8-06 Inbox F-08 (sol) · P8-07 Review escalation banner + Agent review card (sol) · P8-08 Settings › Review (sol) · P8-09 seeded eval run (OPUS) · P8-G |||||
 | **Phase 9 — Credibility** (plan.md 7) | P9-00 spec · 7a: P9-01 evidence tables (sol) · P9-02 label engine on events (astra) · P9-03 anchor relinking (astra) · P9-04 source tiers (sol) · P9-05 E8a invariants (astra, review OPUS) · 7b: P9-06 worker jobs (astra) · 7c: P9-07 attestation API + rules (astra) · P9-08 follows/notifications (sol) · P9-09 Trust drawer F-04 (sol) · P9-10 Page rail + action row F-03 rest (sol) · P9-11 You F-05 (sol) · P9-12 Home notices F-01 (sol) · P9-13 Credibility F-12 (sol) · 7d: P9-14 gates in Settings › Trust labels (sol) · P9-G |||||
-| **Phase 10 — Hardening** (plan.md 8) | P10-01 backup/restore (sol) · P10-02 security pass (OPUS + astra) · P10-03 accessibility pass (terra + sol) · P10-04 docs (luna) · P10-G |||||
+| **Phase 10 — Hardening** (plan.md 8) | P10-01 backup/restore (sol) · P10-02 security pass (OPUS + astra) · P10-03 accessibility pass (terra + sol) · P10-04 docs (sol, was luna) · P10-G |||||
 
 ## 4. Per-task specs
 
@@ -167,7 +167,7 @@ Every brief sent to Pi = the common preamble (`tools/orchestrate/preamble.md`) +
 - **Spec**: Playwright against `vite preview` with MSW fixtures that reproduce the frame's sample data exactly (copy from the frame's `renderVals`), so screens can be compared to the reference pixel by pixel. Diff with `pixelmatch` (threshold 0.1), mask the TopBar band for full frames (design-system.md §6 item 8); output `visual/report/<task>/index.html` with side-by-side + diff images and per-image mismatch %.
 - **Acceptance**: comparing the reference against itself = 0%; a deliberately 1px-shifted element is detected.
 
-#### P0-10 CI — luna
+#### P0-10 CI — sol (was luna, D-26)
 - **Files**: `.github/workflows/ci.yml`.
 - **Spec**: jobs: node (install, build, check, contracts:check), worker (uv sync, ruff, mypy, pytest), api-integration (services postgres + redis, prisma migrate, api tests). Cache pnpm and uv.
 - **Verify**: `actionlint` if installed, else YAML parse; the same commands pass locally via `make check`.
@@ -189,7 +189,7 @@ Clean clone into a temp dir → `make up && pnpm install && pnpm build && make c
 - **Spec**: §3.3 (D-1, D-2, D-3, D-8). Export `splitSections`, `pageTitle`, `sectionHash`.
 - **Acceptance**: tests for every Markdown case in §11; hash stability (CRLF vs LF same hash; trailing spaces same hash; changed word different hash); golden test over `wiki-sample/`.
 
-#### P1-04 `domain/snapshot-label` + `domain/time` — luna
+#### P1-04 `domain/snapshot-label` + `domain/time` — sol (was luna, D-26)
 - **Spec**: §3.5 `nextLabel`; `formatRelative(date, now)` [D-9]: `< 1 min` "just now", `< 60 min` "N min ago", `< 24 h` "N h ago", `< 7 d` "N d ago", else `D Mon` (en-GB short month, e.g. "22 Nov"), with year if not the current year; `formatDate` "22 Nov".
 - **Acceptance**: boundary tests at each threshold, UTC date rollover for labels.
 
@@ -229,7 +229,7 @@ Clean clone into a temp dir → `make up && pnpm install && pnpm build && make c
 - **Spec**: system-logic.md §10. `error-copy.ts` covers every `ErrorCode` (test enforces). No UI.
 - **Acceptance**: unit tests with MSW: CSRF header on mutations, 401 → session cleared + redirect target computed, problem+json → `ApiError` with code.
 
-#### P1-15 API e2e — luna
+#### P1-15 API e2e — sol (was luna, D-26)
 - **Spec**: one supertest suite booting the API against compose Postgres and a temp copy of `wiki-sample`, covering login → tree → page → search → admin token → context with token. **Acceptance**: green in CI job `api-integration`.
 
 ### Phase 2 (design system; binds to no API)
@@ -279,7 +279,7 @@ Tools in `tools/orchestrate/` (written by OPUS before P0-01):
 | `visual.sh <ID>` | runs `visual:shots` for the task's nodes and sends reference + actual + diff images to terra for a JSON verdict per width |
 | `pi-guard.sh <events> -- <pi args>` | every pi call goes through it: JSON event stream, stdin closed, watchdog kills the process tree when no session starts within 90 s, no event for 15 min (10 min for reviews/visual), or 60 min total (25/20 min for reviews/visual). Startup/idle hangs are retried up to 2 times automatically and do **not** count as task retries; a hard timeout counts as a failed attempt with the log as context. Hung event logs are kept as `*.jsonl.hangN` |
 
-Loop per task: brief → run → gate → review (→ visual) → **pass**: `git add -A` (the staging area is the checkpoint; nothing is committed without the user's approval) and progress.md updated → **fail**: retry with the exact gate/review output appended (max 2 per model) → escalate up the ladder with all attempts. Parallel dispatch only inside a ‖ group. A task that reports `BLOCKED:` stops its branch of the DAG; OPUS decides whether it is a human question.
+Loop per task: brief → run → gate → review (→ visual) → **pass**: progress.md updated, then `git add <task files + progress/decision notes>` and `git commit -m "<type>(<ID>): <title>"` (D-27; one commit per task, never push) → **fail**: retry with the exact gate/review output appended (max 2 per model) → escalate up the ladder with all attempts. Parallel dispatch only inside a ‖ group. A task that reports `BLOCKED:` stops its branch of the DAG; OPUS decides whether it is a human question.
 
 Phase end: full suite (`make check`, API integration, Playwright when present), `pnpm design:shots` + full-screen visual check of every screen built so far at all four widths, then a report in progress.md.
 
@@ -303,6 +303,10 @@ Reversible; each is used as written until a human changes it.
 | D-12 | Git: the staging area is the per-task checkpoint; no commits or pushes without the user's approval | §5 |
 | D-22 | All pi calls run under `pi-guard.sh` (watchdog, auto-retry on hang); runs are always dispatched in the background and never awaited in the foreground | §5 |
 | D-23 | Dev containers run on the remote Docker engine `fd` (user's choice, 2026-11-23): compose project `mdwiki-web`, ports bound to remote loopback 55432/56379, SSH tunnel to localhost 5432/6379, repo-local Docker config with a no-op credential helper (public images only). `MW_DOCKER_HOST=` switches to a local engine (CI) | Makefile, infra/ |
+| D-24 | `design/runtime/support.js` (canvas runtime, 198 KB, exported with the frames from the same artifact) is tracked in the repo, no longer gitignored, so a clean clone can render references. Its CDN deps are version-pinned (react 18.3.1, babel 7.29.0) | P0-08 review |
+| D-25 | Dev launcher env precedence: one rule for all children — process environment overrides `.env` (standard dotenv semantics) | P0-03 review |
+| D-26 | **User instruction (2026-11-23):** luna is raised to sol because of too many failed reviews (P0-01 and P0-03 each failed 3 luna attempts). All remaining luna tasks go to sol; their reviewer becomes astra; ladder is sol → astra → OPUS | user |
+| D-27 | **User instruction (2026-11-23), resolves Q-P-1:** commit after each task passes its gate and review — one commit per task, message `<type>(<ID>): <title>` with implementer/reviewer in the body, only that task's files (+ the orchestrator's progress/decision notes). No pushes | user |
 | D-13 | Before Phase 9, Home/Page regions whose data does not exist are not rendered (no placeholders) | §4 Phase 3 |
 
 ### 6.1 Decisions on former open questions (2026-11-23, by the orchestrator under the user's delegation)
@@ -320,13 +324,13 @@ The user delegated all UI questions and any non-critical question to the orchest
 | Q-D-2 → D-19 | *Start here* comes from `wiki-meta/start-here.md` (table `team | page path`), reviewed like content; the reader's team selects the rows. | Fits "wiki-meta is reviewed content"; no new admin UI |
 | Q-D-3 → D-20 | *Often searched* is an owner-configured list in Settings (stored in `Settings.popularSearches`); no per-person query logging. | Avoids a privacy question |
 | Q-D-4 → D-21 | Wiki name/description from env `WIKI_NAME`, `WIKI_DESCRIPTION`; team name from `User.team`. | Simple, one wiki per deployment |
-| Q-P-1 | Still open: the orchestrator does not commit; the staging area is the checkpoint. | Commits need the user's explicit go-ahead |
+| Q-P-1 | **Resolved (D-27):** commit after each task. | user answered 2026-11-23 |
 
 Future non-critical questions are decided the same way and appended to this table.
 
 ## 7. Open questions (need a human)
 
-All answered in §6.1 except Q-P-1. Original list kept for reference:
+All answered (§6.1; Q-P-1 by D-27). Original list kept for reference:
 
 | ID | Question | Blocks | Default if unanswered |
 | --- | --- | --- | --- |
