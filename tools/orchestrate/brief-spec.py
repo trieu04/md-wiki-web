@@ -8,6 +8,8 @@ for line in open("docs/tasks/merges.tsv"):
     f = line.rstrip("\n").split("\t")
     merges[f[0]] = dict(parts=f[1].split(","), impl=f[2], rev=f[3], deps=f[4], title=f[5])
 
+printed_common = set()
+
 def section(old):
     # 1) a "#### <ID> " section
     for i, l in enumerate(plan):
@@ -25,7 +27,8 @@ def section(old):
             hdr = plan[j:j + 2]
             k = j
             while k > 0 and not plan[k - 1].startswith("### "): k -= 1
-            common = [p for p in plan[k:j] if p.startswith("Common")]
+            common = [p for p in plan[k:j] if p.startswith("Common") and p not in printed_common]
+            printed_common.update(common)
             return "\n".join([f"#### {old}", *common, "", *hdr, l])
     return f"#### {old}\n(no spec section found — report BLOCKED)"
 
