@@ -536,6 +536,200 @@
       "variant": "relevance",
       "selector": "article mark >> nth=0",
       "part": "mark"
+    },
+    "SearchInput/topbar": {
+      "frame": "TopBar",
+      "variant": "home",
+      "selector": "form[role=search]:has(#wiki-search)",
+      "part": "> div > div",
+      "fit": true
+    },
+    "SearchInput/home": {
+      "frame": "Main",
+      "variant": "mine",
+      "selector": "#home-q",
+      "part": "input",
+      "fit": true
+    },
+    "TextInput/default": {
+      "frame": "Trust",
+      "variant": "check",
+      "selector": "label:has(> input[type=text])",
+      "fit": true
+    },
+    "Textarea/default": {
+      "frame": "Trust",
+      "variant": "check",
+      "selector": "label:has(> textarea)",
+      "fit": true
+    },
+    "Textarea/excerpt": {
+      "frame": "Trust",
+      "variant": "report",
+      "selector": "label:has(> textarea[rows='2'])",
+      "fit": true
+    },
+    "Textarea/compact": {
+      "frame": "Review",
+      "variant": "escalated",
+      "selector": "#reason",
+      "part": "textarea",
+      "fit": true
+    },
+    "Select/default": {
+      "frame": "You",
+      "variant": "following",
+      "selector": "label:has-text('How') > select",
+      "part": "select",
+      "fit": true
+    },
+    "Checkbox/checked": {
+      "frame": "Search",
+      "variant": "relevance",
+      "selector": "button[role=checkbox][aria-checked=true]:has-text('Checked against source')",
+      "fit": true
+    },
+    "Checkbox/unchecked": {
+      "frame": "Search",
+      "variant": "without-checked",
+      "selector": "button[role=checkbox][aria-checked=false]:has-text('Checked against source')",
+      "fit": true
+    },
+    "Radio/filter": {
+      "frame": "Search",
+      "variant": "relevance",
+      "selector": "fieldset:has(legend:text-is('Updated')) > label:has-text('Any time')",
+      "part": "label:first-of-type",
+      "fit": true
+    },
+    "Radio/filter-unchecked": {
+      "frame": "Search",
+      "variant": "relevance",
+      "selector": "fieldset:has(legend:text-is('Updated')) > label:has-text('Last 30 days')",
+      "gallery": "Radio/filter",
+      "part": "label:nth-of-type(2)",
+      "fit": true
+    },
+    "Radio/form": {
+      "frame": "Trust",
+      "variant": "check",
+      "selector": "fieldset:has(legend:text-is('Which source did you check?'))",
+      "fit": true
+    },
+    "RadioCards/trust": {
+      "frame": "Trust",
+      "variant": "check",
+      "selector": "fieldset:has(legend:text-is('What did you find?')) > button[aria-checked=true]",
+      "part": "label:first-child",
+      "fit": true
+    },
+    "RadioCards/trust-unselected": {
+      "frame": "Trust",
+      "variant": "check",
+      "selector": "button[role=radio]:has-text('Some of it matches')",
+      "gallery": "RadioCards/trust",
+      "part": "label:nth-child(2)",
+      "fit": true
+    },
+    "RadioCards/conflict": {
+      "frame": "Conflict",
+      "variant": "merge",
+      "selector": "section[aria-label='Choose an outcome'] > [role=radiogroup]",
+      "fit": true
+    },
+    "RadioCards/decision": {
+      "frame": "Review",
+      "variant": "escalated",
+      "selector": "section[aria-label=Decision] [role=radiogroup]",
+      "fit": true
+    },
+    "Switch/on": {
+      "frame": "You",
+      "variant": "following",
+      "selector": "button[role=switch][aria-checked=true]:has(span.sc-interp:text-is('A section I used goes under re-check'))",
+      "fit": true
+    },
+    "Switch/off": {
+      "frame": "You",
+      "variant": "following",
+      "selector": "button[role=switch][aria-checked=false]:has(span.sc-interp:text-is('Weekly summary of followed pages'))",
+      "fit": true
+    },
+    "Card/default": {
+      "frame": "Main",
+      "variant": "mine",
+      "selector": "section[aria-labelledby=topics-h]",
+      "fit": true
+    },
+    "Card/header": {
+      "frame": "Main",
+      "variant": "mine",
+      "selector": "section#recent",
+      "fit": true
+    },
+    "Table/scroll": {
+      "frame": "Main",
+      "variant": "mine",
+      "selector": "section#recent > div:has(> table)",
+      "fit": true
+    },
+    "Tabs/workspace": {
+      "frame": "Proposals",
+      "variant": "open",
+      "selector": "[role=tablist][aria-label=State]",
+      "part": "[role=tablist]",
+      "fit": true
+    },
+    "Tabs/activity": {
+      "frame": "You",
+      "variant": "following",
+      "selector": "[role=tablist][aria-label='Your activity']",
+      "part": "[role=tablist]",
+      "fit": true
+    },
+    "Tabs/drawer": {
+      "frame": "Trust",
+      "variant": "why",
+      "selector": "[role=tablist][aria-label='Trust actions']",
+      "part": "[role=tablist]",
+      "fit": "parent"
+    },
+    "Callout/warn": {
+      "frame": "Page",
+      "variant": "principle",
+      "selector": "section[aria-label=Principle] > [role=note]",
+      "fit": true
+    },
+    "Callout/error": {
+      "frame": "Review",
+      "variant": "blocked",
+      "selector": "main > [role=status]:has-text('Publish outcome unknown.')",
+      "fit": true
+    },
+    "Callout/success": {
+      "frame": "Trust",
+      "variant": "check-done",
+      "selector": "[role=status]:has-text('Source check saved')",
+      "fit": true
+    },
+    "Callout/info": {
+      "frame": "Review",
+      "variant": "escalated",
+      "selector": "section[aria-label=Decision]",
+      "fit": true
+    },
+    "Callout/ai": {
+      "frame": "Review",
+      "variant": "escalated",
+      "selector": "section:has(> h2:has-text('Agent review'))",
+      "fit": true
+    },
+    "Drawer/open": {
+      "frame": "Trust",
+      "variant": "why",
+      "selector": "section[role=dialog][aria-labelledby=drawer-h]",
+      "part": "[role=dialog]",
+      "fit": "parent"
     }
   }
 }

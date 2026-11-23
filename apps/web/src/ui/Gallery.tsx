@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import type { ReactNode } from 'react';
 import { labelMeta } from '@md-wiki/domain';
 import type { Label } from '@md-wiki/domain';
 import { AITag } from './AITag';
@@ -14,17 +13,9 @@ import { TrustBadge } from './TrustBadge';
 import { TrustIcon } from './TrustIcon';
 import { themeTokens } from './theme-tokens';
 
-type ExampleProps = { id: string; children: ReactNode; canvas?: boolean };
-function Example({ id, children, canvas }: ExampleProps) {
-  return (
-    <div>
-      <div className="text-12 text-muted">{id}</div>
-      <div data-gallery={id} className={canvas ? 'bg-canvas' : 'bg-surface'}>
-        {children}
-      </div>
-    </div>
-  );
-}
+import { GalleryExample as Example } from './GalleryExample';
+import { FormExamples, UndrawnFormExamples } from './GalleryForms';
+import { ContainerExamples, UndrawnContainerExamples } from './GalleryContainers';
 
 const labels = Object.keys(labelMeta) as Label[];
 const iconSamples = ([12, 13, 14, 18] as const).flatMap((size) =>
@@ -74,7 +65,7 @@ function PillExamples({
       {options.map((option, index) => (
         <Example
           key={option}
-          id={`PillToggle/${size}-${index ? 'off' : 'on'}`}
+          id={`PillToggle/${size}-${current === index ? 'on' : 'off'}`}
           canvas={size === 'sort'}
         >
           <PillToggle
@@ -238,6 +229,8 @@ export default function Gallery() {
         </Example>
         <p role="status">{notice}</p>
       </section>
+      <FormExamples />
+      <ContainerExamples />
       <section aria-labelledby="gallery-not-drawn" className="flex flex-col gap-12px">
         <h2 id="gallery-not-drawn" className="text-20 font-semibold">
           Not in frames (§6.1)
@@ -271,6 +264,8 @@ export default function Gallery() {
             All pages
           </PillToggle>
         </Example>
+        <UndrawnFormExamples />
+        <UndrawnContainerExamples />
       </section>
     </main>
   );

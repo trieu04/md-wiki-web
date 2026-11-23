@@ -68,6 +68,7 @@
   --text-12: 12px;
   --text-12-5: 12.5px;
   --text-13: 13px;
+  --text-native-control: 13.3333px;
   --text-14: 14px;
   --text-15: 15px;
   --text-16: 16px;
@@ -143,11 +144,40 @@
   --spacing-spread-md: 8px;
   --spacing-spread-sm: 6px;
   --spacing-spread-sm-width: 120px;
+  --spacing-switch-track: 36px;
+  --spacing-search-basis: 280px;
+  --spacing-search-max: 560px;
+  --spacing-home-search-max: 720px;
+  --spacing-drawer-basis: 440px;
+  --spacing-drawer-max: 520px;
+  --spacing-table-home: 640px;
+  --spacing-trust-layout: 897px;
+  --spacing-trust-context-basis: 480px;
+  --spacing-trust-preview: 760px;
+  --flex-trust-context: 999 1 var(--spacing-trust-context-basis);
+  --spacing-trust-date: 52px;
+  --spacing-tabs-activity: 11px;
+  --spacing-36px: 36px;
+  --spacing-40px: 40px;
+  --leading-prose: 1.7;
+  --color-native-placeholder: #757575;
+  --border-width-choice: 1.5px;
   --shadow-avatar: 0 0 0 2px #ffffff, 0 0 0 4px #2453d6;
   --focus-width: 2px;
   --focus-offset: 2px;
   --stroke-trust: 1.5;
   --stroke-trust-lg: 1.3;
+  --stroke-checkbox: 1.6;
+  --stroke-control-icon: 1.8;
+  --stroke-success-icon: 2;
+}
+
+@utility border-choice {
+  border-width: var(--border-width-choice);
+}
+
+@utility flex-trust-context {
+  flex: var(--flex-trust-context);
 }
 
 @layer base {
@@ -170,7 +200,7 @@
     cursor: pointer;
   }
 
-  :is(a, button, input, textarea, select):focus-visible {
+  :is(a, button, input, textarea, select, [tabindex="0"]):focus-visible {
     outline: var(--focus-width) solid var(--color-accent);
     outline-offset: var(--focus-offset);
   }

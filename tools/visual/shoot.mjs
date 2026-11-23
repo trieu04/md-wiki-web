@@ -18,6 +18,7 @@ import { writeReport } from './report.mjs';
 
 const root = fileURLToPath(new URL('../..', import.meta.url));
 const web = join(root, 'apps/web');
+const requireFromWeb = createRequire(join(web, 'package.json'));
 const references = join(root, 'design/reference');
 const widths = [390, 768, 1024, 1440];
 const captureStyle = `
@@ -83,7 +84,7 @@ export function capturePlan(cases) {
 async function withApp(run) {
   // Use the web workspace's Vite directly, so the dynamically bound preview
   // socket and its shutdown are owned by this process (no orphan pnpm child).
-  const { build, preview } = createRequire(join(web, 'package.json'))('vite');
+  const { build, preview } = requireFromWeb('vite');
   const outDir = await mkdtemp(join(tmpdir(), 'md-wiki-visual-'));
   try {
     const config = { root: web, mode: 'visual', build: { outDir, emptyOutDir: true } };
@@ -213,10 +214,66 @@ async function runCases(cases, manifest) {
   });
 }
 
+async function auditGallery(browser, origin, width, axeScript) {
+  const page = await browser.newPage({
+    viewport: { width, height: canvas.boards['Main.dc.html'].h },
+    colorScheme: 'light',
+  });
+  try {
+    page.setDefaultTimeout(15_000);
+    const response = await page.goto(`${origin}/__gallery`);
+    assert.ok(response?.ok(), `Gallery request returned HTTP ${response?.status()}`);
+    await page.locator('#gallery').waitFor({ state: 'visible' });
+    await page.evaluate(async () => {
+      await document.fonts.ready;
+    });
+    await page.addScriptTag({ path: axeScript });
+    const { violations, contrastChecked } = await page.evaluate(async () => {
+      const result = await window.axe.run(document, {
+        rules: { 'color-contrast': { enabled: true } },
+      });
+      return {
+        violations: result.violations.map(({ id, nodes }) => ({
+          id,
+          nodes: nodes.map(({ target, failureSummary }) => ({ target, failureSummary })),
+        })),
+        contrastChecked: result.passes.some(({ id }) => id === 'color-contrast'),
+      };
+    });
+    assert.deepEqual(violations, [], 'Expected no axe violations');
+    assert.ok(contrastChecked, 'Expected axe to check color-contrast on the rendered page');
+
+    // axe does not cover ::placeholder text. Verify both D-42 styles in the browser.
+    for (const [variant, color] of [
+      ['topbar', 'rgb(84, 91, 104)'],
+      ['home', 'rgb(117, 117, 117)'],
+    ]) {
+      const style = await page
+        .locator(`[data-gallery="SearchInput/${variant}"] input[placeholder]`)
+        .evaluate((input) => {
+          const { color, opacity } = window.getComputedStyle(input, '::placeholder');
+          return { color, opacity };
+        });
+      assert.deepEqual(style, { color, opacity: '1' }, `SearchInput/${variant} placeholder`);
+    }
+  } catch (error) {
+    throw new Error(`/__gallery axe and contrast checks at ${width}px failed: ${error.message}`, {
+      cause: error,
+    });
+  } finally {
+    await page.close();
+  }
+}
+
 async function runGallery() {
+  const axeScript = requireFromWeb.resolve('axe-core/axe.min.js');
   const manifest = JSON.parse(await readFile(join(references, 'crops', 'manifest.json'), 'utf8'));
   const plan = cropPlan(referenceConfig);
   return withApp(async (browser, origin) => {
+    await Promise.all(widths.map((width) => auditGallery(browser, origin, width, axeScript)));
+    log(
+      `Full /__gallery: axe (including color-contrast) and D-42 checks passed at ${widths.join(', ')}px`,
+    );
     const batches = await Promise.all(
       widths.map(async (width) => {
         const images = [];

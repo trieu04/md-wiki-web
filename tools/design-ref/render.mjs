@@ -196,6 +196,14 @@ async function shoot(context, server, stage, { frame, variant, width, height, co
         // A table cell can require scrolling its own container at narrow widths.
         // Do this after capturing the untouched full frame.
         const target = page.locator(selector);
+        // Each crop starts at the frame's original scroll position. An earlier
+        // crop of a table cell must not scroll a later crop of the whole table.
+        await page.evaluate(() => {
+          for (const el of document.querySelectorAll('*')) {
+            if (el.scrollLeft || el.scrollTop) el.scrollTo(0, 0);
+          }
+          window.scrollTo(0, 0);
+        });
         await target.scrollIntoViewIfNeeded();
         const geometry = await target.evaluate((element) => {
           const rect = element.getBoundingClientRect();
