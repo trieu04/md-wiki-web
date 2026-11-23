@@ -257,6 +257,28 @@ interface SearchHitDto { path: string; pageTitle: string; anchor: string; sectio
 - Dev endpoints (only `NODE_ENV !== "production"`, otherwise 404): `POST /api/v1/dev/ping { message }` → `201 { id, status }`; `GET /api/v1/dev/ping/{id}` → `{ id, status, input, output?, error?, createdAt, finishedAt? }`.
 - Schemas live in `packages/contracts/jobs/*.schema.json` (JSON Schema 2020-12): `envelope`, `result`, `ping.input`, `ping.output`. TS types and pydantic v2 models are generated from them; neither side hand-writes these shapes.
 
+### 7.2 Worker providers (Phase 7 foundation) [D-70 … D-74]
+
+Worker-only; no job kind, schema or endpoint is added here (the `quality_check` wiring comes with P7-00). Code: `services/worker/src/mdwiki_worker/providers/` and `.../quality/`.
+
+- **Provider** protocol: `complete(StructuredRequest{ system, user, schema, schemaName }) → StructuredResult{ data: object, provider, model, usage{ input_tokens, output_tokens } }`. Implementations: `anthropic` (official SDK, native structured outputs `output_config.format = { type: json_schema, schema }`, SDK retries off), `openai_compat` (httpx `POST {OPENAI_COMPAT_BASE_URL}/chat/completions`, `response_format = { type: json_schema, json_schema: { name, schema, strict: false } }`), `fake` (scripted objects / raw text / errors, tests only). `complete_structured(provider, request, OutputModel)` validates `data` with the pydantic output model whose JSON schema was sent.
+- **Config per job kind** (pydantic-settings): `AI_DEFAULT__{PROVIDER,MODEL,MAX_TOKENS,TIMEOUT_S,TEMPERATURE,MAX_ATTEMPTS}` (defaults `anthropic`, `claude-sonnet-5-5`, 4096, 120 s, unset, 3), override per kind with `AI_JOBS__<KIND>__<FIELD>`; credentials `ANTHROPIC_API_KEY`, `OPENAI_COMPAT_BASE_URL`, `OPENAI_COMPAT_API_KEY`. `temperature` is rejected for `anthropic` (the SDK/current models take no sampling parameters). Every later result records provider and model.
+- **Error codes** (go into `JobResult.error.code`, message ≤ 500 chars, single line, never content or secrets):
+
+| Code | When | Retried |
+| --- | --- | --- |
+| `provider_timeout` | client timeout; HTTP 408/504 | yes |
+| `rate_limited` | HTTP 429 (honours `Retry-After`) | yes |
+| `provider_error` | connection failure, HTTP 5xx/529 (retried); other 4xx, refusal, malformed envelope (not retried) | see left |
+| `schema_invalid` | output not JSON, not an object, cut off at `max_tokens`, or fails the output model | no |
+
+  Retry: at most `max_attempts` calls; delay `1 s × 2^(n-1)` (or `Retry-After` if larger), capped at 30 s. BullMQ attempts (§7.1) are separate and only cover worker crashes/transport errors to the internal API.
+- **Fencing**: untrusted text (wiki page, base, proposal, sources, discussion) enters the user message as `<<<DATA id="<id>" kind="<kind>" nonce="<32 hex>">>>\n…\n<<<END id="<id>" nonce="<nonce>">>>`; block ids `^[a-z][a-z0-9-]{0,39}$`, unique; the nonce is 128 random bits per prompt and no block may contain it, so content cannot close its block. The system prompt carries the rules and the instruction that only markers with that nonce are real and block contents are data.
+- **Rules file**: UTF-8 Markdown ≤ 64 KiB (BOM/CRLF tolerated); each `## ` heading outside code fences is a rule, id = heading slug or explicit trailing `{#id}`; duplicate ids, no rules or invalid UTF-8 → error. SHA-256 is over the file's raw bytes.
+- **Model output**: `{ findings: [{ rule, severity: info|warning|blocking, message, quote: { block, text } }] }`, no extra properties.
+- **Quote verification**: a finding is kept only if `rule` is a loaded rule id, `quote.block` is a block of the prompt, and the NFC + whitespace-collapsed quote is a non-empty substring of the equally normalised block (case and punctuation exact). Dropped findings are counted by reason `unknown_rule | unknown_block | empty_quote | quote_not_found`; identical kept findings (rule, block, normalised quote) collapse to one.
+- **Dropped-hedge rule** (deterministic, advisory): a proposal sentence that is new (not verbatim in the original) and whose content-word Jaccard similarity to a hedged sentence of the base or a source is ≥ 0.6, but lacks one of that sentence's hedge terms (md-wiki `STRONG_HEDGE` + `suggest(s|ed)`, `có thể`, `giả thuyết`; whole-word, case-blind), yields a candidate `{ original, derived, hedges, similarity }`; each derived sentence is reported once, against its best match.
+
 ## 8. State machines
 
 ### 8.1 Proposal
