@@ -136,11 +136,12 @@ Snapshot(path, label, sha256, content bytea, capturedAt)                     uni
 PageSection(path, versionLabel, anchor, title, level, ord, sectionHash, text, search tsvector)
                                                                              pk(path,versionLabel,anchor); GIN(search)
 AuditEvent(actorId?, actorKind human|agent|system, action, subjectType, subjectId, data jsonb, at)   append-only
--- Phase 2
-Draft(authorId, targetPath, baseSnapshotId?, scope jsonb, content text, reason, sources jsonb, appliesTo jsonb, updatedAt)
-Proposal(slug unique, targetPath, submitterId, state, bundleHash, manifest bytea, base bytea?, proposed bytea,
-         artifact bytea?, artifactHash?, baseSha256?, createdAt)
-ProposalRef(proposalId, snapshotId, role target|scope|source, impact?)
+-- Phase 2 (Prisma precise in §7.2.1)
+Draft(authorId, targetPath, baseSnapshotId?, scope jsonb, title, content text, reason, sources jsonb, appliesTo jsonb,
+      createdAt, updatedAt)                                                  unique(authorId,targetPath)
+Proposal(slug unique, title, targetPath, section?, submitterId, origin, state, reason, bundleHash, manifest bytea,
+         base bytea?, proposed bytea, artifact bytea?, artifactHash?, baseSha256?, baseSnapshotId?, createdAt, updatedAt)
+ProposalRef(proposalId, snapshotId, role target|scope|source, impact?, ord)
 -- Phase 3
 Assignment, Decision, Publication, Resolution, ConflictResolution   (fields as architecture.md › Data model)
 ```
@@ -238,7 +239,7 @@ interface SearchHitDto { path: string; pageTitle: string; anchor: string; sectio
 
 | Phase | Endpoints |
 | --- | --- |
-| P4 Contribute | `GET/POST/PATCH/DELETE /drafts[/{id}]` (autosave `PATCH` with `If-Match: <updatedAt>`), `POST /drafts/{id}/sources`, `POST /drafts/{id}/rebase`, `POST /drafts/{id}/submit` → `ProposalDto`, `POST /contributions` (agent bundle), `GET /contributions/{slug}`, `POST /contributions/import` (`.contribution.md` v3), `GET /drafts/{id}/export` |
+| P4 Contribute (**full contract: §7.2**) | `GET/POST/PATCH/DELETE /drafts[/{id}]` (autosave `PATCH` with `If-Match: <updatedAt>`), `POST /drafts/{id}/sources`, `POST /drafts/{id}/rebase`, `POST /drafts/{id}/submit` → `ProposalDto`, `POST /contributions` (agent bundle), `GET /contributions/{slug}`, `POST /contributions/import` (`.contribution.md` v3), `GET /drafts/{id}/export` |
 | P5 Review/publish | `GET /proposals?state&tab&cursor`, `GET /proposals/{slug}` (incl. `preview` artifact + hashes), `GET /proposals/{slug}/diff`, `POST /proposals/{slug}/decisions` `{ approve, reason, bundleHash, artifactHash, previewAt, discussionVersion, disputeVersion }`, `POST /proposals/{slug}/publish`, `POST /proposals/{slug}/conflict` `{ outcome: keep_current\|use_incoming\|merge, replacement? }`, `GET /ops/blocked`, `POST /ops/blocked/{slug}/resolution`, `GET /audit`, `GET /events` (SSE) |
 | P6 Discussions/MCP | `/topics`, `/topics/{id}/comments`, `/proposals/{slug}/discussion`, `/proposals/{slug}/disputes`, MCP at `/mcp` (streamable HTTP) |
 | P7 Quality | `POST /proposals/{slug}/quality-check`, `GET /proposals/{slug}/findings`, internal `GET /internal/v1/jobs/{id}/input`, `POST /internal/v1/jobs/{id}/result`, `/admin/models`, `/admin/rules` |
@@ -257,7 +258,210 @@ interface SearchHitDto { path: string; pageTitle: string; anchor: string; sectio
 - Dev endpoints (only `NODE_ENV !== "production"`, otherwise 404): `POST /api/v1/dev/ping { message }` → `201 { id, status }`; `GET /api/v1/dev/ping/{id}` → `{ id, status, input, output?, error?, createdAt, finishedAt? }`.
 - Schemas live in `packages/contracts/jobs/*.schema.json` (JSON Schema 2020-12): `envelope`, `result`, `ping.input`, `ping.output`. TS types and pydantic v2 models are generated from them; neither side hand-writes these shapes.
 
-### 7.2 Worker providers (Phase 7 foundation) [D-70 … D-74]
+### 7.2 Phase 4 — Contribute (full contract, P4-00)
+
+Behavioural spec: `md-wiki/wiki_worker/core/bundle.py` (`validate_bundle`, `contribution_file`), `core/context.py` (pinned references, freshness) and their tests (`test_workflow.py`, `test_context.py`, `test_web.py`). Decisions D-55 … D-69.
+
+#### 7.2.1 Data model (Prisma)
+
+```text
+enum ProposalState   pending | approved | published | rejected | stale
+enum ProposalOrigin  editor | api | import                         -- how it arrived; never part of the bundle
+enum ProposalRefRole target | scope | source
+
+Draft(id, authorId → User, targetPath, baseSnapshotId? → Snapshot, scope jsonb, title text default '',
+      content text, reason text default '', sources jsonb, appliesTo jsonb, createdAt, updatedAt timestamptz(3))
+      unique(authorId, targetPath)  index(authorId, updatedAt)
+Proposal(id, slug unique, title, targetPath, section?, submitterId → User, origin, state default pending,
+      reason, bundleHash, manifest bytea, base bytea?, proposed bytea, artifact bytea?, artifactHash?,
+      baseSha256?, baseSnapshotId? → Snapshot, createdAt, updatedAt)
+      index(submitterId, createdAt)  index(targetPath, state)
+ProposalRef(id, proposalId → Proposal, snapshotId → Snapshot, role, impact?, ord)  unique(proposalId, role, snapshotId)
+```
+
+- `Draft.scope = { section: string | null }` — the anchor of the base section being edited, `null` = whole page **[D-56]**.
+- `Draft.sources = [{ path, snapshotId, versionLabel, sha256, addedAt }]` (ordered by add time, ≤ 32). `Draft.appliesTo = [{ name, version }]` (≤ 16).
+- `Draft.content` is the **editable region** **[D-56]**: the source text of the scoped section (heading line to the line before the next root heading, exactly `Section.text`), or the whole body (status block stripped) for page scope, or the new file for a create (no base).
+- Proposals are frozen: a trigger rejects `UPDATE` of `slug, targetPath, submitterId, origin, bundleHash, manifest, base, proposed, baseSha256, baseSnapshotId, createdAt` and rejects `DELETE`; `ProposalRef` is append-only (UPDATE/DELETE rejected). Only `state`, `artifact`, `artifactHash`, `updatedAt` change later (Phase 5) **[D-57]**.
+
+#### 7.2.2 Bundle (`domain/bundle.ts`) [D-58]
+
+A bundle is `(manifest bytes, base bytes | null, proposed bytes)`. Every submission path (editor submit, `POST /contributions`, `.contribution.md` import) builds its manifest with the **same** `buildManifest` and the same serializer, then runs the **same** `validateBundle`; the stored structure is therefore identical whatever the origin (P4-G).
+
+```ts
+interface SnapshotRef { path: string; version: string; hash: string }          // version = YYYYMMDD-N
+interface Manifest {                                                            // keys serialized in this order
+  schema_version: 1;
+  id: string;                      // proposal slug (D-6, §7.2.5)
+  target: string;                  // wiki path
+  base_hash: string | null;        // sha256(base) or null for a new page
+  proposed_hash: string;           // sha256(proposed)
+  title: string;                   // 1..120 chars, trimmed non-empty
+  reason: string;                  // 1..4000 chars, trimmed non-empty
+  section: string | null;          // scoped base anchor or null (whole page / create)
+  context: { target: { path: string; version: string | null; hash: string | null }; sources: SnapshotRef[] };
+  scope_impact: { path: string; version: string | null; impact: string }[];   // primary target first
+  source_references: { path: string; version: string }[];                      // = context.sources without hash
+  applies_to: { name: string; version: string }[];
+  author_metadata?: { name?: string; role?: string; expert?: string; metadata_source?: string };  // import only
+}
+```
+
+- Serialization: `JSON.stringify` of an object built with the key order above, no whitespace, UTF-8, no trailing newline. **`bundleHash = sha256(manifest bytes)`** (as md-wiki: base and proposed are bound through `base_hash`/`proposed_hash`).
+- `scope_impact[0] = { path: target, version: base version | null, impact }`; default impact (when none given): `Edits section #<anchor>` / `Edits the whole page` / `Creates the page`. Further rows are related files (agents and import only in Phase 4 **[D-59]**), each pinned to an existing snapshot.
+- `validateBundle({ manifest, base, proposed }) → Result<ValidBundle, BundleIssue>`, `BundleIssue = { code: BundleCode; message: string }`. Checks, in this order (first failure wins):
+
+| `BundleCode` | Rule (ported from `validate_bundle` / `context.validate` unless marked new) |
+| --- | --- |
+| `TOO_LARGE` | manifest, base, proposed each ≤ 1 MiB (1 048 576 bytes) |
+| `INVALID_JSON` | manifest is UTF-8 JSON whose top level is an object |
+| `DUPLICATE_KEY` | no object in the manifest repeats a key (at any depth) |
+| `FIELDS` | required keys present, no unknown keys (`author_metadata` optional), each with its type |
+| `SCHEMA_VERSION` | `schema_version` is the integer 1 |
+| `INVALID_ID` | `id` matches `^[a-z0-9]+(?:-[a-z0-9]+)*$`, ≤ 80 chars (the status-block proposal grammar, §3.4) |
+| `INVALID_TARGET` | `target` passes `validateWikiPath` (§3.1) |
+| `TITLE_REQUIRED` / `REASON_REQUIRED` | trimmed non-empty, ≤ 120 / ≤ 4000 chars (title: new) |
+| `INVALID_HASH` | `proposed_hash` and non-null `base_hash` are 64 lowercase hex |
+| `MODE_MISMATCH` | `base_hash === null` ⇔ base bytes absent |
+| `HASH_MISMATCH` | sha256(proposed) = `proposed_hash`; sha256(base) = `base_hash` |
+| `NOT_UTF8` | proposed and base decode as strict UTF-8 |
+| `RESERVED_MARKER` | proposed contains no `<!-- md-wiki:status` (§3.4) |
+| `INVALID_CONTEXT` | `context.target.path = target`, `context.target.hash = base_hash`, version `null` ⇔ create, else `^\d{8}-\d+$`; ≤ 32 sources, each a valid path + version + hex hash, paths unique and ≠ target |
+| `INVALID_SCOPE` | `scope_impact` non-empty, row 0 = `{target, context.target.version}`, paths unique, every impact trimmed non-empty ≤ 500, other rows have a version and are not the target |
+| `INVALID_SOURCES` | `source_references` equals `context.sources` (path, version, same order) |
+| `INVALID_APPLIES_TO` | ≤ 16 rows, name 1..100 and version 1..50 trimmed non-empty, names unique (case-insensitive) |
+| `INVALID_AUTHOR_METADATA` | only the four keys, each a trimmed non-empty string ≤ 200 |
+| `UNKNOWN_SECTION` | `section` is `null`, or (base present) an anchor of `splitSections(base)`; must be `null` for a create (new) |
+| `NO_CHANGE` | proposed bytes ≠ base body bytes (base with its status block stripped) (new) |
+
+- API mapping of a `BundleIssue`: `TOO_LARGE` → `413 PAYLOAD_TOO_LARGE`; `INVALID_TARGET` → `400 INVALID_PATH`; any other → `400 VALIDATION_FAILED` with `fields: [{ path: 'bundle', code: <BundleCode>, message }]`. A pinned reference that does not resolve (unknown path/version, or the snapshot row's bytes no longer hash to its `sha256`) → `400 VALIDATION_FAILED` with field code `UNKNOWN_VERSION` (md-wiki "unknown or modified context snapshot").
+- Not ported: md-wiki's free-text `sources: string[]` (replaced by pinned refs), `knowledge_change` (no counterpart), Windows device names (`con.md`) — §3.1 paths stay binding **[D-58]**.
+
+#### 7.2.3 Composition and rebase (`domain/draft.ts`) [D-56, D-60]
+
+- `composeProposed(baseBody: string | null, section: string | null, content: string) → Result<string, 'UNKNOWN_SECTION'>`: create or page scope → `content`; section scope → `baseBody` with that section's text replaced by `content`; when another section follows and `content` does not end with a line break, one `\n` is appended so the next heading stays on its own line. Pure, byte-exact elsewhere.
+- `regionOf(baseBody, section) → { text, startLine } | null`: the editable region and its 1-based start line in the **stored** file (status block lines counted, D-33).
+- `rebasePlan(draft, base, current, mode)`; inputs are the pinned base body, the current body and the draft:
+
+| Situation | `mode: auto` | `mode: keep_mine` |
+| --- | --- | --- |
+| current sha = pinned sha | no-op | no-op |
+| draft unedited (content = base region) | re-pin, content := current region | same as auto |
+| section scope, section hash equal in both versions | re-pin, content kept | re-pin, content kept |
+| section scope, section changed | `409 SECTION_CHANGED` | re-pin, content kept (replaces the new section) |
+| section scope, section removed in current | `409 SECTION_CHANGED` | `409 SECTION_CHANGED` (switch to whole page first) |
+| page scope, page changed and draft edited | `409 STALE_BASE` | re-pin, content kept (replaces the whole page) |
+| target removed, or created since a create-draft was opened | `409 STALE_BASE` | `409 STALE_BASE` |
+
+#### 7.2.4 Pinning and freshness [D-55]
+
+- **Observe** (`WikiIndexer.observe(path)`, under the storage root lock): read the file; if its sha differs from the indexed one, index that path exactly as a reindex would (snapshot capture with dedupe, `Page`/`PageSection` rows); return `{ snapshotId, versionLabel, sha256, content }` or `null` when the file does not exist. This is md-wiki's `observe`: every pin is a registered, immutable snapshot.
+- Pin target on open (`POST /drafts`), pin each source when added (`POST /drafts/{id}/sources`): the observed snapshot.
+- `DraftDto.baseChanged` (on every read) compares the pinned sha with the **indexed** `Page.currentSha256` (no storage IO on reads); submit and rebase observe storage live.
+- Submit (and `POST /contributions`, import) run under the root lock: target observed sha ≠ pinned base sha (or file appeared/disappeared) → `409 STALE_BASE`; any source or related-scope file whose observed sha ≠ its pinned sha (or now missing) → `409 SOURCE_CHANGED` with `fields: [{ path: 'sources[i]' | 'scope[i]', code: 'SOURCE_CHANGED', message: <path> }]`. Nothing is recaptured silently (md-wiki `test_stale_draft_is_rejected_without_recapturing_source`).
+
+#### 7.2.5 Slugs and titles (D-6) [D-61]
+
+- `slugify(title)`: NFKD, strip combining marks, lowercase, every run of characters outside `[a-z0-9]` → `-`, trim `-`, cut to ≤ 60 chars at the last `-` before the limit (hard cut if none), empty → `suggestion`.
+- Unique: the first of `s`, `s-2`, `s-3`, … not used by any proposal (checked in the insert transaction; a unique-violation race retries with the next suffix, max 5).
+- Title: the draft/contribution `title` when non-blank, else `deriveTitle(reason)` = the first line of the reason, trimmed, cut to ≤ 80 chars at a word boundary with `…`. The editor has no title field (none is drawn), so editor titles are derived **[D-61]**.
+- An explicit `slug` (agents; the `ID` of a `.contribution.md`) must match the `INVALID_ID` grammar and is used as is: if a proposal with that slug exists and has the **same submitter and bundleHash**, the call is an idempotent replay → `200` with that proposal (md-wiki `submit`); otherwise `409 ALREADY_EXISTS`.
+
+#### 7.2.6 Endpoints
+
+All under `/api/v1`; permission per §5.2 (`draft.*` / `proposal.submit`, token scope `contribute`). Drafts are private: another user's draft id → `404 NOT_FOUND`. `If-Match` carries `DraftDto.updatedAt` (ISO with ms, quotes optional); responses that return a draft also set `ETag: "<updatedAt>"`. JSON body limit 5 MiB (the 4 MiB + 64 KiB contribution file fits).
+
+| Method | Path | Perm | Request | Response | Errors |
+| --- | --- | --- | --- | --- | --- |
+| GET | `/drafts` | `draft.read` | `?limit&cursor` | `Page<DraftDto>` own drafts, `updatedAt desc, id desc` | `VALIDATION_FAILED` |
+| POST | `/drafts` | `draft.create` | `{ targetPath, section?: string \| null }` | `201 DraftDto` new · `200 DraftDto` the author's existing draft for that path (resume; its own scope is kept) **[D-62]** | `INVALID_PATH`, `NOT_FOUND` (section given and page missing), `VALIDATION_FAILED` (`section` not in the current version; field `section`), `STORAGE_ERROR` |
+| GET | `/drafts/{id}` | `draft.read` | | `DraftDto` | `NOT_FOUND` |
+| PATCH | `/drafts/{id}` | `draft.update` | header `If-Match`; any subset of `{ content, reason, title, appliesTo, scope: { section: null } }` | `DraftDto` (new `updatedAt`) | `VALIDATION_FAILED` (missing/invalid `If-Match`, field rules), `PRECONDITION_FAILED` (`If-Match` ≠ current `updatedAt`), `PAYLOAD_TOO_LARGE` (content > 1 MiB UTF-8), `NOT_FOUND` |
+| DELETE | `/drafts/{id}` | `draft.delete` | | `204` | `NOT_FOUND` |
+| POST | `/drafts/{id}/sources` | `draft.update` | `{ path }` | `DraftDto` | `INVALID_PATH`, `NOT_FOUND` (draft, or the source file), `VALIDATION_FAILED` (source = target, already pinned, > 32) |
+| DELETE | `/drafts/{id}/sources/{path}` | `draft.update` | path URL-encoded | `DraftDto` | `NOT_FOUND` (draft or not pinned) |
+| POST | `/drafts/{id}/rebase` | `draft.update` | `{ mode?: 'auto' \| 'keep_mine' }` (default auto) | `DraftDto` | `SECTION_CHANGED`, `STALE_BASE` (table §7.2.3), `NOT_FOUND` |
+| POST | `/drafts/{id}/submit` | `proposal.submit` | header `If-Match` | `201 ProposalDto` (`state: 'pending'`, origin `editor`); the draft is deleted in the same transaction | `VALIDATION_FAILED` (`If-Match`; reason blank → field `reason`; bundle codes), `PRECONDITION_FAILED`, `STALE_BASE`, `SOURCE_CHANGED`, `PAYLOAD_TOO_LARGE`, `NOT_FOUND` |
+| GET | `/drafts/{id}/export` | `draft.read` | | `200 text/markdown; charset=utf-8`, `Content-Disposition: attachment; filename="<slug>.contribution.md"` (v3, §7.2.7) | `NOT_FOUND`, `PRECONDITION_FAILED` (draft has no base: v3 needs a versioned primary file), `VALIDATION_FAILED` (reason blank; field `reason`) |
+| POST | `/contributions` | `proposal.submit` | `ContributionInput` | `201 ProposalDto` (origin `api`) · `200` idempotent replay | `VALIDATION_FAILED` (DTO, `UNKNOWN_VERSION`, bundle codes), `INVALID_PATH`, `STALE_BASE`, `SOURCE_CHANGED`, `ALREADY_EXISTS`, `PAYLOAD_TOO_LARGE` |
+| GET | `/contributions/{slug}` | `wiki.read` | | `ContributionDto` | `NOT_FOUND` (unknown, or caller is neither the submitter nor role ≥ reviewer **[D-63]**) |
+| POST | `/contributions/import` | `proposal.submit` | `{ file: string }` (the `.contribution.md` text) | `201 ProposalDto` (origin `import`) · `200` idempotent replay | as `POST /contributions`, plus field code `CONTRIBUTION_FORMAT` for envelope errors; file > 4 MiB + 64 KiB → `PAYLOAD_TOO_LARGE` |
+| GET | `/me/suggestions` | `draft.read` | `?limit&cursor` | `{ items: SuggestionDto[], nextCursor, total }` — the caller's drafts and proposals, `at desc, id desc` **[D-64]** | `VALIDATION_FAILED` |
+
+```ts
+interface PinnedRefDto { path: string; versionLabel: string; sha256: string }
+interface DraftSourceDto extends PinnedRefDto { addedAt: string; changed: boolean /* indexed sha ≠ pinned */ }
+interface DraftDto {
+  id: string; targetPath: string; pageTitle: string;
+  section: string | null; sectionTitle: string | null;       // title of the scoped base section
+  title: string; content: string; reason: string; appliesTo: { name: string; version: string }[];
+  base: (PinnedRefDto & { capturedAt: string }) | null;      // null = new page
+  baseText: string;                                          // base region text ('' for a create) → Changes tab
+  baseStartLine: number;                                     // first line of the region in the stored file (1 for create)
+  current: PinnedRefDto | null;                              // indexed current version of the target
+  baseChanged: boolean;                                      // current sha ≠ base sha (or existence differs)
+  sectionChanged: boolean;                                   // baseChanged and the scoped section's hash differs or is gone
+  currentText: string | null;                                // region text in `current` when baseChanged, else null
+  sources: DraftSourceDto[];
+  createdAt: string; updatedAt: string;
+}
+interface ProposalDto {
+  id: string; slug: string; title: string; targetPath: string; pageTitle: string;
+  section: string | null; sectionTitle: string | null;
+  state: 'pending' | 'approved' | 'published' | 'rejected' | 'stale';
+  origin: 'editor' | 'api' | 'import';
+  submitter: { id: string; name: string; kind: 'human' | 'agent' };
+  reason: string; bundleHash: string; proposedSha256: string;
+  base: PinnedRefDto | null;
+  sources: PinnedRefDto[];
+  scope: { path: string; versionLabel: string | null; impact: string }[];
+  appliesTo: { name: string; version: string }[];
+  createdAt: string;
+}
+interface ContributionDto extends ProposalDto { manifest: string /* exact bytes */; proposed: string }
+interface ContributionInput {
+  targetPath: string;
+  base: { versionLabel: string; sha256: string } | null;    // what the agent read via /context; null = new page
+  content: string;                                          // the complete proposed Markdown (no status block)
+  reason: string; title?: string; slug?: string; section?: string | null; targetImpact?: string;
+  sources?: { path: string; versionLabel: string }[];       // ≤ 32
+  scope?: { path: string; versionLabel: string; impact: string }[];   // related files, ≤ 32
+  appliesTo?: { name: string; version: string }[];
+}
+interface SuggestionDto {
+  kind: 'draft' | 'proposal'; id: string; slug: string | null;
+  targetPath: string; pageTitle: string; section: string | null; sectionTitle: string | null;
+  title: string;                                            // draft: title or derived from reason ('' if neither)
+  state: 'draft' | ProposalDto['state'];
+  needsAttention: boolean;                                  // draft.baseChanged, or proposal state stale
+  at: string;                                               // draft updatedAt / proposal createdAt
+}
+```
+
+- `POST /contributions`: `base` must resolve to the snapshot row `(targetPath, versionLabel)` with that `sha256` (else `UNKNOWN_VERSION`) and be the observed current version (else `STALE_BASE`); `base: null` requires the file to be absent (else `STALE_BASE`). `sources`/`scope` resolve `(path, versionLabel)` to snapshot rows (`UNKNOWN_VERSION`) and must be current (`SOURCE_CHANGED`). A file may appear in both `scope` and `sources` only with the same version (`INVALID_SCOPE`).
+- Submitter identity is always the caller (session or token user); a contribution file's `Author` cell is informational and ignored (md-wiki: "the verified submitter comes from the caller").
+- `pageTitle`: the indexed `Page.title`, else `pageTitle(path, [])` (§3.3).
+
+#### 7.2.7 `.contribution.md` v3 (`domain/contribution-file.ts`) [D-65]
+
+Byte-compatible with md-wiki `contribution_file` (envelope, framing, `\|` / `<br>` / `\\` escapes, boundary `wc-[a-z0-9-]{1,200}` absent from both payloads, the three breaks each exactly once and in order, file ends with the end break, payload framing of exactly two LF, size ≤ 4 MiB + 64 KiB, strict UTF-8). Required fields `Format` (= `wiki-contribution-v3`), `Boundary`, `ID`, `Base SHA-256`, `Proposed SHA-256`, `Author`, `Reason`; duplicate fields rejected. Optional fields kept: `Author name|role|expert|metadata source` → `author_metadata`; new optional fields `Title`, `Section` (anchor), `Applies to` (`name = version` lines joined by `<br>`) — md-wiki ignores unknown rows, so exported files stay md-wiki-readable. Scope table rows `| path | YYYYMMDD-N | impact |` (≥ 1, primary first, unique); Sources rows `| path | YYYYMMDD-N |` (unique). The primary row's snapshot hash must equal `Base SHA-256`; a file in both tables must use one version; the target may not appear in Sources. `ID` becomes the explicit slug (§7.2.5). Envelope errors → field code `CONTRIBUTION_FORMAT`; resolution and bundle errors as `POST /contributions`.
+
+`renderContribution(bundle)` produces the file for `GET /drafts/{id}/export`: fields in the order above, a fresh boundary `wc-<16 hex>` regenerated until absent from both payloads, ID = the slug the draft would get now (not reserved). `parseContribution(renderContribution(x))` round-trips the bundle exactly (tested).
+
+#### 7.2.8 Audit events [D-66]
+
+`draft.created {targetPath, section, baseVersion}` · `draft.rebased {from, to, mode}` · `draft.discarded {targetPath}` · `proposal.submitted {slug, targetPath, origin, bundleHash}` (subject `proposal`). Autosave and source pins are not audited (they are private draft state; the submitted bundle records what was pinned).
+
+#### 7.2.9 Web (F-06 Editor, F-05 Your suggestions, F-03 entry) [D-67, D-68, D-69]
+
+- Route `/wiki/*path/edit?section=`: on mount `POST /drafts` (create-or-resume) and cache the result under `['draft', id]`; autosave = debounced (800 ms) `PATCH` with `If-Match`, one request in flight, the latest local text always wins locally; a `PRECONDITION_FAILED` reloads the draft and shows the error callout (input stays). Tabs Write · Preview · Changes; Changes = `domain/line-diff` of `baseText` → `content`, line numbers offset by `baseStartLine`.
+- *Whole page* = `PATCH scope: { section: null }` (the server splices the region into the body); hidden when already whole page.
+- Base changed banner (frame `baseChanged`): copy from `sectionChanged`; *Compare and rebase* → `POST rebase {auto}`; on `SECTION_CHANGED`/`STALE_BASE` the Changes tab compares `currentText` → `content` and offers *Keep my text and rebase* (`keep_mine`). Submit stays disabled while `baseChanged`.
+- Not rendered in Phase 4 (no data): *What happens to evidence* (Phase 9), *Self-check (AI)* (Phase 7), source tier/retraction meta (Phase 9).
+- `/me`: only the *Your suggestions* tab (count = `total`) renders; *Followed pages*, *Your checks and reports*, *Tell me when*, *Your part this year* belong to Phase 9.
+- F-03 header *Suggest an edit* links to `/wiki/<path>/edit?section=<selected anchor>` (no `section` when nothing is selected); shown to roles ≥ contributor.
+
+### 7.3 Worker providers (Phase 7 foundation) [D-70 … D-74]
 
 Worker-only; no job kind, schema or endpoint is added here (the `quality_check` wiring comes with P7-00). Code: `services/worker/src/mdwiki_worker/providers/` and `.../quality/`.
 

@@ -2,6 +2,7 @@ import { createLink, Link, useNavigate } from '@tanstack/react-router';
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import { useEffect, useMemo, type ComponentProps, type ReactNode } from 'react';
 import { useApi } from '../../lib/api';
+import { useSession } from '../../lib/session';
 import { messageForError } from '../../lib/error-copy';
 import { Button } from '../../ui/Button';
 import { Callout } from '../../ui/Callout';
@@ -15,6 +16,7 @@ import { MarkdownPageContent } from '../markdown/MarkdownPageContent';
 import type { PageDto } from '../markdown/model';
 import { pageQueryOptions } from '../markdown/page-query';
 import {
+  canSuggest,
   historyModel,
   pageArticleModel,
   pageHeaderModel,
@@ -143,7 +145,8 @@ function Contents({ links, selected }: { links: PageArticleModel['links']; selec
   );
 }
 
-function ReadingHeader({ model }: { model: PageHeaderModel }) {
+function ReadingHeader({ model, selected }: { model: PageHeaderModel; selected: string }) {
+  const session = useSession();
   return (
     <header className="flex flex-col gap-10px border-b border-divider pb-18px">
       <span className="text-13 text-muted">
@@ -174,6 +177,15 @@ function ReadingHeader({ model }: { model: PageHeaderModel }) {
         )}
       </div>
       <div className="flex flex-wrap gap-8px pt-4px">
+        {canSuggest(session.data?.user?.roles) && (
+          <Link
+            className={actionLinkClass}
+            to={model.editHref}
+            search={selected ? { section: selected } : {}}
+          >
+            Suggest an edit
+          </Link>
+        )}
         <Link className={actionLinkClass} to={model.historyHref}>
           History
         </Link>
@@ -282,7 +294,7 @@ function ReadingPage({
       >
         {article ? (
           <>
-            <ReadingHeader model={header} />
+            <ReadingHeader model={header} selected={selected} />
             {article.empty ? (
               <Card
                 title={header.title}

@@ -1,6 +1,7 @@
 import { http, HttpResponse } from 'msw';
 import { setupWorker } from 'msw/browser';
 import { homeDescription, visualRecent, visualSearch, visualTree } from './home-search';
+import { visualDraft, visualSuggestions } from './contribute';
 import { frameSamples } from './samples';
 import { visualHistory, visualMeta, visualPage, visualPageTopic } from './reading';
 import { adminPage, visualOwnerSession, visualTeams, visualTokens, visualUsers } from './settings';
@@ -10,6 +11,8 @@ const notFound = () =>
     { code: 'NOT_FOUND' },
     { status: 404, headers: { 'Content-Type': 'application/problem+json' } },
   );
+
+const draft = () => visualDraft(new URLSearchParams(globalThis.location.search).has('baseChanged'));
 
 // Private visual-mode transport. Add typed /api/v1 handlers here as the
 // corresponding screens and API bindings are implemented.
@@ -43,6 +46,21 @@ const worker = setupWorker(
   http.get('/api/v1/wiki/pages/:path/history', ({ params }) =>
     params.path === visualPage.path ? HttpResponse.json(visualHistory) : notFound(),
   ),
+  // F-06 Editor and F-05 Your suggestions. Writes echo the draft; nothing is persisted.
+  http.post('/api/v1/drafts', () => HttpResponse.json(draft(), { status: 200 })),
+  http.get('/api/v1/drafts/:id', () => HttpResponse.json(draft())),
+  http.patch('/api/v1/drafts/:id', async ({ request }) =>
+    HttpResponse.json({
+      ...draft(),
+      ...((await request.json()) as object),
+      updatedAt: new Date().toISOString(),
+    }),
+  ),
+  http.post('/api/v1/drafts/:id/rebase', () => HttpResponse.json(visualDraft(false))),
+  http.post('/api/v1/drafts/:id/sources', () => HttpResponse.json(draft())),
+  http.delete('/api/v1/drafts/:id/sources/:path', () => HttpResponse.json(draft())),
+  http.delete('/api/v1/drafts/:id', () => new HttpResponse(null, { status: 204 })),
+  http.get('/api/v1/me/suggestions', () => HttpResponse.json(visualSuggestions)),
   http.get('/__visual/fixtures/:frame', ({ params }) => {
     const { frame } = params;
     if (typeof frame !== 'string' || !Object.hasOwn(frameSamples, frame)) {

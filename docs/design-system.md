@@ -120,6 +120,12 @@ Exact values that appear in a frame but were missing from §2.1–2.3 are added 
 | `size.workspace-content-basis` / `size.workspace-nav-basis` / `space.workspace-bottom` | 640px / 220px / 40px | F-08 workspace columns and main bottom padding |
 | `size.settings-label` / `size.settings-value` | 300px / 320px | F-14 setting row columns (D-54) |
 | `size.table-settings` | 720px (min width) | derived F-14 People table (D-52, D-54) |
+| `space.26` / `space.30` | 26px / 30px | F-06 preview horizontal padding / toolbar button min width |
+| `leading.editor` / `leading.diff` | 1.8 / 1.75 | F-06 Write source and gutter / Changes rows |
+| `size.editor-min` / `size.editor-content-basis` | 330px / 520px | F-06 textarea min height / editor column basis |
+| `size.editor-aside-basis` / `size.editor-aside-max` | 380px / 480px | F-06 submission aside |
+| `size.diff-number` / `size.diff-sign` | 44px / 18px | F-06 Changes line-number and sign columns |
+| `size.you-table` | 680px (table min width) | F-05 activity table |
 
 ## 3. Trust label system (exact, from every frame's `TL` table)
 

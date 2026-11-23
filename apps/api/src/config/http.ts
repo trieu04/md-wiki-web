@@ -3,6 +3,7 @@ import { authenticate } from '../auth/auth-http.js';
 import { AuthService } from '../auth/auth.service.js';
 import { validationPipe } from '../common/validation.js';
 import type { INestApplication } from '@nestjs/common';
+import type { NestExpressApplication } from '@nestjs/platform-express';
 import type { RequestHandler } from 'express';
 import { AppError } from '../common/app-error.js';
 import { ProblemFilter } from '../common/problem.filter.js';
@@ -29,6 +30,8 @@ export function configureHttp(
     app.use(serviceAuth(listener.serviceToken));
     app.setGlobalPrefix('internal/v1');
   } else {
+    // A .contribution.md may be 4 MiB + 64 KiB inside a JSON string (system-logic §7.2.6).
+    (app as NestExpressApplication).useBodyParser('json', { limit: '5mb' });
     app.use('/api/v1', authenticate(app.get(AuthService)));
     app.setGlobalPrefix('api/v1');
   }

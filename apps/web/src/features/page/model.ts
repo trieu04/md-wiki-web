@@ -9,6 +9,12 @@ export function pageHref(path: string) {
   return `/wiki/${path.split('/').map(encodeURIComponent).join('/')}`;
 }
 
+/** F-06 route: `/wiki/<path>/edit?section=<anchor>` (system-logic §7.2.9). */
+export function editorHref(path: string, section?: string | null) {
+  const href = `${pageHref(path)}/edit`;
+  return section ? `${href}?${new URLSearchParams({ section }).toString()}` : href;
+}
+
 const joinNames = new Intl.ListFormat('en-GB');
 const spreadLabels = {
   checked: 'checked',
@@ -36,6 +42,7 @@ export function pageHeaderModel(page: PageDto) {
     topic: page.topic.name,
     pageHref: pageHref(page.path),
     historyHref: `${pageHref(page.path)}/history`,
+    editHref: editorHref(page.path),
     updatedAt: page.updatedAt,
     updated: `updated ${formatDate(new Date(page.updatedAt))}`,
     maintainers: page.maintainers.length
@@ -135,4 +142,11 @@ export function historyModel(pages: readonly HistoryDto[]) {
       captured: formatDateTime(new Date(capturedAt)),
     })),
   );
+}
+
+const SUGGEST_ROLES = new Set(['contributor', 'reviewer', 'publisher', 'owner']);
+
+/** *Suggest an edit* is shown to roles ≥ contributor (system-logic §7.2.9). */
+export function canSuggest(roles: readonly string[] | undefined) {
+  return !!roles?.some((role) => SUGGEST_ROLES.has(role));
 }

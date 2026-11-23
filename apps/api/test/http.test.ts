@@ -103,7 +103,12 @@ it('never leaks the message or stack of an unexpected exception', async () => {
 });
 
 it.each([
-  { body: JSON.stringify('a'.repeat(128 * 1024)), status: 413, code: 'PAYLOAD_TOO_LARGE' },
+  // Public JSON limit is 5 MiB (system-logic §7.2.6).
+  {
+    body: JSON.stringify({ a: 'a'.repeat(5 * 1024 * 1024) }),
+    status: 413,
+    code: 'PAYLOAD_TOO_LARGE',
+  },
   { body: '{"item":', status: 400, code: 'VALIDATION_FAILED' },
 ])('reports $code for a rejected JSON body', async ({ body, status, code }) => {
   const response = await fetch(`${url}/test`, {

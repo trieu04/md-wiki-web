@@ -64,6 +64,8 @@ model User {
   sessions     Session[]
   tokens       ApiToken[]
   events       AuditEvent[]
+  drafts       Draft[]
+  proposals    Proposal[]
 }
 
 model Session {
@@ -112,6 +114,10 @@ model Snapshot {
   sha256     String
   content    Bytes
   capturedAt DateTime @default(now()) @db.Timestamptz(3)
+
+  drafts    Draft[]
+  proposals Proposal[]
+  refs      ProposalRef[]
 
   @@unique([path, label])
   @@index([path, sha256])
@@ -167,4 +173,86 @@ model AiJob {
   createdAt  DateTime    @default(now()) @db.Timestamptz(3)
   startedAt  DateTime?   @db.Timestamptz(3)
   finishedAt DateTime?   @db.Timestamptz(3)
+}
+
+// Phase 4 — Contribute (system-logic §7.2.1)
+enum ProposalState {
+  pending
+  approved
+  published
+  rejected
+  stale
+}
+
+enum ProposalOrigin {
+  editor
+  api
+  import
+}
+
+enum ProposalRefRole {
+  target
+  scope
+  source
+}
+
+model Draft {
+  id             String    @id @default(uuid(7)) @db.Uuid
+  authorId       String    @db.Uuid
+  author         User      @relation(fields: [authorId], references: [id])
+  targetPath     String
+  baseSnapshotId String?   @db.Uuid
+  baseSnapshot   Snapshot? @relation(fields: [baseSnapshotId], references: [id])
+  scope          Json
+  title          String    @default("")
+  content        String
+  reason         String    @default("")
+  sources        Json
+  appliesTo      Json
+  createdAt      DateTime  @default(now()) @db.Timestamptz(3)
+  updatedAt      DateTime  @db.Timestamptz(3)
+
+  @@unique([authorId, targetPath])
+  @@index([authorId, updatedAt])
+}
+
+model Proposal {
+  id             String         @id @default(uuid(7)) @db.Uuid
+  slug           String         @unique
+  title          String
+  targetPath     String
+  section        String?
+  submitterId    String         @db.Uuid
+  submitter      User           @relation(fields: [submitterId], references: [id])
+  origin         ProposalOrigin
+  state          ProposalState  @default(pending)
+  reason         String
+  bundleHash     String
+  manifest       Bytes
+  base           Bytes?
+  proposed       Bytes
+  artifact       Bytes?
+  artifactHash   String?
+  baseSha256     String?
+  baseSnapshotId String?        @db.Uuid
+  baseSnapshot   Snapshot?      @relation(fields: [baseSnapshotId], references: [id], onDelete: Restrict)
+  createdAt      DateTime       @default(now()) @db.Timestamptz(3)
+  updatedAt      DateTime       @default(now()) @db.Timestamptz(3)
+  refs           ProposalRef[]
+
+  @@index([submitterId, createdAt])
+  @@index([targetPath, state])
+}
+
+model ProposalRef {
+  id         String          @id @default(uuid(7)) @db.Uuid
+  proposalId String          @db.Uuid
+  proposal   Proposal        @relation(fields: [proposalId], references: [id], onDelete: Restrict)
+  snapshotId String          @db.Uuid
+  snapshot   Snapshot        @relation(fields: [snapshotId], references: [id], onDelete: Restrict)
+  role       ProposalRefRole
+  impact     String?
+  ord        Int
+
+  @@unique([proposalId, role, snapshotId])
 }

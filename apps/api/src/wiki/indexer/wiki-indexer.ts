@@ -1,6 +1,8 @@
 import { pageTitle, splitSections, topicId, topicName, topicNames } from '@md-wiki/domain';
+import type { WikiPath } from '@md-wiki/domain';
 import type { PrismaClient } from '@prisma/client';
-import { decodeMarkdown, type WikiStorage } from '../storage/wiki-storage.js';
+import { AppError } from '../../common/app-error.js';
+import { decodeMarkdown, type ReadResult, type WikiStorage } from '../storage/wiki-storage.js';
 import type { PublicationLookup } from './publication-lookup.js';
 import { captureSnapshot } from './snapshots.js';
 
@@ -46,38 +48,93 @@ export class WikiIndexer {
             await this.db.page.update({ where: { path }, data: { changedOutsideReview } });
           continue;
         }
-        const sections = splitSections(markdown);
-        const capturedAt = this.now();
-        await this.db.$transaction(async (tx) => {
-          const versionLabel = await captureSnapshot(tx, file, capturedAt);
-          const data = {
-            title: pageTitle(path, sections),
-            topic: topicId(item.path),
-            isMeta: item.path.isMeta,
-            currentVersionLabel: versionLabel,
-            currentSha256: hash,
-            changedOutsideReview,
-            updatedAt: capturedAt,
-          };
-          await tx.page.upsert({ where: { path }, create: { path, ...data }, update: data });
-          await tx.pageSection.createMany({
-            data: sections.map(({ anchor, title, level, hash: sectionHash, text }, ord) => ({
-              path,
-              versionLabel,
-              anchor,
-              title,
-              level,
-              ord,
-              sectionHash,
-              text,
-            })),
-            skipDuplicates: true,
-          });
-        });
+        await this.index(file, markdown, changedOutsideReview);
         changed++;
       }
       this.names = names;
       return { scanned: items.length, changed, durationMs: Math.round(performance.now() - start) };
     });
   }
+
+  /**
+   * Pin the current version of one path (system-logic §7.2.4, D-55): a live read under the
+   * root lock that indexes the file when it changed, so every pin is a registered snapshot.
+   * `null` when the file does not exist.
+   */
+  async observe(path: WikiPath): Promise<Observed | null> {
+    return this.storage.withRootLock(async () => {
+      let file: ReadResult;
+      try {
+        file = await this.storage.read(path);
+      } catch (error) {
+        if (error instanceof AppError && error.code === 'NOT_FOUND') return null;
+        throw error;
+      }
+      const current = await this.db.page.findUnique({
+        where: { path: path.path },
+        select: { currentSha256: true, currentVersionLabel: true },
+      });
+      let label = current?.currentVersionLabel;
+      if (current?.currentSha256 !== file.sha256) {
+        const published = await this.publications.lastPublishedSha256(path);
+        label = await this.index(
+          file,
+          decodeMarkdown(file.content),
+          published !== null && published !== file.sha256,
+        );
+      }
+      const snapshot = await this.db.snapshot.findUniqueOrThrow({
+        where: { path_label: { path: path.path, label: label ?? '' } },
+        select: { id: true, label: true, sha256: true },
+      });
+      if (snapshot.sha256 !== file.sha256) throw new AppError('STORAGE_ERROR', 'Index mismatch');
+      return {
+        snapshotId: snapshot.id,
+        versionLabel: snapshot.label,
+        sha256: file.sha256,
+        content: file.content,
+      };
+    });
+  }
+
+  private async index(file: ReadResult, markdown: string, changedOutsideReview: boolean) {
+    const { path: wikiPath } = file;
+    const path = wikiPath.path;
+    const sections = splitSections(markdown);
+    const capturedAt = this.now();
+    return this.db.$transaction(async (tx) => {
+      const versionLabel = await captureSnapshot(tx, file, capturedAt);
+      const data = {
+        title: pageTitle(path, sections),
+        topic: topicId(wikiPath),
+        isMeta: wikiPath.isMeta,
+        currentVersionLabel: versionLabel,
+        currentSha256: file.sha256,
+        changedOutsideReview,
+        updatedAt: capturedAt,
+      };
+      await tx.page.upsert({ where: { path }, create: { path, ...data }, update: data });
+      await tx.pageSection.createMany({
+        data: sections.map(({ anchor, title, level, hash: sectionHash, text }, ord) => ({
+          path,
+          versionLabel,
+          anchor,
+          title,
+          level,
+          ord,
+          sectionHash,
+          text,
+        })),
+        skipDuplicates: true,
+      });
+      return versionLabel;
+    });
+  }
+}
+
+export interface Observed {
+  snapshotId: string;
+  versionLabel: string;
+  sha256: string;
+  content: Buffer;
 }

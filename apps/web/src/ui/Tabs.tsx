@@ -9,6 +9,8 @@ type TabsProps = {
   selected: string;
   onChange: (id: string) => void;
   variant?: 'workspace' | 'activity' | 'drawer';
+  /** Controls drawn on the tab bar's right (F-06 formatting toolbar). */
+  actions?: ReactNode;
 };
 
 const styles = {
@@ -17,7 +19,14 @@ const styles = {
   drawer: { list: 'mx-22px', button: 'px-10px py-10px text-13', count: 'text-muted' },
 };
 
-export function Tabs({ label, tabs, selected, onChange, variant = 'workspace' }: TabsProps) {
+export function Tabs({
+  label,
+  tabs,
+  selected,
+  onChange,
+  variant = 'workspace',
+  actions,
+}: TabsProps) {
   const uid = useId();
   const buttons = useRef(new Map<string, HTMLButtonElement>());
   const style = styles[variant];
@@ -52,44 +61,61 @@ export function Tabs({ label, tabs, selected, onChange, variant = 'workspace' }:
   const tabId = (id: string) => `${uid}-tab-${id}`;
   const panelId = (id: string) => `${uid}-panel-${id}`;
 
+  const tablist = (
+    <div
+      role="tablist"
+      aria-label={label}
+      className={
+        actions == null
+          ? `flex flex-wrap gap-2px border-b border-edge ${style.list}`
+          : 'flex gap-2px'
+      }
+    >
+      {tabs.map((tab, index) => (
+        <button
+          key={tab.id}
+          ref={(node) => {
+            if (node) buttons.current.set(tab.id, node);
+            else buttons.current.delete(tab.id);
+          }}
+          type="button"
+          role="tab"
+          id={tabId(tab.id)}
+          aria-controls={panelId(tab.id)}
+          aria-selected={tab === active}
+          tabIndex={tab === active ? 0 : -1}
+          onKeyDown={(event) => {
+            navigate(event, index);
+          }}
+          onClick={() => {
+            if (tab !== active) onChange(tab.id);
+          }}
+          className={`-mb-mark-x border-b-2 leading-control focus-visible:relative focus-visible:z-10 ${style.button} ${tab === active ? 'border-accent font-semibold text-primary' : 'border-transparent font-medium text-muted'}`}
+        >
+          {tab.label}
+          {tab.count != null && (
+            <>
+              {' '}
+              <span className={`font-medium ${style.count}`}>{tab.count}</span>
+            </>
+          )}
+        </button>
+      ))}
+    </div>
+  );
+
   return (
     <div className="min-w-0">
-      <div
-        role="tablist"
-        aria-label={label}
-        className={`flex flex-wrap gap-2px border-b border-edge ${style.list}`}
-      >
-        {tabs.map((tab, index) => (
-          <button
-            key={tab.id}
-            ref={(node) => {
-              if (node) buttons.current.set(tab.id, node);
-              else buttons.current.delete(tab.id);
-            }}
-            type="button"
-            role="tab"
-            id={tabId(tab.id)}
-            aria-controls={panelId(tab.id)}
-            aria-selected={tab === active}
-            tabIndex={tab === active ? 0 : -1}
-            onKeyDown={(event) => {
-              navigate(event, index);
-            }}
-            onClick={() => {
-              if (tab !== active) onChange(tab.id);
-            }}
-            className={`-mb-mark-x border-b-2 leading-control focus-visible:relative focus-visible:z-10 ${style.button} ${tab === active ? 'border-accent font-semibold text-primary' : 'border-transparent font-medium text-muted'}`}
-          >
-            {tab.label}
-            {tab.count != null && (
-              <>
-                {' '}
-                <span className={`font-medium ${style.count}`}>{tab.count}</span>
-              </>
-            )}
-          </button>
-        ))}
-      </div>
+      {actions == null ? (
+        tablist
+      ) : (
+        <div
+          className={`flex flex-wrap items-center justify-between gap-6px border-b border-edge ${style.list}`}
+        >
+          {tablist}
+          {actions}
+        </div>
+      )}
       {tabs.map((tab) => (
         <div
           key={tab.id}

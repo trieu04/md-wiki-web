@@ -5,6 +5,7 @@ import { userEvent } from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
 import { setupServer } from 'msw/node';
 import { afterAll, afterEach, beforeAll, beforeEach, expect, it, vi } from 'vitest';
+import { visualDraft, visualSuggestions } from '../src/dev/fixtures/contribute';
 import { visualRecent, visualSearch, visualTree } from '../src/dev/fixtures/home-search';
 import {
   visualHistory,
@@ -29,6 +30,9 @@ const server = setupServer(
     );
   }),
   http.get('*/api/v1/wiki/recent', () => HttpResponse.json(visualRecent)),
+  http.post('*/api/v1/drafts', () => HttpResponse.json(visualDraft(false))),
+  http.get('*/api/v1/drafts/:id', () => HttpResponse.json(visualDraft(false))),
+  http.get('*/api/v1/me/suggestions', () => HttpResponse.json(visualSuggestions)),
   http.get('*/api/v1/search', ({ request }) =>
     HttpResponse.json(visualSearch(new URL(request.url).searchParams)),
   ),
@@ -62,21 +66,15 @@ function open(path: string) {
   return router;
 }
 
-it.each([
-  ['/wiki/microscopy/%E6%96%87%20%E5%AD%97.md/edit?section=overview', '/wiki/{$}/edit', null],
-  ['/me', '/me', 'MN — You: followed pages and your activity'],
-  ['/me/suggestions/example-id/resolve', '/me/suggestions/$id/resolve', null],
-])('uses the empty reading screen for %s', async (path, id, active) => {
-  const router = open(path);
+it('uses the empty reading screen for the conflict route', async () => {
+  const router = open('/me/suggestions/example-id/resolve');
   const main = await screen.findByRole('main');
   expect(main).toHaveTextContent(/^$/);
-  expect(router.state.matches.at(-1)?.routeId).toBe(id);
+  expect(router.state.matches.at(-1)?.routeId).toBe('/me/suggestions/$id/resolve');
   expect(screen.queryByRole('navigation', { name: 'Workspace' })).not.toBeInTheDocument();
   await screen.findByText('A runtime wiki');
   const banner = screen.getByRole('banner');
-  if (active)
-    expect(within(banner).getByRole('link', { name: active, current: 'page' })).toBeVisible();
-  else expect(within(banner).queryByRole('link', { current: 'page' })).not.toBeInTheDocument();
+  expect(within(banner).queryByRole('link', { current: 'page' })).not.toBeInTheDocument();
 });
 
 it.each([
@@ -302,9 +300,14 @@ it('shows page and section labels, follows section anchors and omits deferred re
     'href',
     `/wiki/${visualPage.path}/history`,
   );
+  // Phase 4: roles ≥ contributor get *Suggest an edit* for the selected section.
+  expect(within(article).getByRole('link', { name: 'Suggest an edit' })).toHaveAttribute(
+    'href',
+    `/wiki/${visualPage.path}/edit?section=overview`,
+  );
   expect(
     within(article).queryByText(
-      /^(Follow|Suggest an edit|Ask a question|Sources|Changed outside review|Did this page help with your work\?|This section:)$/u,
+      /^(Follow|Ask a question|Sources|Changed outside review|Did this page help with your work\?|This section:)$/u,
     ),
   ).not.toBeInTheDocument();
   expect(screen.queryByRole('complementary', { name: 'About this page' })).not.toBeInTheDocument();

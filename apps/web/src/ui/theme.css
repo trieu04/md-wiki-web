@@ -177,6 +177,18 @@
   --spacing-tabs-activity: 11px;
   --spacing-36px: 36px;
   --spacing-40px: 40px;
+  --spacing-26px: 26px;
+  --spacing-30px: 30px;
+  --leading-editor: 1.8;
+  --leading-diff: 1.75;
+  --spacing-editor-min: 330px;
+  --spacing-editor-content: 520px;
+  --spacing-editor-aside: 380px;
+  --spacing-editor-aside-max: 480px;
+  --spacing-diff-number: 44px;
+  --spacing-diff-sign: 18px;
+  --spacing-you-table: 680px;
+  --flex-editor-content: 999 1 var(--spacing-editor-content);
   --leading-prose: 1.7;
   --color-native-placeholder: #757575;
   --border-width-choice: 1.5px;
@@ -202,6 +214,10 @@
 
 @utility flex-workspace-content {
   flex: var(--flex-workspace-content);
+}
+
+@utility flex-editor-content {
+  flex: var(--flex-editor-content);
 }
 
 @utility flex-trust-context {

@@ -12,4 +12,7 @@ export const queryKeys = {
   adminUsers: ['admin.users', {}],
   adminTeams: ['admin.teams', {}],
   adminTokens: ['admin.tokens', {}],
+  draftOpen: (path: string, section: string | null) => ['draft.open', { path, section }] as const,
+  draft: (id: string) => ['draft', id] as const,
+  suggestions: ['me.suggestions', {}],
 } as const;

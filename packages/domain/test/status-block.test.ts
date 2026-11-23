@@ -25,7 +25,7 @@ it.each(['\n', '\r\n'])(
       body,
     });
     if (!parsed.block) throw new Error('expected a status block');
-  expect(renderStatusBlock(parsed.block) + parsed.body).toBe(source);
+    expect(renderStatusBlock(parsed.block) + parsed.body).toBe(source);
   },
 );
 

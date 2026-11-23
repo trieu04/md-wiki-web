@@ -7,6 +7,8 @@ import { GalleryExample as Example } from './GalleryExample';
 import { DecisionOptions, DecisionReason, SourceRadios, SourceResults } from './GalleryForms';
 import { PillToggle } from './PillToggle';
 import { Table } from './Table';
+import { DiffView } from './DiffView';
+import { MarkdownToolbar } from './MarkdownToolbar';
 import { Tabs } from './Tabs';
 import type { Tab } from './Tabs';
 import { Textarea } from './Textarea';
@@ -325,6 +327,26 @@ export function ContainerExamples() {
       </Example>
       <Example id="Tabs/activity">
         <CountedTabs activity />
+      </Example>
+      <Example id="MarkdownToolbar/default">
+        <MarkdownToolbar onFormat={() => undefined} />
+      </Example>
+      <Example id="DiffView/changes">
+        <DiffView
+          rows={[
+            {
+              kind: 'del',
+              number: 14,
+              text: 'Closing the pinhole improves sectioning and reduces the detected signal.',
+            },
+            {
+              kind: 'add',
+              number: 14,
+              text: 'Closing the pinhole below about 1 Airy unit (AU) gives little extra sectioning and reduces the detected signal.[^4]',
+            },
+            { kind: 'add', number: 18, text: '[^4]: sources/pawley-handbook.md, §2.4' },
+          ]}
+        />
       </Example>
       <Example id="Callout/warn">
         <Callout tone="warn" title="Use with care: this section is being re-checked.">

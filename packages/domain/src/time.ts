@@ -22,3 +22,10 @@ export function formatRelative(date: Date, now: Date): string {
     ? formatDate(date)
     : `${formatDate(date)} ${String(date.getUTCFullYear())}`;
 }
+
+/** Clock time for "Draft saved 10:42" (UTC, like every other display format here). */
+export function formatTime(date: Date): string {
+  const hours = String(date.getUTCHours()).padStart(2, '0');
+  const minutes = String(date.getUTCMinutes()).padStart(2, '0');
+  return `${hours}:${minutes}`;
+}

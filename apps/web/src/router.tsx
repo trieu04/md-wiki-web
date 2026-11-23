@@ -12,6 +12,7 @@ import {
   useRouter,
 } from '@tanstack/react-router';
 import type { RouterHistory } from '@tanstack/react-router';
+import { EditorScreen } from './features/editor/EditorScreen';
 import { HomeScreen } from './features/home/HomeScreen';
 import { LoginScreen } from './features/login/LoginScreen';
 import { pageQueryOptions } from './features/markdown/page-query';
@@ -20,6 +21,7 @@ import { userInitials } from './features/navigation/model';
 import { SearchScreen } from './features/search/SearchScreen';
 import { settingsTab } from './features/settings/model';
 import { SettingsScreen } from './features/settings/SettingsScreen';
+import { YouScreen } from './features/you/YouScreen';
 import { ApiContext, createWebData, safeNext, useWikiMeta } from './lib/api';
 import { useSession } from './lib/session';
 import { ReadingLayout } from './ui/ReadingLayout';
@@ -128,12 +130,26 @@ const editor = createRoute({
   getParentRoute: () => root,
   path: '/wiki/{$}/edit',
   validateSearch: ({ section }) => ({ section: typeof section === 'string' ? section : undefined }),
-  component: readingScreen('none'),
+  component: function WikiEditor() {
+    const { _splat } = editor.useParams();
+    const { section } = editor.useSearch();
+    const path = _splat ?? '';
+    return (
+      <EditorScreen
+        key={`${path}#${section ?? ''}`}
+        path={path}
+        section={section ?? null}
+        topBar={useTopBar('none')}
+      />
+    );
+  },
 });
 const you = createRoute({
   getParentRoute: () => root,
   path: '/me',
-  component: readingScreen('you'),
+  component: function You() {
+    return <YouScreen topBar={useTopBar('you')} />;
+  },
 });
 const conflict = createRoute({
   getParentRoute: () => root,
