@@ -166,6 +166,9 @@
   --spacing-drawer-basis: 440px;
   --spacing-drawer-max: 520px;
   --spacing-table-home: 640px;
+  --spacing-settings-label: 300px;
+  --spacing-settings-value: 320px;
+  --spacing-table-settings: 720px;
   --spacing-trust-layout: 897px;
   --spacing-trust-context-basis: 480px;
   --spacing-trust-preview: 760px;

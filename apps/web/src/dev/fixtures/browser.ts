@@ -2,7 +2,8 @@ import { http, HttpResponse } from 'msw';
 import { setupWorker } from 'msw/browser';
 import { homeDescription, visualRecent, visualSearch, visualTree } from './home-search';
 import { frameSamples } from './samples';
-import { visualHistory, visualMeta, visualPage, visualPageTopic, visualSession } from './reading';
+import { visualHistory, visualMeta, visualPage, visualPageTopic } from './reading';
+import { adminPage, visualOwnerSession, visualTeams, visualTokens, visualUsers } from './settings';
 
 const notFound = () =>
   HttpResponse.json(
@@ -32,7 +33,10 @@ const worker = setupWorker(
   http.get('/api/v1/search', ({ request }) =>
     HttpResponse.json(visualSearch(new URL(request.url).searchParams)),
   ),
-  http.get('/api/v1/auth/session', () => HttpResponse.json(visualSession)),
+  http.get('/api/v1/auth/session', () => HttpResponse.json(visualOwnerSession)),
+  http.get('/api/v1/admin/users', () => HttpResponse.json(adminPage(visualUsers))),
+  http.get('/api/v1/admin/teams', () => HttpResponse.json(adminPage(visualTeams))),
+  http.get('/api/v1/admin/tokens', () => HttpResponse.json(adminPage(visualTokens))),
   http.get('/api/v1/wiki/pages/:path', ({ params }) =>
     params.path === visualPage.path ? HttpResponse.json(visualPage) : notFound(),
   ),

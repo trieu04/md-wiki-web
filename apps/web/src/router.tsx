@@ -18,6 +18,8 @@ import { pageQueryOptions } from './features/markdown/page-query';
 import { PageScreen } from './features/page/PageScreen';
 import { userInitials } from './features/navigation/model';
 import { SearchScreen } from './features/search/SearchScreen';
+import { settingsTab } from './features/settings/model';
+import { SettingsScreen } from './features/settings/SettingsScreen';
 import { ApiContext, createWebData, safeNext, useWikiMeta } from './lib/api';
 import { useSession } from './lib/session';
 import { ReadingLayout } from './ui/ReadingLayout';
@@ -171,7 +173,18 @@ const ops = createRoute({
 const settings = createRoute({
   getParentRoute: () => root,
   path: '/work/settings',
-  component: workspaceScreen('settings'),
+  validateSearch: ({ tab }) => ({ tab: settingsTab(tab) }),
+  component: function Settings() {
+    const { tab } = settings.useSearch();
+    const navigate = settings.useNavigate();
+    return (
+      <SettingsScreen
+        tab={tab}
+        onTab={(next) => void navigate({ search: { tab: next }, replace: true })}
+        topBar={useTopBar('workspace')}
+      />
+    );
+  },
 });
 
 const devRoutes = [];
@@ -238,7 +251,7 @@ export function createAppRouter(history: RouterHistory = createBrowserHistory())
       const search = defaultParseSearch(raw) as Record<string, unknown>;
       const params = new URLSearchParams(raw);
       // TanStack's JSON parsing otherwise coerces inputs such as ?q=123 or ?q=null.
-      for (const key of ['q', 'section', 'next']) {
+      for (const key of ['q', 'section', 'next', 'tab']) {
         const value = params.get(key);
         if (value !== null) search[key] = value;
       }

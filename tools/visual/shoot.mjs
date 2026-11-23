@@ -17,6 +17,7 @@ import { diffPng, maskRowsFor } from './diff.mjs';
 import { pageHistoryCapture, pageReadingCases } from './page-reading.mjs';
 import { writeReport } from './report.mjs';
 import p3bCases from './p3-b.mjs';
+import p3dCases from './p3-d.mjs';
 
 const root = fileURLToPath(new URL('../..', import.meta.url));
 const web = join(root, 'apps/web');
@@ -501,6 +502,7 @@ async function main() {
       task === 'P3-C' ? await runCases(pageReadingCases, manifest, [pageHistoryCapture]) : [];
     screens.push(...pageScreens);
     if (task === 'P3-B') screens.push(...(await runCases(p3bCases, manifest)));
+    if (task === 'P3-D') screens.push(...(await runCases(p3dCases, manifest)));
     images = [...screens, ...(await runGallery())];
   } else {
     const manifest = JSON.parse(await readFile(join(references, 'manifest.json'), 'utf8'));

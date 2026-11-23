@@ -16,3 +16,4 @@ visual/report/
 __pycache__/
 .docker-local/
 *.egg-info/
+test-results/

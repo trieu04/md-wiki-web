@@ -118,6 +118,8 @@ Exact values that appear in a frame but were missing from §2.1–2.3 are added 
 | `space.work-nav-group-gap` | 1px | C-WorkNav item groups |
 | `size.work-nav-height` | 1000px minimum | C-WorkNav, F-08 imported sidebar |
 | `size.workspace-content-basis` / `size.workspace-nav-basis` / `space.workspace-bottom` | 640px / 220px / 40px | F-08 workspace columns and main bottom padding |
+| `size.settings-label` / `size.settings-value` | 300px / 320px | F-14 setting row columns (D-54) |
+| `size.table-settings` | 720px (min width) | derived F-14 People table (D-52, D-54) |
 
 ## 3. Trust label system (exact, from every frame's `TL` table)
 

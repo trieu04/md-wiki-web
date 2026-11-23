@@ -165,7 +165,6 @@ it.each([
   ['/work/discussions', '/work/discussions', 'Discussions'],
   ['/work/credibility', '/work/credibility', 'Credibility'],
   ['/work/ops', '/work/ops', 'Operations'],
-  ['/work/settings', '/work/settings', 'Settings'],
 ])('uses the empty workspace screen for %s', async (path, id, active) => {
   const router = open(path);
   expect(await screen.findByRole('main')).toBeEmptyDOMElement();

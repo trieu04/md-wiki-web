@@ -40,6 +40,13 @@ normalize viewport height; differences in overflow still count. Full original
 screenshots are linked. The same report includes History captures at all four
 widths for D-16 review (no pixel score).
 
+## Settings (P3-D)
+
+`pnpm visual:shots --task P3-D --gallery` adds `Settings/people` and `Settings/agents`
+(`tools/visual/p3-d.mjs`) against the original F-14 references. Only the drawn rows are
+comparable: the derived management sections (D-52) below them add height, so the
+mismatch percentage is diagnostic only.
+
 ## Component gallery (D-32/D-35)
 
 After building the domain workspace (`pnpm --filter @md-wiki/domain build`), run

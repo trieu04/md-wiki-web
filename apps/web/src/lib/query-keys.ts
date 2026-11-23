@@ -9,4 +9,7 @@ export const queryKeys = {
   page: (path: string) => ['wiki.page', { path }] as const,
   topic: (topic: string) => ['wiki.tree', { topic }] as const,
   history: (path: string) => ['wiki.history', { path }] as const,
+  adminUsers: ['admin.users', {}],
+  adminTeams: ['admin.teams', {}],
+  adminTokens: ['admin.tokens', {}],
 } as const;
