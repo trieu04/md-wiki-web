@@ -30,6 +30,8 @@ function useDraftCache() {
   return {
     set(draft: DraftDto) {
       queryClient.setQueryData(queryKeys.draft(draft.id), draft);
+      // A saved change can make the last self-check stale (draft digest, system-logic §7.6.6).
+      void queryClient.invalidateQueries({ queryKey: queryKeys.selfCheck(draft.id) });
     },
     reload(id: string) {
       return queryClient.invalidateQueries({ queryKey: queryKeys.draft(id) });

@@ -20,6 +20,8 @@ import {
   ROLES,
   SETTINGS_TABS,
   createUserInput,
+  modelsRows,
+  type ModelsRow,
   peopleRows,
   settingsAccess,
   settingsFormError,
@@ -37,7 +39,7 @@ import {
   type TeamDto,
   type UserDto,
 } from './model';
-import { useAdminLists, useAdminMutations } from './queries';
+import { useAdminLists, useAdminMutations, useModelsSettings } from './queries';
 
 type FormState = { message?: string | undefined; fields: FieldErrors };
 const noErrors: FormState = { fields: {} };
@@ -48,8 +50,11 @@ function Row({
   help,
   value,
   note,
+  locked = false,
+  items = [],
   children,
-}: Omit<SettingsRow, 'key'> & { children?: ReactNode }) {
+}: Omit<SettingsRow, 'key'> &
+  Partial<Pick<ModelsRow, 'locked' | 'items'>> & { children?: ReactNode }) {
   return (
     <div className="flex flex-wrap gap-x-24px gap-y-8px border-b border-row py-14px">
       <div className="flex min-w-0 shrink grow basis-settings-label flex-col gap-2px">
@@ -57,7 +62,23 @@ function Row({
         <span className="text-13 text-muted">{help}</span>
       </div>
       <div className="flex min-w-0 shrink grow basis-settings-value flex-col gap-6px">
-        <span className="rounded-8 border border-control bg-surface px-10px py-7px">{value}</span>
+        {locked ? (
+          <span className="rounded-8 bg-row px-10px py-7px font-mono text-13 break-all">
+            {value}
+          </span>
+        ) : (
+          <span className="rounded-8 border border-control bg-surface px-10px py-7px">{value}</span>
+        )}
+        {items.length > 0 && (
+          <ul aria-label={label} className="m-0 flex list-none flex-col gap-4px p-0">
+            {items.map((item) => (
+              <li key={item.key} className="text-13">
+                {item.text}
+                <span className="text-muted">{item.note}</span>
+              </li>
+            ))}
+          </ul>
+        )}
         <span className="text-12 text-muted">{note}</span>
         {children}
       </div>
@@ -677,6 +698,25 @@ function AgentsPanel() {
   );
 }
 
+function ModelsPanel() {
+  const { models, rules } = useModelsSettings();
+  return (
+    <ListState queries={[models, rules]} title="Models">
+      {() =>
+        models.data && rules.data
+          ? modelsRows(models.data, rules.data).map(({ key, ...row }) => <Row key={key} {...row} />)
+          : null
+      }
+    </ListState>
+  );
+}
+
+const panels: Partial<Record<SettingsTabId, () => ReactNode>> = {
+  people: () => <PeoplePanel />,
+  agents: () => <AgentsPanel />,
+  models: () => <ModelsPanel />,
+};
+
 function SettingsContent({
   tab,
   onTab,
@@ -700,12 +740,10 @@ function SettingsContent({
           tabs={SETTINGS_TABS.map(({ id, label, implemented }) => ({
             id,
             label,
-            // Deferred tabs (review, trust, models, storage) have no data yet: no panel (D-49).
+            // Deferred tabs (review, trust, storage) have no data yet: no panel (D-49).
             panel:
               implemented && id === tab ? (
-                <div className="px-22px pt-6px pb-22px">
-                  {id === 'people' ? <PeoplePanel /> : <AgentsPanel />}
-                </div>
+                <div className="px-22px pt-6px pb-22px">{panels[id]?.()}</div>
               ) : null,
           }))}
         />

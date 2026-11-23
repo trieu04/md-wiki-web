@@ -45,8 +45,10 @@ describe('settings tabs and access', () => {
     expect(SETTINGS_TABS.filter((tab) => tab.implemented).map(({ id }) => id)).toEqual([
       'people',
       'agents',
+      'models',
     ]);
     expect(settingsTab('agents')).toBe('agents');
+    expect(settingsTab('models')).toBe('models');
     expect(settingsTab('trust')).toBe('trust');
     expect(settingsTab(undefined)).toBe('people');
     expect(settingsTab('nope')).toBe('people');

@@ -1,6 +1,7 @@
 import type { components } from '@md-wiki/contracts';
 import { renderStatusBlock } from '@md-wiki/domain';
 import { visualNow } from './home-search';
+import { visualQualitySummary } from './quality';
 import { frameSamples } from './samples';
 
 type S = components['schemas'];
@@ -72,7 +73,7 @@ export const visualProposalItems: ListItem[] = frameSamples.Proposals.all.map((r
     },
     publishedVersion: tab === 'published' ? '20261123-1' : null,
     autoPublished: tab === 'published' ? row.detail.startsWith('Automatically') : null,
-    quality: noQuality,
+    quality: visualQualitySummary(row.quality),
     createdAt: ago(ageMinutes(row.age)),
     updatedAt: tab === 'blocked' ? '2026-11-23T09:31:00.000Z' : ago(ageMinutes(row.age)),
   };
@@ -177,7 +178,7 @@ function detail(slug: string, overrides: Partial<Detail>): Detail {
       held: false,
       topicId: null,
     },
-    quality: noQuality,
+    quality: item.quality,
     can,
     history: historyActions.map(([time, action, actor], index) => ({
       id: uuid(900 + index),
@@ -277,7 +278,7 @@ export function visualProposal(slug: string, scenario: string | null): Detail {
       trigger: null,
       createdAt: ago(120),
     },
-    can: { ...can, decide: true },
+    can: { ...can, decide: true, rerunQuality: true },
   });
 }
 

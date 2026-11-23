@@ -6,29 +6,70 @@ import {
   useQueryClient,
   type InfiniteData,
 } from '@tanstack/react-query';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { apiData, useApi, type ApiClient } from '../../lib/api';
 import { messageForError } from '../../lib/error-copy';
 import { queryKeys } from '../../lib/query-keys';
 import { Button } from '../../ui/Button';
 import { Card } from '../../ui/Card';
 import { QueryFailure } from '../../ui/QueryFailure';
-import { StatusDot } from '../../ui/StatusDot';
+import { StatusDot, type StatusTone } from '../../ui/StatusDot';
+import { proposalHref } from '../review/model';
 import { Table } from '../../ui/Table';
 import type { TopBarProps } from '../../ui/TopBar';
 import { WorkspaceLayout } from '../../ui/WorkspaceLayout';
 import type { WorkNavProps } from '../../ui/WorkNav';
+import { Select } from '../../ui/Select';
 import {
   BLOCKED_CHOICES,
+  JOB_KINDS,
+  JOB_STATUSES,
   auditRows,
   blockedHealth,
   blockedModel,
+  jobKindRows,
+  jobRows,
   resolutionInput,
+  workerQueueHealth,
   type AuditPageDto,
   type BlockedChoice,
   type BlockedTargetDto,
+  type JobKind,
+  type JobListDto,
+  type JobStatus,
   type ResolutionInput,
 } from './model';
+
+type JobFilter = { kind: JobKind | ''; status: JobStatus | '' };
+
+function jobsQueryOptions(api: ApiClient, filter: JobFilter, limit = 50) {
+  const key = queryKeys.opsJobs({ kind: filter.kind, status: filter.status });
+  return infiniteQueryOptions<
+    JobListDto,
+    Error,
+    InfiniteData<JobListDto>,
+    typeof key,
+    string | null
+  >({
+    queryKey: key,
+    initialPageParam: null,
+    getNextPageParam: (page) => page.nextCursor ?? undefined,
+    queryFn: async ({ pageParam, signal }) =>
+      apiData(
+        await api.GET('/api/v1/ops/jobs', {
+          params: {
+            query: {
+              limit,
+              ...(filter.kind && { kind: filter.kind }),
+              ...(filter.status && { status: filter.status }),
+              ...(pageParam != null && { cursor: pageParam }),
+            },
+          },
+          signal,
+        }),
+      ),
+  });
+}
 
 export function blockedQueryOptions(api: ApiClient) {
   return {
@@ -143,7 +184,7 @@ function Header({ title, subtitle, audit }: { title: string; subtitle: string; a
               <a href="/work/ops" className="text-muted">
                 Operations
               </a>{' '}
-              / Audit log
+              / {title}
             </span>
             <h1 className="text-24 font-bold">{title}</h1>
           </>
@@ -164,11 +205,91 @@ function Header({ title, subtitle, audit }: { title: string; subtitle: string; a
   );
 }
 
-/** F-13 Operations (D-100): health card and Blocked targets; agent/job panels are later phases. */
+function HealthCard({
+  label,
+  health,
+}: {
+  label: string;
+  health: { tone: StatusTone; value: string; note: string };
+}) {
+  return (
+    <div className="flex flex-col gap-2px rounded-10 border border-edge bg-surface px-14px py-12px">
+      <span className="text-13 text-secondary">
+        <StatusDot tone={health.tone} weight="normal">
+          {label}
+        </StatusDot>
+      </span>
+      <span className="text-18 font-bold">{health.value}</span>
+      <span className="text-12 text-muted">{health.note}</span>
+    </div>
+  );
+}
+
+/** F-13 *Background jobs*: one row per job kind from `/ops/jobs` (D-152). */
+function BackgroundJobs({ data }: { data: JobListDto }) {
+  const rows = jobKindRows(data.kinds);
+  return (
+    <section
+      aria-labelledby="background-jobs"
+      className="min-w-0 flex-ops-jobs overflow-hidden rounded-10 border border-edge bg-surface"
+    >
+      <h2
+        id="background-jobs"
+        className="border-b border-divider px-18px py-14px text-15 font-bold"
+      >
+        Background jobs
+      </h2>
+      <Table label="Background jobs" widthClass="min-w-table-jobs text-13">
+        <thead>
+          <tr>
+            <th scope="col" className="px-18px py-9px">
+              Job
+            </th>
+            <th scope="col" className="px-12px py-9px">
+              Last run
+            </th>
+            <th scope="col" className="px-12px py-9px">
+              Result
+            </th>
+            <th scope="col" className="px-18px py-9px">
+              Queue
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((row) => (
+            <tr key={row.key}>
+              <td className="px-18px py-10px font-mono text-12">{row.name}</td>
+              <td className="px-12px py-10px text-secondary">{row.last}</td>
+              <td className="px-12px py-10px">
+                <StatusDot tone={row.tone} weight="normal">
+                  {row.result}
+                </StatusDot>
+              </td>
+              <td className="px-18px py-10px text-secondary">{row.queue}</td>
+            </tr>
+          ))}
+        </tbody>
+      </Table>
+      <div className="border-t border-divider px-18px py-10px text-13">
+        <a href="/work/ops/jobs">All AI jobs</a>
+      </div>
+    </section>
+  );
+}
+
+/** F-13 Operations (D-100, D-152): health cards, Blocked targets, Background jobs. */
 export function OpsScreen({ topBar, workNav }: { topBar: TopBarProps; workNav: WorkNavProps }) {
-  const query = useQuery(blockedQueryOptions(useApi()));
+  const api = useApi();
+  const query = useQuery(blockedQueryOptions(api));
+  const jobs = useInfiniteQuery(jobsQueryOptions(api, { kind: '', status: '' }));
   const items = query.data;
   const health = items && blockedHealth(items);
+  const jobPage = jobs.data?.pages[0];
+  const queue = useMemo(
+    () => (jobPage ? workerQueueHealth(jobPage.kinds, jobPage.items, new Date()) : null),
+    [jobPage],
+  );
   return (
     <WorkspaceLayout topBar={topBar} workNav={workNav}>
       <Header
@@ -187,20 +308,142 @@ export function OpsScreen({ topBar, workNav }: { topBar: TopBarProps; workNav: W
       ) : (
         <>
           <div className="grid grid-cols-stats gap-10px">
-            <div className="flex flex-col gap-2px rounded-10 border border-edge bg-surface px-14px py-12px">
-              <span className="text-13 text-secondary">
-                <StatusDot tone={health.tone} weight="normal">
-                  Blocked targets
-                </StatusDot>
-              </span>
-              <span className="text-18 font-bold">{health.value}</span>
-              <span className="text-12 text-muted">{health.note}</span>
-            </div>
+            <HealthCard label="Blocked targets" health={health} />
+            {queue && <HealthCard label="Worker queue" health={queue} />}
           </div>
           {items.map((target) => (
             <BlockedTarget key={target.publicationId} target={target} />
           ))}
         </>
+      )}
+      <div className="flex flex-wrap items-start gap-16px">
+        {jobs.isError && !jobs.data ? (
+          <div className="min-w-0 flex-ops-jobs">
+            <QueryFailure
+              error={jobs.error}
+              retry={() => void jobs.refetch()}
+              busy={jobs.isFetching}
+            />
+          </div>
+        ) : jobPage ? (
+          <BackgroundJobs data={jobPage} />
+        ) : (
+          <Card title="Background jobs" className="flex-ops-jobs" state={{ type: 'loading' }} />
+        )}
+      </div>
+    </WorkspaceLayout>
+  );
+}
+
+const anyOption = (label: string) => <option value="">{label}</option>;
+
+/** Derived *AI jobs* page (D-16, D-152; design-system §6 item 7): F-13 structure, Card + Table. */
+export function JobsScreen({ topBar, workNav }: { topBar: TopBarProps; workNav: WorkNavProps }) {
+  const [filter, setFilter] = useState<JobFilter>({ kind: '', status: '' });
+  const query = useInfiniteQuery(jobsQueryOptions(useApi(), filter));
+  const rows = jobRows(query.data?.pages ?? []);
+  return (
+    <WorkspaceLayout topBar={topBar} workNav={workNav}>
+      <Header
+        title="AI jobs"
+        subtitle="Every background job run, newest first. Metadata only: no prompts, inputs or findings."
+        audit
+      />
+      <div className="flex flex-wrap gap-12px [&>*]:grow [&>*]:basis-search-filter-basis">
+        <Select
+          label="Job"
+          value={filter.kind}
+          onChange={(event) => {
+            setFilter({ ...filter, kind: event.target.value as JobKind | '' });
+          }}
+        >
+          {anyOption('All jobs')}
+          {JOB_KINDS.map((kind) => (
+            <option key={kind} value={kind}>
+              {kind}
+            </option>
+          ))}
+        </Select>
+        <Select
+          label="Status"
+          value={filter.status}
+          onChange={(event) => {
+            setFilter({ ...filter, status: event.target.value as JobStatus | '' });
+          }}
+        >
+          {anyOption('Any status')}
+          {JOB_STATUSES.map((status) => (
+            <option key={status} value={status}>
+              {status}
+            </option>
+          ))}
+        </Select>
+      </div>
+      {query.isError && !query.data ? (
+        <QueryFailure
+          error={query.error}
+          retry={() => void query.refetch()}
+          busy={query.isFetching}
+        />
+      ) : query.isPending ? (
+        <Card title="Runs" state={{ type: 'loading' }} />
+      ) : !rows.length ? (
+        <Card title="Runs" header state={{ type: 'empty', message: 'No job runs match.' }} />
+      ) : (
+        <Card title="Runs" header>
+          <Table label="AI jobs" widthClass="min-w-table-audit text-13">
+            <thead>
+              <tr>
+                {['When', 'Job', 'Trigger', 'Subject', 'Result', 'Model', 'Tokens', 'Took'].map(
+                  (title) => (
+                    <th key={title} scope="col" className="px-12px py-9px first:pl-18px">
+                      {title}
+                    </th>
+                  ),
+                )}
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((row) => (
+                <tr key={row.key}>
+                  <td className="py-10px pr-12px pl-18px whitespace-nowrap text-secondary">
+                    <time dateTime={row.at}>{row.when}</time>
+                  </td>
+                  <td className="px-12px py-10px font-mono text-12">{row.kind}</td>
+                  <td className="px-12px py-10px">{row.trigger}</td>
+                  <td className="px-12px py-10px font-mono text-12">
+                    {row.subject.slug ? (
+                      <a href={proposalHref(row.subject.slug)}>{row.subject.text}</a>
+                    ) : (
+                      row.subject.text
+                    )}
+                  </td>
+                  <td className="px-12px py-10px">
+                    <StatusDot tone={row.tone} weight="normal">
+                      {row.result}
+                    </StatusDot>
+                  </td>
+                  <td className="px-12px py-10px font-mono text-12">{row.model}</td>
+                  <td className="px-12px py-10px whitespace-nowrap text-secondary">{row.tokens}</td>
+                  <td className="px-12px py-10px whitespace-nowrap text-secondary">
+                    {row.duration}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </Table>
+          {query.hasNextPage && (
+            <div className="border-t border-divider px-18px py-10px">
+              <Button
+                variant="secondary-compact"
+                loading={query.isFetchingNextPage}
+                onClick={() => void query.fetchNextPage()}
+              >
+                Load more
+              </Button>
+            </div>
+          )}
+        </Card>
       )}
     </WorkspaceLayout>
   );

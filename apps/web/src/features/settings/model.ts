@@ -1,5 +1,5 @@
 import type { components } from '@md-wiki/contracts';
-import { formatDate, roleAllowsScope } from '@md-wiki/domain';
+import { formatDate, formatDateTime, roleAllowsScope } from '@md-wiki/domain';
 import { ApiError } from '../../lib/api';
 import { errorCopy, messageForError } from '../../lib/error-copy';
 
@@ -29,13 +29,13 @@ export const SCOPES = [
   'publish',
 ] as const satisfies readonly Scope[];
 
-/** F-14 tab order and copy. Only People and Agents have data before Phase 7 (D-49). */
+/** F-14 tab order and copy. People and Agents (D-49), Models from Phase 7 (D-151). */
 export const SETTINGS_TABS = [
   { id: 'review', label: 'Review and publishing', implemented: false },
   { id: 'trust', label: 'Trust labels', implemented: false },
   { id: 'people', label: 'People and teams', implemented: true },
   { id: 'agents', label: 'Agents and tokens', implemented: true },
-  { id: 'models', label: 'Models', implemented: false },
+  { id: 'models', label: 'Models', implemented: true },
   { id: 'storage', label: 'Storage', implemented: false },
 ] as const;
 export type SettingsTabId = (typeof SETTINGS_TABS)[number]['id'];
@@ -276,4 +276,87 @@ export function settingsFormError(
     }
   }
   return { message: messageForError(error), fields: {} };
+}
+
+// ---------- Models tab (P7-06, system-logic §7.6.7, D-151) ----------
+
+export type ModelsDto = components['schemas']['ModelsDto'];
+export type RulesDto = components['schemas']['RulesDto'];
+export type ModelsRow = SettingsRow & {
+  /** Drawn "locked" value (mono on `bg.row`): set outside the app. */
+  locked: boolean;
+  items: { key: string; text: string; note: string }[];
+};
+
+const JOB_LABEL: Record<ModelsDto['jobs'][number]['kind'], { label: string; help: string }> = {
+  quality_check: {
+    label: 'Quality check',
+    help: 'Runs on every submission and on request. Set by the server environment.',
+  },
+};
+
+const modelsRow = (
+  key: string,
+  label: string,
+  help: string,
+  value: string,
+  note = '',
+  extra: Partial<Pick<ModelsRow, 'locked' | 'items'>> = {},
+): ModelsRow => ({ key, label, help, value, note, locked: false, items: [], ...extra });
+
+/** F-14 *Models* rows from `/admin/models` and `/admin/rules`; read-only (D-140, D-151). */
+export function modelsRows(models: ModelsDto, rules: RulesDto): ModelsRow[] {
+  const jobs = models.jobs.map((job) => {
+    const copy = JOB_LABEL[job.kind];
+    const last = models.lastUsed.find(({ kind }) => kind === job.kind);
+    const config = [
+      job.provider,
+      `up to ${String(job.maxTokens)} tokens`,
+      `${String(job.timeoutS)} s timeout`,
+      `${String(job.maxAttempts)} ${job.maxAttempts === 1 ? 'attempt' : 'attempts'}`,
+      job.overridden ? 'set for this job' : 'default model',
+    ].join(' · ');
+    const used = last
+      ? `Last used ${[last.model, last.promptVersion].filter(Boolean).join(' · ')}, ${formatDateTime(new Date(last.at))}.`
+      : 'Not used yet.';
+    return modelsRow(job.kind, copy.label, copy.help, job.model, `${config}. ${used}`);
+  });
+  const local = [
+    ...new Set(
+      models.jobs.filter(({ provider }) => provider === 'openai_compat').map(({ model }) => model),
+    ),
+  ];
+  const endpoint = models.openaiCompat.baseUrl;
+  const localRow = modelsRow(
+    'local',
+    'Local model',
+    'OpenAI-compatible endpoint, for teams that can’t send text out.',
+    endpoint ? [endpoint, ...local].join(' · ') : 'Not configured',
+    endpoint
+      ? local.length
+        ? ''
+        : 'No job uses it yet.'
+      : 'Set OPENAI_COMPAT_BASE_URL in the server environment to use one.',
+  );
+  const rulesNote = rules.error
+    ? `Not usable: ${rules.error}. Quality checks fail until the file is fixed.`
+    : [
+        `${String(rules.rules.length)} ${rules.rules.length === 1 ? 'rule' : 'rules'}`,
+        rules.sha256 && `version ${rules.sha256.slice(0, 6)}`,
+        rules.size !== null && `${String(rules.size)} bytes`,
+      ]
+        .filter(Boolean)
+        .join(' · ');
+  const rulesRow = modelsRow(
+    'rules',
+    'Quality rules',
+    'What the quality check looks for. Edit the file; the next check uses it.',
+    rules.path,
+    rulesNote,
+    {
+      locked: true,
+      items: rules.rules.map(({ id, title }) => ({ key: id, text: title, note: ` · ${id}` })),
+    },
+  );
+  return [...jobs, localRow, rulesRow];
 }

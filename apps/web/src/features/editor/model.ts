@@ -109,10 +109,14 @@ export function sourcesModel(draft: DraftDto) {
 
 const joinNames = new Intl.ListFormat('en-GB');
 
-/** *After you submit* (D-67): no AI quality check or reviewer agent exists in Phase 4. */
+/** *After you submit* (D-67, D-150): the quality check runs on every submission (Phase 7). */
 export function afterSubmitModel(maintainers: readonly string[] | null | undefined) {
   const who = maintainers?.length ? joinNames.format(maintainers) : "the page's authors";
-  return [`A reviewer decides, or escalates to ${who}`, 'If approved: published automatically'];
+  return [
+    'Quality check (about 2 min)',
+    `A reviewer decides, or escalates to ${who}`,
+    'If approved: published automatically',
+  ];
 }
 
 export function submitModel(draft: DraftDto) {

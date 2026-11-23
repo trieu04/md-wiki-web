@@ -21,6 +21,14 @@ import { discussionsHref } from '../discussions/model';
 import { proposalDiscussionQueryOptions, useDispute } from '../discussions/queries';
 import { MarkdownArticle } from '../markdown/MarkdownArticle';
 import { pageHref } from '../page/model';
+import { QualityCheckCard } from '../quality/QualityCard';
+import {
+  artifactLineOffset,
+  markDiffRows,
+  qualityCard,
+  type QualityReportDto,
+} from '../quality/model';
+import { proposalQualityQueryOptions, useRerunQuality } from '../quality/queries';
 import { DiscussionPanel, type DiscussionQuery } from './DiscussionPanel';
 import {
   LOCK_CODES,
@@ -272,19 +280,26 @@ function ContentSection({
   onTab,
   discussion,
   onSeen,
+  quality,
 }: {
   detail: ProposalDetailDto;
   tab: string;
   onTab: (tab: string) => void;
   discussion: DiscussionQuery;
   onSeen: (seen: Partial<SeenVersions>) => void;
+  quality: QualityReportDto | undefined;
 }) {
   const api = useApi();
   const diff = useQuery(proposalDiffQueryOptions(api, detail.slug));
-  const changes = useMemo(
-    () => (diff.data ? reviewDiff(diff.data, detail.sectionTitle) : null),
-    [diff.data, detail.sectionTitle],
-  );
+  const changes = useMemo(() => {
+    if (!diff.data) return null;
+    const model = reviewDiff(diff.data, detail.sectionTitle);
+    const findings = quality?.current?.findings ?? [];
+    return {
+      ...model,
+      rows: markDiffRows(model.rows, findings, artifactLineOffset(diff.data.to.text)),
+    };
+  }, [diff.data, detail.sectionTitle, quality]);
   const history = historyRows(detail.history);
   const count = discussionCount(discussion.data);
   const wait = (render: (data: NonNullable<typeof diff.data>) => ReactNode) =>
@@ -324,7 +339,12 @@ function ContentSection({
             label: 'Changes',
             panel: wait(() =>
               changes ? (
-                <DiffView rows={changes.rows} heading={changes.heading} empty="No changes." />
+                <DiffView
+                  rows={changes.rows}
+                  heading={changes.heading}
+                  empty="No changes."
+                  anchors
+                />
               ) : null,
             ),
           },
@@ -427,7 +447,27 @@ function Review({ detail, viewerId }: { detail: ProposalDetailDto; viewerId: str
   // Versions the reviewer has read; an SSE refetch with newer ones locks the decision (D-123).
   const [seen, setSeen] = useState<SeenVersions>(() => seenVersions(detail));
   const [tab, setTab] = useState('changes');
-  const discussion = useQuery(proposalDiscussionQueryOptions(useApi(), detail.slug));
+  const api = useApi();
+  const discussion = useQuery(proposalDiscussionQueryOptions(api, detail.slug));
+  const quality = useQuery(proposalQualityQueryOptions(api, detail.slug));
+  const diff = useQuery(proposalDiffQueryOptions(api, detail.slug));
+  const rerun = useRerunQuality(detail.slug);
+  const card = useMemo(
+    () =>
+      quality.data
+        ? qualityCard(quality.data, {
+            subject: 'proposal',
+            offset: artifactLineOffset(diff.data?.to.text),
+          })
+        : null,
+    [quality.data, diff.data],
+  );
+  function showLine(line: number) {
+    setTab('changes');
+    requestAnimationFrame(() => {
+      document.getElementById(`line-${String(line)}`)?.scrollIntoView({ block: 'center' });
+    });
+  }
   const locked = errorLock ?? (versionsChanged(seen, detail) ? 'DISCUSSION_CHANGED' : null);
   const status = proposalStatus(detailStatusInput(detail));
   const subline = reviewSubline(detail, new Date());
@@ -496,6 +536,19 @@ function Review({ detail, viewerId }: { detail: ProposalDetailDto; viewerId: str
                 Discuss
               </Button>
             )}
+            {detail.can.rerunQuality && (
+              <Button
+                variant="secondary"
+                className="text-14"
+                loading={rerun.isPending}
+                disabled={card?.active}
+                onClick={() => {
+                  rerun.mutate();
+                }}
+              >
+                Re-run quality check
+              </Button>
+            )}
           </div>
         </div>
       </div>
@@ -508,6 +561,7 @@ function Review({ detail, viewerId }: { detail: ProposalDetailDto; viewerId: str
             onTab={setTab}
             discussion={discussion}
             onSeen={onSeen}
+            quality={quality.data}
           />
           <ReasonSection detail={detail} />
         </div>
@@ -515,6 +569,21 @@ function Review({ detail, viewerId }: { detail: ProposalDetailDto; viewerId: str
           aria-label="Review panel"
           className="flex min-w-0 max-w-review-aside-max grow basis-review-aside flex-col gap-12px"
         >
+          {quality.isError ? (
+            <QueryFailure
+              error={quality.error}
+              retry={() => void quality.refetch()}
+              busy={quality.isFetching}
+            />
+          ) : (
+            <QualityCheckCard
+              title="Quality check"
+              variant="review"
+              card={card}
+              onLine={showLine}
+              error={rerun.error && messageForError(rerun.error)}
+            />
+          )}
           <DecisionSection
             detail={detail}
             viewerId={viewerId}
@@ -528,7 +597,7 @@ function Review({ detail, viewerId }: { detail: ProposalDetailDto; viewerId: str
   );
 }
 
-/** F-10 Review (D-98, D-121). Escalation, agent review, quality check and evidence are later phases. */
+/** F-10 Review (D-98, D-121, D-148). Escalation, agent review and evidence are later phases. */
 export function ReviewScreen({
   slug,
   topBar,

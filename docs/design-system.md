@@ -131,6 +131,7 @@ Exact values that appear in a frame but were missing from §2.1–2.3 are added 
 | `size.topic-list` / `size.thread` (`flex 1 1 340px` / `flex 2 1 520px`) | 340px / 520px | F-11 Topics and Thread sections |
 | `size.thread-term` (`grid-cols-thread-props`: `120px minmax(0, 1fr)`) | 120px | F-11 thread properties `dl` |
 | `size.avatar-sm` / `radius.15` | 30px / 15px | F-11 entry avatar |
+| `size.ops-jobs` (`flex-ops-jobs`: `flex 2 1 520px`) / `size.table-jobs` | 520px / 600px (min width) | F-13 *Background jobs* section and its table (D-152) |
 | `size.stat-min` | 170px (`grid-cols-stats`: `repeat(auto-fill, minmax(170px, 1fr))`; the frames use `auto-fit` with 4–5 cards, `auto-fill` keeps the card width when fewer cards have data) | F-09 stats, F-13 health cards |
 | `size.filter-basis` / `size.filter-max` | 240px / 320px | F-09 filter input |
 | `size.review-aside` / `size.review-aside-max` | 380px / 480px | F-10 review panel |

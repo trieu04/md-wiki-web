@@ -226,6 +226,14 @@
   --radius-15: 15px;
   --flex-topic-list: 1 1 var(--spacing-topic-list);
   --flex-thread: 2 1 var(--spacing-thread);
+  /* Phase 7 frame values (F-13 Background jobs; design-system §2.4) */
+  --spacing-ops-jobs: 520px;
+  --spacing-table-jobs: 600px;
+  --flex-ops-jobs: 2 1 var(--spacing-ops-jobs);
+}
+
+@utility flex-ops-jobs {
+  flex: var(--flex-ops-jobs);
 }
 
 @utility border-choice {

@@ -7,6 +7,7 @@ import { setupServer } from 'msw/node';
 import { afterAll, afterEach, beforeAll, beforeEach, expect, it, vi } from 'vitest';
 import { visualSession } from '../src/dev/fixtures/reading';
 import {
+  visualArtifact,
   visualAudit,
   visualBlocked,
   visualConflictProposal,
@@ -15,6 +16,8 @@ import {
   visualProposalList,
 } from '../src/dev/fixtures/review';
 import { visualOwnerSession } from '../src/dev/fixtures/settings';
+import { visualJobs, visualProposalQuality } from '../src/dev/fixtures/quality';
+import type { QualityReportDto } from '../src/features/quality/model';
 import { visualProposalDiscussion, visualTopicList } from '../src/dev/fixtures/discussions';
 import type { ProposalDetailDto } from '../src/features/review/model';
 import { startingText } from '../src/features/conflict/model';
@@ -33,7 +36,17 @@ let session: object = visualSession;
 let detail: ProposalDetailDto = visualProposal('fix-pinhole-units', null);
 let blocked = visualBlocked;
 let discussion = visualProposalDiscussion('fix-pinhole-units', null);
+let quality: QualityReportDto = visualProposalQuality(visualArtifact, null);
 const server = setupServer(
+  http.get('*/api/v1/proposals/:slug/findings', () => HttpResponse.json(quality)),
+  http.post('*/api/v1/proposals/:slug/quality-check', ({ params }) => {
+    requests.push({ path: `quality-check:${String(params.slug)}`, body: null });
+    quality = visualProposalQuality(visualArtifact, 'quality-running');
+    return HttpResponse.json(quality.latest, { status: 202 });
+  }),
+  http.get('*/api/v1/ops/jobs', ({ request }) =>
+    HttpResponse.json(visualJobs(new URL(request.url).searchParams)),
+  ),
   http.get('*/api/v1/topics', ({ request }) =>
     HttpResponse.json(visualTopicList(new URL(request.url).searchParams.get('filter'))),
   ),
@@ -64,6 +77,7 @@ beforeEach(() => {
   detail = visualProposal('fix-pinhole-units', null);
   blocked = visualBlocked;
   discussion = visualProposalDiscussion('fix-pinhole-units', null);
+  quality = visualProposalQuality(visualArtifact, null);
   sessionStorage.clear();
   vi.spyOn(window, 'scrollTo').mockImplementation(() => {});
 });
@@ -101,8 +115,17 @@ it('F-09 lists proposals with tab counts, keeps the tab in the URL and filters r
   // WorkNav shows the open count where data exists (D-95).
   const nav = screen.getByRole('navigation', { name: 'Workspace' });
   expect(within(nav).getByRole('link', { name: /Proposals/u })).toHaveTextContent('Proposals 4');
+  // Quality column from `item.quality` (Phase 7, D-149) with the frame's cell copy.
+  expect(within(table).getByRole('columnheader', { name: 'Quality' })).toBeVisible();
+  const qualityOf = (slug: string) =>
+    within(table)
+      .getAllByRole('row')
+      .find((row) => within(row).queryByRole('link', { name: slug }))
+      ?.querySelectorAll('td')[5]?.textContent;
+  expect(qualityOf('fix-pinhole-units')).toBe('1 finding');
+  expect(qualityOf('psf-fwhm-table')).toBe('No findings');
+  expect(qualityOf('new-sted-page')).toBe('Running');
   // Regions without Phase 5 data are not rendered (D-97).
-  expect(screen.queryByRole('columnheader', { name: 'Quality' })).not.toBeInTheDocument();
   expect(screen.queryByText('Import .contribution.md')).not.toBeInTheDocument();
 
   // Keyboard: arrow keys move between tabs (Tabs component), and the URL follows.
@@ -162,10 +185,9 @@ it('F-10 sends the preview binding with the decision and keeps the reason on a l
     await screen.findByText('Section Principle · 2 lines added, 1 line removed'),
   ).toBeVisible();
   expect(screen.getByText('20 unchanged lines')).toBeVisible();
-  // Escalation/Agent review/Quality check are later phases (not rendered).
-  expect(screen.queryByRole('heading', { name: /Agent review|Quality check|Escalation/u })).toBe(
-    null,
-  );
+  // Escalation/Agent review are later phases (not rendered); Quality check is Phase 7.
+  expect(screen.queryByRole('heading', { name: /Agent review|Escalation/u })).toBe(null);
+  expect(screen.getByRole('heading', { name: 'Quality check AI' })).toBeVisible();
 
   // Reason is required.
   await user.click(within(panel).getByRole('button', { name: 'Approve and publish' }));
@@ -312,6 +334,126 @@ it('Audit log is a derived owner screen linked from Operations', async () => {
   expect(within(table).getByText('publication.unknown')).toBeVisible();
   expect(within(table).getByText('m.nguyen')).toBeVisible();
   expect(screen.getByRole('link', { name: 'Operations', current: false })).toBeVisible();
+});
+
+it('F-10 Quality check: finding with severity, quote and line link; the quote is marked in Changes', async () => {
+  open('/work/proposals/fix-pinhole-units');
+  const user = userEvent.setup();
+  const card = await screen.findByRole('region', { name: 'Quality check AI' });
+  const findings = await within(card).findByRole('list', { name: 'Findings' });
+  const link = within(findings).getByRole('link');
+  expect(link).toHaveAttribute('href', '#line-14');
+  expect(link).toHaveTextContent(
+    'Line 14 · medium · The reason says “fix units” but the line also adds a claim.“gives little extra sectioning”',
+  );
+  expect(
+    within(card).getByText(
+      '1 finding dropped: its quote was not in the proposal · claude-sonnet-5-5 · quality.md 3f2a91',
+    ),
+  ).toBeVisible();
+  // Line 14 of the proposed file sits below the status block; the link targets the artifact line.
+  const row = await screen.findByText((_, node) => node?.id === 'line-14');
+  const mark = within(row).getByText('gives little extra sectioning');
+  expect(mark).toHaveClass('decoration-wavy');
+
+  // From another tab, the link returns to Changes and scrolls to the line.
+  const scroll = vi.fn();
+  Element.prototype.scrollIntoView = scroll;
+  const content = screen.getByRole('region', { name: 'Content' });
+  await user.click(within(content).getByRole('tab', { name: 'History (2)' }));
+  await user.click(link);
+  expect(within(content).getByRole('tab', { name: 'Changes' })).toHaveAttribute(
+    'aria-selected',
+    'true',
+  );
+  await waitFor(() => {
+    expect(scroll).toHaveBeenCalled();
+  });
+});
+
+it('F-10 Re-run quality check per can.rerunQuality; running, failed and empty states', async () => {
+  open('/work/proposals/fix-pinhole-units');
+  const user = userEvent.setup();
+  const rerun = await screen.findByRole('button', { name: 'Re-run quality check' });
+  await user.click(rerun);
+  expect(requests.map(({ path }) => path)).toContain('quality-check:fix-pinhole-units');
+  const card = screen.getByRole('region', { name: 'Quality check AI' });
+  expect(await within(card).findByText('Quality check running…')).toBeVisible();
+  expect(card).toHaveAttribute('aria-busy', 'true');
+  expect(screen.getByRole('button', { name: 'Re-run quality check' })).toBeDisabled();
+  cleanup();
+
+  // Failed run: explained in words, review still works.
+  quality = visualProposalQuality(visualArtifact, 'quality-failed');
+  open('/work/proposals/fix-pinhole-units');
+  expect(
+    await screen.findByText(
+      'The last check failed: the model provider timed out. Review works without it.',
+    ),
+  ).toBeVisible();
+  expect(screen.getByRole('region', { name: 'Decision' })).toBeVisible();
+  cleanup();
+
+  // No run yet, and no rerun permission (a submitter): no button.
+  quality = { ...quality, current: null, latest: null, runs: [], can: { rerun: false } };
+  detail = { ...detail, can: { ...detail.can, rerunQuality: false } };
+  open('/work/proposals/fix-pinhole-units');
+  expect(await screen.findByText('No quality check has run on this proposal.')).toBeVisible();
+  expect(screen.queryByRole('button', { name: 'Re-run quality check' })).toBeNull();
+});
+
+it('F-10 shows the error copy when a re-run is refused', async () => {
+  server.use(
+    http.post('*/api/v1/proposals/:slug/quality-check', () => problem('PRECONDITION_FAILED', 409)),
+  );
+  open('/work/proposals/fix-pinhole-units');
+  await userEvent.click(await screen.findByRole('button', { name: 'Re-run quality check' }));
+  const card = screen.getByRole('region', { name: 'Quality check AI' });
+  expect(await within(card).findByRole('alert')).toHaveTextContent(
+    'This has changed. Refresh and try again.',
+  );
+});
+
+it('F-13 Background jobs and Worker queue from /ops/jobs; derived AI jobs page filters', async () => {
+  session = visualOwnerSession;
+  const asked: string[] = [];
+  server.use(
+    http.get('*/api/v1/ops/jobs', ({ request }) => {
+      const params = new URL(request.url).searchParams;
+      asked.push(params.toString());
+      return HttpResponse.json(visualJobs(params));
+    }),
+  );
+  open('/work/ops');
+  const table = await screen.findByRole('table', { name: 'Background jobs' });
+  const cells = within(table)
+    .getAllByRole('row')
+    .slice(1)
+    .map((row) => [...row.querySelectorAll('td')].map((td) => td.textContent));
+  expect(cells).toEqual([['quality_check', '10:07 · 1 min 40 s', 'OK', '1 waiting']]);
+  expect(screen.getByText('Worker queue')).toBeVisible();
+  expect(screen.getByText('1 job')).toBeVisible();
+
+  expect(screen.getByRole('link', { name: 'All AI jobs' })).toHaveAttribute(
+    'href',
+    '/work/ops/jobs',
+  );
+  cleanup();
+  open('/work/ops/jobs');
+  const jobs = await screen.findByRole('table', { name: 'AI jobs' });
+  expect(within(jobs).getByText('Private draft')).toBeVisible();
+  expect(within(jobs).getAllByRole('link', { name: 'fix-pinhole-units' })[0]).toHaveAttribute(
+    'href',
+    '/work/proposals/fix-pinhole-units',
+  );
+  expect(within(jobs).getByText('OK · 1 finding')).toBeVisible();
+  await userEvent.selectOptions(screen.getByLabelText('Status'), 'queued');
+  await waitFor(() => {
+    expect(within(screen.getByRole('table', { name: 'AI jobs' })).getAllByRole('row')).toHaveLength(
+      2,
+    );
+  });
+  expect(asked.at(-1)).toBe('limit=50&status=queued');
 });
 
 it('F-07 maps the choices to the conflict endpoint and confirms the new proposal', async () => {

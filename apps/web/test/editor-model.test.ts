@@ -130,11 +130,12 @@ describe('F-06 editor model', () => {
 
   it("names the maintainers after submit, else the page's authors", () => {
     expect(afterSubmitModel(['m.nguyen', 'h.pham'])).toEqual([
+      'Quality check (about 2 min)',
       'A reviewer decides, or escalates to m.nguyen and h.pham',
       'If approved: published automatically',
     ]);
-    expect(afterSubmitModel([])[0]).toBe("A reviewer decides, or escalates to the page's authors");
-    expect(afterSubmitModel(undefined)[0]).toContain("the page's authors");
+    expect(afterSubmitModel([])[1]).toBe("A reviewer decides, or escalates to the page's authors");
+    expect(afterSubmitModel(undefined)[1]).toContain("the page's authors");
   });
 
   it('disables submit while the base changed', () => {

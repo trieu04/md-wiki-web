@@ -1,5 +1,131 @@
 import type { components } from '@md-wiki/contracts';
 import { formatDateTime, formatTime } from '@md-wiki/domain';
+import type { StatusTone } from '../../ui/StatusDot';
+import { durationText, jobErrorText } from '../quality/model';
+
+export type JobListDto = components['schemas']['JobListDto'];
+export type JobListItemDto = components['schemas']['JobListItemDto'];
+export type JobKindSummaryDto = components['schemas']['JobKindSummaryDto'];
+export type JobStatus = components['schemas']['JobStatus'];
+export type JobKind = components['schemas']['JobKind'];
+
+export const JOB_KINDS = ['quality_check', 'ping'] as const satisfies readonly JobKind[];
+export const JOB_STATUSES = [
+  'queued',
+  'running',
+  'succeeded',
+  'failed',
+] as const satisfies readonly JobStatus[];
+
+const plural = (n: number, one: string, many = `${one}s`) => `${String(n)} ${n === 1 ? one : many}`;
+
+/** The run's outcome in words, and its dot (F-13 *Background jobs* › Result). */
+export function jobResult(
+  job: JobListItemDto,
+  { findings = true }: { findings?: boolean } = {},
+): { text: string; tone: StatusTone } {
+  switch (job.status) {
+    case 'queued':
+      return { text: 'Waiting', tone: 'pending' };
+    case 'running':
+      return { text: 'Running', tone: 'publishing' };
+    case 'failed':
+      return { text: `Failed: ${jobErrorText(job.error)}`, tone: 'error' };
+    case 'succeeded':
+      return {
+        text: findings && job.findings ? `OK · ${plural(job.findings, 'finding')}` : 'OK',
+        tone: 'published',
+      };
+  }
+}
+
+/** F-13 *Background jobs* rows, one per job kind (D-152). */
+export function jobKindRows(kinds: readonly JobKindSummaryDto[]) {
+  return kinds.map((kind) => {
+    const { last } = kind;
+    // The frame's Result is the run's health ("OK"); findings are not a job failure.
+    const result = last
+      ? jobResult(last, { findings: false })
+      : { text: 'No runs yet', tone: 'closed' as const };
+    const failed = kind.failed24h ? ` · ${String(kind.failed24h)} failed in 24 h` : '';
+    const queue = [
+      kind.queued && `${String(kind.queued)} waiting`,
+      kind.running && `${String(kind.running)} running`,
+    ].filter(Boolean);
+    return {
+      key: kind.kind,
+      name: kind.kind,
+      last: last
+        ? [formatTime(new Date(last.finishedAt ?? last.createdAt)), durationText(last.durationMs)]
+            .filter(Boolean)
+            .join(' · ')
+        : '—',
+      result: `${result.text}${failed}`,
+      tone: kind.failed24h && result.tone === 'published' ? ('pending' as const) : result.tone,
+      queue: queue.length ? queue.join(' · ') : '0',
+    };
+  });
+}
+
+/** F-13 *Worker queue* health card: active runs and the age of the oldest waiting one. */
+export function workerQueueHealth(
+  kinds: readonly JobKindSummaryDto[],
+  items: readonly JobListItemDto[],
+  now: Date,
+) {
+  const active = kinds.reduce((sum, kind) => sum + kind.queued + kind.running, 0);
+  const waiting = items
+    .filter(({ status }) => status === 'queued')
+    .map(({ createdAt }) => Date.parse(createdAt));
+  const oldest = waiting.length ? Math.min(...waiting) : null;
+  return {
+    value: plural(active, 'job'),
+    note:
+      oldest === null
+        ? active
+          ? 'None waiting'
+          : 'Nothing waiting'
+        : `Oldest ${durationText(Math.max(0, now.getTime() - oldest)) ?? ''}`,
+    tone: 'published' as const,
+  };
+}
+
+const TRIGGER_TEXT: Record<JobListItemDto['trigger'], string> = {
+  dev: 'Dev ping',
+  submit: 'On submit',
+  rerun: 'Re-run',
+  self_check: 'Self-check',
+};
+
+/** Derived *AI jobs* rows (D-16, D-152): metadata only; drafts stay private (D-141). */
+export function jobRows(pages: readonly JobListDto[]) {
+  return pages.flatMap(({ items }) =>
+    items.map((job) => {
+      const result = jobResult(job);
+      return {
+        key: job.id,
+        at: job.createdAt,
+        when: formatDateTime(new Date(job.createdAt)),
+        kind: job.kind,
+        trigger: TRIGGER_TEXT[job.trigger],
+        subject:
+          job.subject?.kind === 'proposal'
+            ? { text: job.subject.slug ?? '—', slug: job.subject.slug }
+            : job.subject?.kind === 'draft'
+              ? { text: 'Private draft', slug: null }
+              : { text: '—', slug: null },
+        result: result.text,
+        tone: result.tone,
+        model: [job.model, job.promptVersion].filter(Boolean).join(' · ') || '—',
+        tokens:
+          job.tokensIn === null && job.tokensOut === null
+            ? '—'
+            : `${String(job.tokensIn ?? 0)} in · ${String(job.tokensOut ?? 0)} out`,
+        duration: durationText(job.durationMs) ?? '—',
+      };
+    }),
+  );
+}
 
 export type BlockedTargetDto = components['schemas']['BlockedTargetDto'];
 export type ResolutionInput = components['schemas']['ResolutionInput'];

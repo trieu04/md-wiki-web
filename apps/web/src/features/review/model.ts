@@ -3,6 +3,7 @@ import { formatTime, parseStatusBlock, type ErrorCode } from '@md-wiki/domain';
 import type { DiffRow } from '../../ui/DiffView';
 import type { PublishStep } from '../../ui/PublishProgress';
 import type { StatusTone } from '../../ui/StatusDot';
+import { qualityCell } from '../quality/model';
 
 export type ProposalListDto = components['schemas']['ProposalListDto'];
 export type ProposalListItemDto = components['schemas']['ProposalListItemDto'];
@@ -130,6 +131,7 @@ export type ProposalRow = Status & {
   author: string;
   kind: string;
   with: string;
+  quality: string;
   age: string;
   createdAt: string;
 };
@@ -144,6 +146,7 @@ export function proposalRow(item: ProposalListItemDto, now: Date): ProposalRow {
     author: item.submitter.name,
     kind: item.submitter.kind === 'agent' ? 'agent' : 'person',
     with: proposalWith(item),
+    quality: qualityCell(item.quality),
     age: age(item.createdAt, now),
     createdAt: item.createdAt,
   };

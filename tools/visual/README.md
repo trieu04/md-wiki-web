@@ -47,6 +47,10 @@ widths for D-16 review (no pixel score).
 comparable: the derived management sections (D-52) below them add height, so the
 mismatch percentage is diagnostic only.
 
+## Quality check (P7-05/06)
+
+`pnpm visual:shots --task P7 --config tools/visual/p7.mjs` captures F-10 (Quality check card, quote underline), F-06 (Self-check), F-09 (Quality column), F-14 *Models* and F-13 *Background jobs*. Later-phase regions (Escalation, Agent review, Evidence, Reviewer agent panel) are absent, so the scores are diagnostic only. `?scenario=quality-running` / `quality-failed` on the F-10 URL selects the other card states.
+
 ## Component gallery (D-32/D-35)
 
 After building the domain workspace (`pnpm --filter @md-wiki/domain build`), run

@@ -26,7 +26,7 @@ test('a reader asks on a section, a reviewer replies and closes the topic', asyn
   await signIn(page, reader);
   await page.goto(`/wiki/${path}`);
   const contents = page.getByRole('navigation', { name: 'Pages and contents' });
-  const sectionLink = contents.getByRole('link', { name: /^Sample Preparation:/u });
+  const sectionLink = contents.locator('a[href$="#sample-preparation"]');
   await sectionLink.click();
   await expect(page).toHaveURL(/#sample-preparation$/u);
   const article = page.getByRole('article', { name: 'Sample Preparation' });

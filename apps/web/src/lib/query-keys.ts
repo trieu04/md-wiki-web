@@ -26,4 +26,10 @@ export const queryKeys = {
   topics: (params: { filter: string; limit: number }) => ['topics', params] as const,
   discussionTopic: (id: string) => ['topic', id] as const,
   proposalDiscussion: (slug: string) => ['proposal-discussion', slug] as const,
+  // Phase 7 (system-logic §7.6.7): prefixes `['quality', slug]`, `['draft', id, 'self-check']`, `['ops', 'jobs']`.
+  quality: (slug: string) => ['quality', slug] as const,
+  selfCheck: (draftId: string) => ['draft', draftId, 'self-check'] as const,
+  opsJobs: (params: { kind: string; status: string }) => ['ops', 'jobs', params] as const,
+  adminModels: ['admin.models', {}],
+  adminRules: ['admin.rules', {}],
 } as const;

@@ -13,6 +13,7 @@ import {
   visualTokens,
   visualUsers,
 } from '../src/dev/fixtures/settings';
+import { visualModels, visualRules } from '../src/dev/fixtures/quality';
 import { createAppRouter } from '../src/router';
 
 const problem = (code: string, status: number, fields: string[] = []) =>
@@ -39,6 +40,8 @@ const server = setupServer(
   http.get('*/api/v1/admin/users', () => HttpResponse.json(adminPage(visualUsers))),
   http.get('*/api/v1/admin/teams', () => HttpResponse.json(adminPage(visualTeams))),
   http.get('*/api/v1/admin/tokens', () => HttpResponse.json(adminPage(visualTokens))),
+  http.get('*/api/v1/admin/models', () => HttpResponse.json(visualModels)),
+  http.get('*/api/v1/admin/rules', () => HttpResponse.json(visualRules)),
 );
 beforeAll(() => {
   server.listen({ onUnhandledRequest: 'error' });
@@ -119,6 +122,48 @@ it('renders no panel content for tabs owned by later phases', async () => {
   const panel = document.getElementById(tab.getAttribute('aria-controls') ?? '');
   expect(panel).toBeEmptyDOMElement();
   expect(adminCalls).toEqual([]);
+});
+
+it('Models tab shows the effective model config, local endpoint and quality rules (read-only)', async () => {
+  open('/work/settings?tab=models');
+  await screen.findByRole('tab', { name: 'Models', selected: true });
+  expect(await screen.findByText('Quality check')).toBeVisible();
+  expect(screen.getByText('claude-sonnet-5-5')).toBeVisible();
+  expect(
+    screen.getByText(
+      'anthropic · up to 4096 tokens · 120 s timeout · 3 attempts · default model. Last used claude-sonnet-5-5 · quality-v1, 23 Nov 2026, 10:07 UTC.',
+    ),
+  ).toBeVisible();
+  expect(screen.getByText('http://models.internal:8000')).toBeVisible();
+  expect(screen.getByText('rules/quality.md')).toBeVisible();
+  expect(screen.getByText('6 rules · version 3f2a91 · 3969 bytes')).toBeVisible();
+  const rules = screen.getByRole('list', { name: 'Quality rules' });
+  expect(within(rules).getAllByRole('listitem')[0]).toHaveTextContent(
+    'Claim without evidence · unsourced-claim',
+  );
+  // Read-only: nothing to edit or save on this tab (D-140).
+  const tab = screen.getByRole('tab', { name: 'Models' });
+  const panel = document.getElementById(tab.getAttribute('aria-controls') ?? '');
+  expect(within(panel as HTMLElement).queryAllByRole('button')).toEqual([]);
+  expect(adminCalls).toEqual(
+    expect.arrayContaining(['GET /api/v1/admin/models', 'GET /api/v1/admin/rules']),
+  );
+});
+
+it('Models tab reports an unusable rules file and a failed request', async () => {
+  server.use(
+    http.get('*/api/v1/admin/rules', () =>
+      HttpResponse.json({ ...visualRules, error: 'no rules', rules: [], sha256: null }),
+    ),
+  );
+  open('/work/settings?tab=models');
+  expect(
+    await screen.findByText('Not usable: no rules. Quality checks fail until the file is fixed.'),
+  ).toBeVisible();
+  cleanup();
+  server.use(http.get('*/api/v1/admin/models', () => problem('INTERNAL', 500)));
+  open('/work/settings?tab=models');
+  expect(await screen.findByText('Something went wrong. Try again.')).toBeVisible();
 });
 
 it('shows EMAIL_TAKEN under the email field and validates before sending', async () => {

@@ -14,6 +14,10 @@ import { TextInput } from '../../ui/TextInput';
 import { TopBar, type TopBarProps } from '../../ui/TopBar';
 import { MarkdownArticle } from '../markdown/MarkdownArticle';
 import { pageQueryOptions } from '../markdown/page-query';
+import { QualityCheckCard } from '../quality/QualityCard';
+import { qualityCard } from '../quality/model';
+import { selfCheckQueryOptions, useSelfCheck } from '../quality/queries';
+import { QueryFailure } from '../../ui/QueryFailure';
 import {
   addAppliesTo,
   afterSubmitModel,
@@ -57,6 +61,56 @@ function download(name: string, text: string) {
   anchor.download = name;
   anchor.click();
   URL.revokeObjectURL(url);
+}
+
+/** F-06 *Self-check* (AI) on the saved draft (system-logic §7.6.6, D-150). Advice only. */
+function SelfCheck({ draft, flush }: { draft: DraftDto; flush: () => Promise<DraftDto> }) {
+  const report = useQuery(selfCheckQueryOptions(useApi(), draft.id));
+  const run = useSelfCheck(draft.id);
+  const [flushError, setFlushError] = useState<unknown>(null);
+  const card = useMemo(
+    () => (report.data ? qualityCard(report.data, { subject: 'draft' }) : null),
+    [report.data],
+  );
+  const failure = flushError ?? run.error;
+  if (report.isError)
+    return (
+      <QueryFailure
+        error={report.error}
+        retry={() => void report.refetch()}
+        busy={report.isFetching}
+      />
+    );
+  return (
+    <QualityCheckCard
+      title="Self-check"
+      variant="editor"
+      card={card}
+      footer="Advice only. It doesn’t block submitting."
+      error={failure ? messageForError(failure) : null}
+      action={
+        <button
+          type="button"
+          className={`${smallButton} disabled:cursor-not-allowed disabled:bg-disabled-bg disabled:text-disabled-fg`}
+          disabled={!card || card.active || run.isPending}
+          aria-busy={run.isPending || undefined}
+          onClick={() => {
+            setFlushError(null);
+            flush().then(
+              () => {
+                run.mutate();
+              },
+              (error: unknown) => {
+                setFlushError(error);
+              },
+            );
+          }}
+        >
+          {card?.state === 'none' ? 'Run self-check' : 'Run again'}
+        </button>
+      }
+    />
+  );
 }
 
 function SourceEditor({ draft }: { draft: DraftDto }) {
@@ -514,6 +568,8 @@ function Editor({ draft, topBar }: { draft: DraftDto; topBar: TopBarProps }) {
               autosave.edit({ appliesTo: rows });
             }}
           />
+
+          <SelfCheck draft={draft} flush={() => autosave.flush()} />
 
           <Callout tone="info" title="After you submit">
             <ol className="m-0 flex list-decimal flex-col gap-3px pl-18px text-13 text-secondary">

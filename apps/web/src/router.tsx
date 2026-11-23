@@ -21,7 +21,7 @@ import { EditorScreen } from './features/editor/EditorScreen';
 import { HomeScreen } from './features/home/HomeScreen';
 import { LoginScreen } from './features/login/LoginScreen';
 import { pageQueryOptions } from './features/markdown/page-query';
-import { AuditScreen, OpsScreen } from './features/ops/OpsScreen';
+import { AuditScreen, JobsScreen, OpsScreen } from './features/ops/OpsScreen';
 import { PageScreen } from './features/page/PageScreen';
 import { proposalTab } from './features/review/model';
 import { ProposalsScreen } from './features/review/ProposalsScreen';
@@ -288,6 +288,13 @@ const audit = createRoute({
     return <AuditScreen topBar={useTopBar('workspace')} workNav={useWorkNav('ops')} />;
   },
 });
+const jobs = createRoute({
+  getParentRoute: () => root,
+  path: '/work/ops/jobs',
+  component: function Jobs() {
+    return <JobsScreen topBar={useTopBar('workspace')} workNav={useWorkNav('ops')} />;
+  },
+});
 const settings = createRoute({
   getParentRoute: () => root,
   path: '/work/settings',
@@ -353,6 +360,7 @@ const routeTree = root.addChildren([
   credibility,
   ops,
   audit,
+  jobs,
   settings,
   ...devRoutes,
 ]);

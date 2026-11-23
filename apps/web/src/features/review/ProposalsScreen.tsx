@@ -12,7 +12,7 @@ import type { WorkNavProps } from '../../ui/WorkNav';
 import { filterRows, proposalRow, proposalTabs, type ProposalRow, type ProposalTab } from './model';
 import { proposalsQueryOptions } from './queries';
 
-const head = ['Proposal', 'Page · section', 'Author', 'Status', 'With', 'Age'];
+const head = ['Proposal', 'Page · section', 'Author', 'Status', 'With', 'Quality', 'Age'];
 
 function ProposalTable({ rows }: { rows: readonly ProposalRow[] }) {
   return (
@@ -45,6 +45,7 @@ function ProposalTable({ rows }: { rows: readonly ProposalRow[] }) {
               <div className="text-12 text-muted">{row.detail}</div>
             </td>
             <td className="px-14px py-12px text-secondary">{row.with}</td>
+            <td className="px-14px py-12px text-secondary">{row.quality}</td>
             <td className="px-14px py-12px text-trust-none">
               <time dateTime={row.createdAt}>{row.age}</time>
             </td>

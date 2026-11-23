@@ -6,6 +6,8 @@ import { http, HttpResponse } from 'msw';
 import { setupServer } from 'msw/node';
 import { afterAll, afterEach, beforeAll, beforeEach, expect, it, vi } from 'vitest';
 import { visualDraft, visualSuggestions } from '../src/dev/fixtures/contribute';
+import { emptySummary, visualSelfCheck } from '../src/dev/fixtures/quality';
+import type { QualityReportDto } from '../src/features/quality/model';
 import { visualPage, visualSession } from '../src/dev/fixtures/reading';
 import type { DraftDto } from '../src/features/editor/model';
 import { createAppRouter } from '../src/router';
@@ -20,7 +22,36 @@ const problem = (code: string, status: number, fields: object[] = []) =>
 
 let stored: DraftDto = visualDraft(false);
 const patches: { body: unknown; ifMatch: string | null }[] = [];
+const noSelfCheck: QualityReportDto = {
+  subject: { kind: 'draft', id: visualDraft(false).id, slug: null },
+  bundleHash: 'a'.repeat(64),
+  summary: emptySummary,
+  current: null,
+  latest: null,
+  runs: [],
+  can: { rerun: false },
+};
+let selfCheck: QualityReportDto = noSelfCheck;
+const selfChecks: string[] = [];
+
+function need<T>(value: T | null | undefined): T {
+  if (value == null) throw new Error('fixture value missing');
+  return value;
+}
+
 const server = setupServer(
+  http.get('*/api/v1/drafts/:id/self-check', () => HttpResponse.json(selfCheck)),
+  http.post('*/api/v1/drafts/:id/self-check', ({ params }) => {
+    selfChecks.push(String(params.id));
+    const latest = { ...need(visualSelfCheck().latest), status: 'queued' as const, findings: [] };
+    selfCheck = {
+      ...noSelfCheck,
+      latest,
+      runs: [latest],
+      summary: { ...emptySummary, status: 'queued' },
+    };
+    return HttpResponse.json(latest, { status: 202 });
+  }),
   http.get('*/api/v1/meta', () => HttpResponse.json({ wikiName: 'Wiki', wikiDescription: '' })),
   http.get('*/api/v1/topics', () =>
     HttpResponse.json({
@@ -50,6 +81,8 @@ afterAll(() => {
 beforeEach(() => {
   stored = visualDraft(false);
   patches.length = 0;
+  selfCheck = noSelfCheck;
+  selfChecks.length = 0;
   vi.spyOn(window, 'scrollTo').mockImplementation(() => {});
 });
 afterEach(() => {
@@ -97,7 +130,11 @@ it('renders the F-06 frame regions and omits the ones without data (D-67)', asyn
     await within(aside).findByText('A reviewer decides, or escalates to m.nguyen and h.pham'),
   ).toBeVisible();
   expect(within(aside).getByRole('button', { name: 'Submit proposal' })).toBeEnabled();
-  expect(screen.queryByText(/What happens to evidence|Self-check/u)).not.toBeInTheDocument();
+  expect(within(aside).getByText('Quality check (about 2 min)')).toBeVisible();
+  // Self-check is a Phase 7 region (D-150); What happens to evidence is still Phase 9.
+  expect(await within(aside).findByRole('button', { name: 'Run self-check' })).toBeEnabled();
+  expect(within(aside).getByText('Advice only. It doesn’t block submitting.')).toBeVisible();
+  expect(screen.queryByText(/What happens to evidence/u)).not.toBeInTheDocument();
   expect(screen.queryByRole('alert')).not.toBeInTheDocument();
 
   await userEvent.click(within(editor).getByRole('tab', { name: 'Changes' }));
@@ -240,4 +277,71 @@ it('DiffView and MarkdownToolbar expose roles and the empty state', async () => 
   await userEvent.click(screen.getByRole('button', { name: 'Footnote' }));
   expect(onFormat).toHaveBeenCalledWith('footnote');
   expect(screen.getByText('No changes yet.')).toBeVisible();
+});
+
+it('F-06 Self-check saves the draft, runs on it and shows findings, staleness and failures', async () => {
+  open('/wiki/confocal-microscopy.md/edit?section=principle');
+  const aside = await screen.findByRole('complementary', { name: 'Submission' });
+  const card = within(aside).getByRole('region', { name: 'Self-check AI' });
+  expect(
+    await within(card).findByText('Check your draft against the quality rules before you submit.'),
+  ).toBeVisible();
+
+  // An unsaved edit is flushed before the self-check, so the run checks what was typed.
+  fireEvent.change(within(aside).getByLabelText('Reason (required)'), {
+    target: { value: 'Airy units and the sectioning claim' },
+  });
+  await userEvent.click(within(card).getByRole('button', { name: 'Run self-check' }));
+  expect(await within(card).findByText('Quality check queued.')).toBeVisible();
+  expect(patches.at(-1)?.body).toEqual({ reason: 'Airy units and the sectioning claim' });
+  expect(selfChecks).toEqual([stored.id]);
+  expect(within(card).getByRole('button', { name: 'Run again' })).toBeDisabled();
+  expect(card).toHaveAttribute('aria-busy', 'true');
+
+  // The result arrives (SSE quality.changed {draftId} invalidates the report).
+  selfCheck = visualSelfCheck();
+  cleanup();
+  open('/wiki/confocal-microscopy.md/edit?section=principle');
+  const fresh = within(await screen.findByRole('complementary', { name: 'Submission' }));
+  const findings = await fresh.findByRole('list', { name: 'Findings' });
+  expect(within(findings).getByRole('listitem')).toHaveTextContent(
+    'Line 14 · medium · Adds a claim (“little extra sectioning”) that the reason doesn’t mention.“gives little extra sectioning”',
+  );
+  expect(fresh.getByRole('button', { name: 'Run again' })).toBeEnabled();
+
+  // A newer autosave makes the run stale: the old findings are not shown as current.
+  const report = visualSelfCheck();
+  const stale = { ...need(report.latest), current: false };
+  selfCheck = {
+    ...report,
+    current: null,
+    latest: stale,
+    runs: [stale],
+    summary: { ...emptySummary, status: 'succeeded' },
+  };
+  cleanup();
+  open('/wiki/confocal-microscopy.md/edit?section=principle');
+  expect(
+    await screen.findByText(
+      'You changed the draft since the last check. Run it again to check this version.',
+    ),
+  ).toBeVisible();
+  expect(screen.queryByRole('list', { name: 'Findings' })).not.toBeInTheDocument();
+
+  // A failed run explains itself in words; a failed request shows the error copy.
+  const failed = {
+    ...need(report.latest),
+    status: 'failed' as const,
+    findings: [],
+    error: { code: 'rate_limited', message: '429' },
+  };
+  selfCheck = { ...noSelfCheck, latest: failed, runs: [failed] };
+  server.use(http.post('*/api/v1/drafts/:id/self-check', () => problem('VALIDATION_FAILED', 400)));
+  cleanup();
+  open('/wiki/confocal-microscopy.md/edit?section=principle');
+  expect(
+    await screen.findByText('The last check failed: the model provider is rate limiting requests.'),
+  ).toBeVisible();
+  await userEvent.click(screen.getByRole('button', { name: 'Run again' }));
+  expect(await screen.findByRole('alert')).toHaveTextContent('Check your input and try again.');
 });

@@ -52,6 +52,21 @@ export function useAdminLists() {
   };
 }
 
+/** F-14 *Models* (system-logic §7.6.7): effective model config and the parsed rules file. */
+export function useModelsSettings() {
+  const api = useApi();
+  return {
+    models: useQuery({
+      queryKey: queryKeys.adminModels,
+      queryFn: async ({ signal }) => apiData(await api.GET('/api/v1/admin/models', { signal })),
+    }),
+    rules: useQuery({
+      queryKey: queryKeys.adminRules,
+      queryFn: async ({ signal }) => apiData(await api.GET('/api/v1/admin/rules', { signal })),
+    }),
+  };
+}
+
 export function useAdminMutations() {
   const api = useApi();
   const queryClient = useQueryClient();

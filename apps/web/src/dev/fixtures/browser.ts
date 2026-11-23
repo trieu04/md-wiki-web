@@ -9,6 +9,14 @@ import {
   visualTopics,
 } from './discussions';
 import {
+  visualJobs,
+  visualModels,
+  visualProposalQuality,
+  visualRules,
+  visualSelfCheck,
+} from './quality';
+import {
+  visualArtifact,
   visualAudit,
   visualBlocked,
   visualDiff,
@@ -108,6 +116,29 @@ const worker = setupWorker(
     const topic = visualTopic(String(params.id));
     return topic ? HttpResponse.json(topic) : notFound();
   }),
+  // Phase 7 quality check (P7-05/06). `?scenario=quality-running|quality-failed` on F-10.
+  http.get('/api/v1/proposals/:slug/findings', () =>
+    HttpResponse.json(
+      visualProposalQuality(
+        visualArtifact,
+        new URLSearchParams(globalThis.location.search).get('scenario'),
+      ),
+    ),
+  ),
+  http.post('/api/v1/proposals/:slug/quality-check', () =>
+    HttpResponse.json(visualProposalQuality(visualArtifact, 'quality-running').latest, {
+      status: 202,
+    }),
+  ),
+  http.get('/api/v1/drafts/:id/self-check', () => HttpResponse.json(visualSelfCheck())),
+  http.post('/api/v1/drafts/:id/self-check', () =>
+    HttpResponse.json(visualSelfCheck().latest, { status: 202 }),
+  ),
+  http.get('/api/v1/admin/models', () => HttpResponse.json(visualModels)),
+  http.get('/api/v1/admin/rules', () => HttpResponse.json(visualRules)),
+  http.get('/api/v1/ops/jobs', ({ request }) =>
+    HttpResponse.json(visualJobs(new URL(request.url).searchParams)),
+  ),
   http.get('/api/v1/ops/blocked', () => HttpResponse.json(visualBlocked)),
   http.get('/api/v1/audit', () => HttpResponse.json(visualAudit)),
   http.get('/__visual/fixtures/:frame', ({ params }) => {
