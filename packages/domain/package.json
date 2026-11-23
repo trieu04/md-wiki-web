@@ -17,5 +17,16 @@
     "typecheck": "tsc -p tsconfig.json",
     "test": "vitest run"
   },
-  "devDependencies": { "vitest": "^3.2.4" }
+  "devDependencies": {
+    "fast-check": "^3.23.2",
+    "vitest": "^3.2.4"
+  },
+  "dependencies": {
+    "@noble/hashes": "^1.8.0",
+    "github-slugger": "^2.0.0",
+    "mdast-util-to-string": "^4.0.0",
+    "remark-gfm": "^4.0.1",
+    "remark-parse": "^11.0.0",
+    "unified": "^11.0.5"
+  }
 }
