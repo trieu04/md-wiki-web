@@ -32,6 +32,7 @@ Live tracker for [implementation-plan.md](implementation-plan.md). Updated by th
 | P6-00..03 | Claude agent | OPUS | **done** | 0 | discussions/disputes/holds (real DiscussionState), MCP at /mcp (20 tools, same services/errors as REST), skill rewrite + drift test. D-105..D-117. Follow-ups: MCP GET/DELETE 405 untested; mention notifications wait for P9 |
 | P6-04..06 | Claude agent | OPUS | **done** | 0 | F-11 Discussions, derived /ask, F-10 disputed + derived Discussion tab, SSE version lock; e2e 5/5. D-118..D-123. Follow-ups: agreements/mentions not in UI; F-11 doesn't list dispute-log rows |
 | P7-00,02..04 | Claude agent | OPUS | **done** | 0 | quality_check job end to end (fake-provider tests: schema failure, invented quotes, provider errors), findings re-verified by API and bound to bundle hash, self-check, eval CLI; review works with worker stopped. D-130..D-144. Real-model eval NOT run (needs E3 JSONL + user go-ahead for credits) |
+| P7-05,06 | Claude agent → OPUS | — | **done** | 0 | Quality card, Self-check, Models tab, AI jobs; finished by OPUS after the agent hit the usage limit (e2e 6/6). D-145..D-152 |
 | H-1 | orchestrator (delegated) | — | done | — | decided D-14..D-21, see plan §6.1 |
 
 **Orchestration change (user, 2026-11-23):** from P3-D on, the Pi workflow (implementation-plan §5) is skipped; tasks run as Claude subagents in worktrees, the orchestrator reviews and commits (D-27 kept). Briefs: `.orchestrate/claude-common.md`.
