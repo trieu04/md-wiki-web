@@ -5,6 +5,7 @@ export * from './label-meta.js';
 export * from './result.js';
 export * from './paths.js';
 export * from './sections.js';
+export * from './topics.js';
 export * from './snapshot-label.js';
 export * from './status-block.js';
 export * from './time.js';

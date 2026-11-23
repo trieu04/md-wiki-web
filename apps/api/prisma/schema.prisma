@@ -7,6 +7,142 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum Role {
+  reader
+  contributor
+  reviewer
+  publisher
+  owner
+}
+
+enum Scope {
+  read
+  contribute
+  discuss
+  review
+  publish
+}
+
+enum Label {
+  checked
+  reviewed
+  not_reviewed
+  recheck
+  error
+}
+
+enum UserKind {
+  human
+  agent
+}
+
+enum ActorKind {
+  human
+  agent
+  system
+}
+
+model Team {
+  id    String @id @default(uuid(7)) @db.Uuid
+  name  String @unique
+  slug  String @unique
+  users User[]
+}
+
+model User {
+  id           String       @id @default(uuid(7)) @db.Uuid
+  email        String       @unique @db.Citext
+  name         String
+  kind         UserKind
+  roles        Role[]
+  teamId       String?      @db.Uuid
+  team         Team?        @relation(fields: [teamId], references: [id])
+  passwordHash String?
+  disabledAt   DateTime?    @db.Timestamptz(3)
+  createdAt    DateTime     @default(now()) @db.Timestamptz(3)
+  sessions     Session[]
+  tokens       ApiToken[]
+  events       AuditEvent[]
+}
+
+model Session {
+  id         String   @id @default(uuid(7)) @db.Uuid
+  userId     String   @db.Uuid
+  user       User     @relation(fields: [userId], references: [id])
+  tokenHash  String   @unique
+  csrfToken  String
+  createdAt  DateTime @default(now()) @db.Timestamptz(3)
+  expiresAt  DateTime @db.Timestamptz(3)
+  lastSeenAt DateTime @db.Timestamptz(3)
+  ip         String
+  userAgent  String
+}
+
+model ApiToken {
+  id         String    @id @default(uuid(7)) @db.Uuid
+  userId     String    @db.Uuid
+  user       User      @relation(fields: [userId], references: [id])
+  name       String
+  prefix     String    @unique
+  tokenHash  String
+  scopes     Scope[]
+  expiresAt  DateTime? @db.Timestamptz(3)
+  revokedAt  DateTime? @db.Timestamptz(3)
+  lastUsedAt DateTime? @db.Timestamptz(3)
+  createdAt  DateTime  @default(now()) @db.Timestamptz(3)
+}
+
+model Page {
+  id                   String   @id @default(uuid(7)) @db.Uuid
+  path                 String   @unique
+  title                String
+  topic                String
+  isMeta               Boolean
+  currentVersionLabel  String
+  currentSha256        String
+  changedOutsideReview Boolean  @default(false)
+  updatedAt            DateTime @updatedAt @db.Timestamptz(3)
+}
+
+model Snapshot {
+  id         String   @id @default(uuid(7)) @db.Uuid
+  path       String
+  label      String
+  sha256     String
+  content    Bytes
+  capturedAt DateTime @default(now()) @db.Timestamptz(3)
+
+  @@unique([path, label])
+  @@index([path, sha256])
+}
+
+model PageSection {
+  path         String
+  versionLabel String
+  anchor       String
+  title        String
+  level        Int
+  ord          Int
+  sectionHash  String
+  text         String
+  search       Unsupported("tsvector") @default(dbgenerated())
+
+  @@id([path, versionLabel, anchor])
+  @@index([search], type: Gin)
+}
+
+model AuditEvent {
+  id          String    @id @default(uuid(7)) @db.Uuid
+  actorId     String?   @db.Uuid
+  actor       User?     @relation(fields: [actorId], references: [id], onDelete: Restrict)
+  actorKind   ActorKind
+  action      String
+  subjectType String
+  subjectId   String
+  data        Json
+  at          DateTime  @default(now()) @db.Timestamptz(3)
+}
+
 enum AiJobKind {
   ping
 }

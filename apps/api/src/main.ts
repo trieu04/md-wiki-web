@@ -6,6 +6,8 @@ import { API_CONFIG } from './config/env.js';
 import type { ApiConfig } from './config/env.js';
 import { configureHttp } from './config/http.js';
 
+import { WikiIndexer } from './wiki/indexer/wiki-indexer.js';
+
 async function bootstrap(): Promise<void> {
   const app = await NestFactory.create(AppModule);
   const internal = await NestFactory.create(InternalModule);
@@ -15,6 +17,7 @@ async function bootstrap(): Promise<void> {
 
   const close = () => Promise.all([app.close(), internal.close()]);
   try {
+    await app.get(WikiIndexer).reindex();
     await internal.listen(config.INTERNAL_PORT, config.INTERNAL_HOST);
     await app.listen(config.API_PORT);
     logger.info(
