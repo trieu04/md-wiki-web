@@ -548,6 +548,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/proposals/{slug}/discussion": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ProposalDiscussionController_get"];
+        put?: never;
+        post: operations["ProposalDiscussionController_open"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/proposals/{slug}/disputes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ProposalDiscussionController_disputes"];
+        put?: never;
+        post: operations["ProposalDiscussionController_record"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/proposals/{slug}/publish": {
         parameters: {
             query?: never;
@@ -590,6 +622,86 @@ export interface paths {
         get: operations["WikiReadController_search"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/topics": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["TopicsController_list"];
+        put?: never;
+        post: operations["TopicsController_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/topics/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["TopicsController_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/topics/{id}/close": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["TopicsController_close"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/topics/{id}/comments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["TopicsController_entries"];
+        put?: never;
+        post: operations["TopicsController_comment"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/topics/{id}/reopen": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["TopicsController_reopen"];
         delete?: never;
         options?: never;
         head?: never;
@@ -810,6 +922,22 @@ export interface components {
             resolveConflict: boolean;
             withdraw: boolean;
         };
+        CommentInput: {
+            /** @description Required for kind agreement: the entry agreed with */
+            agreesWith?: number;
+            body: string;
+            /**
+             * @default comment
+             * @enum {string}
+             */
+            kind: "comment" | "agreement";
+            /** @description User ids to mention; they become participants */
+            mentions?: string[];
+            /** @description The entry this replies to */
+            parentSeq?: number;
+            /** @description The topic version the caller read; required on a proposal topic */
+            version?: number;
+        };
         ConflictCurrentDto: {
             publishedBy: components["schemas"]["PublishedByDto"] | null;
             sha256: string;
@@ -980,13 +1108,54 @@ export interface components {
         };
         DiscussionDto: {
             discussionVersion: number;
+            /** @description held or disputeOpen: approval is blocked */
             disputed: boolean;
+            /** @description the dispute log is open */
+            disputeOpen: boolean;
             disputeVersion: number;
+            /** @description the proposal topic exists and is not resolved */
+            held: boolean;
+            /** Format: uuid */
+            topicId: string | null;
         };
         DiskDto: {
             /** @enum {string} */
             matches: "new" | "old" | "neither" | "missing";
             sha256: string | null;
+        };
+        DisputeEventDto: {
+            /** @enum {string} */
+            action: "open" | "comment" | "resolve" | "reopen";
+            actor: components["schemas"]["UserRefDto"];
+            /** Format: date-time */
+            createdAt: string;
+            reason: string;
+            relatedSlugs: string[];
+            /** @enum {string|null} */
+            resolutionKind: "supported" | "scoped" | "attributed" | "not_a_conflict" | null;
+            seq: number;
+        };
+        DisputeInput: {
+            /** @enum {string} */
+            action: "open" | "comment" | "resolve" | "reopen";
+            bundleHash: string;
+            /** @description The dispute version the caller read */
+            disputeVersion: number;
+            reason: string;
+            /** @description Related proposal slugs */
+            relatedSlugs?: string[];
+            /**
+             * @description Required for resolve only
+             * @enum {string}
+             */
+            resolutionKind?: "supported" | "scoped" | "attributed" | "not_a_conflict";
+        };
+        DisputeLogDto: {
+            bundleHash: string;
+            disputeOpen: boolean;
+            disputeVersion: number;
+            events: components["schemas"]["DisputeEventDto"][];
+            slug: string;
         };
         DraftBaseDto: {
             /** Format: date-time */
@@ -1040,10 +1209,13 @@ export interface components {
             phase?: components["schemas"]["PublicationPhase"];
             slug?: string;
             state?: string;
+            /** Format: uuid */
+            topicId?: string;
             type: components["schemas"]["EventType"];
+            version?: number;
         };
         /** @enum {string} */
-        EventType: "proposal.changed" | "publication.changed" | "page.changed" | "ping";
+        EventType: "proposal.changed" | "publication.changed" | "page.changed" | "discussion.changed" | "ping";
         FieldProblemDto: {
             code: string;
             message: string;
@@ -1224,6 +1396,31 @@ export interface components {
             lines: components["schemas"]["DiffLineDto"][];
             stats: components["schemas"]["DiffStatsDto"];
             to: components["schemas"]["DiffToDto"];
+        };
+        ProposalDiscussionDto: {
+            bundleHash: string;
+            discussionVersion: number;
+            /** @description held or disputeOpen: approval is blocked */
+            disputed: boolean;
+            disputeOpen: boolean;
+            disputes: components["schemas"]["DisputeLogDto"];
+            disputeVersion: number;
+            held: boolean;
+            slug: string;
+            /** @enum {string} */
+            state: "pending" | "approved" | "published" | "rejected" | "stale";
+            topic: components["schemas"]["TopicDetailDto"] | null;
+        };
+        ProposalDiscussionInput: {
+            /** @description Defaults to the proposal's section */
+            anchor?: string | null;
+            /** @description What is in question */
+            body: string;
+            /** @description The bundle the caller read */
+            bundleHash: string;
+            /** @description User ids to mention; they become participants */
+            mentions?: string[];
+            title?: string;
         };
         ProposalDto: {
             appliesTo: components["schemas"]["AppliesToDto"][];
@@ -1505,14 +1702,136 @@ export interface components {
             /** Format: uuid */
             nextCursor: string | null;
         };
+        TopicCanDto: {
+            close: boolean;
+            comment: boolean;
+            reopen: boolean;
+        };
+        TopicClosedDto: {
+            /** Format: date-time */
+            at: string;
+            by: components["schemas"]["UserRefDto"];
+            /** @enum {string} */
+            outcome: "resolved" | "rejected" | "on_hold";
+            reason: string;
+        };
+        TopicCloseInput: {
+            /** @enum {string} */
+            outcome: "resolved" | "rejected" | "on_hold";
+            /** @description Rationale */
+            reason: string;
+            /** @description Required on a proposal topic */
+            version?: number;
+        };
+        TopicCountsDto: {
+            all: number;
+            closed: number;
+            mine: number;
+            open: number;
+        };
+        TopicCreateInput: {
+            /** @description Section anchor in the current version */
+            anchor?: string | null;
+            body: string;
+            /** @description User ids to mention; they become participants */
+            mentions?: string[];
+            /** @description Wiki path of an indexed page */
+            path: string;
+            title: string;
+        };
+        TopicDetailDto: {
+            anchor: string | null;
+            author: components["schemas"]["UserRefDto"];
+            bundleHash: string | null;
+            can: components["schemas"]["TopicCanDto"];
+            closed: components["schemas"]["TopicClosedDto"] | null;
+            /** Format: date-time */
+            createdAt: string;
+            entries: components["schemas"]["TopicEntryDto"][];
+            /** Format: uuid */
+            id: string;
+            pageTitle: string;
+            participants: components["schemas"]["UserRefDto"][];
+            path: string;
+            proposal: components["schemas"]["TopicProposalDto"] | null;
+            /** @description Entries after the opening one */
+            replies: number;
+            sectionTitle: string | null;
+            /** @enum {string} */
+            status: "open" | "on_hold" | "resolved" | "rejected";
+            title: string;
+            /** Format: date-time */
+            updatedAt: string;
+            version: number;
+            /** @description Page version the topic was opened on */
+            versionLabel: string | null;
+        };
         TopicDto: {
             id: string;
             name: string;
+        };
+        TopicEntryDto: {
+            agreesWith: number | null;
+            author: components["schemas"]["UserRefDto"];
+            body: string;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: uuid */
+            id: string;
+            /** @enum {string} */
+            kind: "open" | "comment" | "agreement" | "close" | "reopen";
+            mentions: components["schemas"]["UserRefDto"][];
+            /** @enum {string|null} */
+            outcome: "resolved" | "rejected" | "on_hold" | null;
+            parentSeq: number | null;
+            seq: number;
+        };
+        TopicEntryPageDto: {
+            items: components["schemas"]["TopicEntryDto"][];
+            nextCursor: string | null;
         };
         TopicFacetDto: {
             id: string;
             n: number;
             name: string;
+        };
+        TopicListDto: {
+            counts: components["schemas"]["TopicCountsDto"];
+            items: components["schemas"]["TopicListItemDto"][];
+            nextCursor: string | null;
+        };
+        TopicListItemDto: {
+            anchor: string | null;
+            author: components["schemas"]["UserRefDto"];
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: uuid */
+            id: string;
+            pageTitle: string;
+            path: string;
+            proposal: components["schemas"]["TopicProposalDto"] | null;
+            /** @description Entries after the opening one */
+            replies: number;
+            sectionTitle: string | null;
+            /** @enum {string} */
+            status: "open" | "on_hold" | "resolved" | "rejected";
+            title: string;
+            /** Format: date-time */
+            updatedAt: string;
+            version: number;
+        };
+        TopicProposalDto: {
+            /** @description This topic currently blocks approval */
+            holds: boolean;
+            slug: string;
+            /** @enum {string} */
+            state: "pending" | "approved" | "published" | "rejected" | "stale";
+            title: string;
+        };
+        TopicReopenInput: {
+            reason: string;
+            /** @description Required on a proposal topic */
+            version?: number;
         };
         TreeDto: {
             topics: components["schemas"]["TreeTopicDto"][];
@@ -3897,6 +4216,260 @@ export interface operations {
             };
         };
     };
+    ProposalDiscussionController_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProposalDiscussionDto"];
+                };
+            };
+            /** @description VALIDATION_FAILED */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description UNAUTHENTICATED */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description FORBIDDEN | ACCOUNT_DISABLED | CSRF_INVALID */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description NOT_FOUND */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+        };
+    };
+    ProposalDiscussionController_open: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProposalDiscussionInput"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProposalDiscussionDto"];
+                };
+            };
+            /** @description VALIDATION_FAILED */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description UNAUTHENTICATED */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description FORBIDDEN | ACCOUNT_DISABLED | CSRF_INVALID */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description NOT_FOUND */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description PRECONDITION_FAILED | ALREADY_EXISTS */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+        };
+    };
+    ProposalDiscussionController_disputes: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DisputeLogDto"];
+                };
+            };
+            /** @description VALIDATION_FAILED */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description UNAUTHENTICATED */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description FORBIDDEN | ACCOUNT_DISABLED | CSRF_INVALID */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description NOT_FOUND */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+        };
+    };
+    ProposalDiscussionController_record: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DisputeInput"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DisputeLogDto"];
+                };
+            };
+            /** @description VALIDATION_FAILED */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description UNAUTHENTICATED */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description FORBIDDEN | ACCOUNT_DISABLED | CSRF_INVALID */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description NOT_FOUND */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description PRECONDITION_FAILED | DISCUSSION_CHANGED | SELF_REVIEW */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+        };
+    };
     ProposalsController_publish: {
         parameters: {
             query?: never;
@@ -4088,6 +4661,447 @@ export interface operations {
             };
             /** @description FORBIDDEN | ACCOUNT_DISABLED */
             403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+        };
+    };
+    TopicsController_list: {
+        parameters: {
+            query?: {
+                anchor?: string;
+                cursor?: string;
+                filter?: "open" | "mine" | "closed" | "all";
+                limit?: number;
+                path?: string;
+                /** @description Proposal slug */
+                proposal?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TopicListDto"];
+                };
+            };
+            /** @description VALIDATION_FAILED */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description UNAUTHENTICATED */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description FORBIDDEN | ACCOUNT_DISABLED | CSRF_INVALID */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+        };
+    };
+    TopicsController_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TopicCreateInput"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TopicDetailDto"];
+                };
+            };
+            /** @description VALIDATION_FAILED | INVALID_PATH */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description UNAUTHENTICATED */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description FORBIDDEN | ACCOUNT_DISABLED | CSRF_INVALID */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description NOT_FOUND */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+        };
+    };
+    TopicsController_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TopicDetailDto"];
+                };
+            };
+            /** @description VALIDATION_FAILED */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description UNAUTHENTICATED */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description FORBIDDEN | ACCOUNT_DISABLED | CSRF_INVALID */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description NOT_FOUND */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+        };
+    };
+    TopicsController_close: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TopicCloseInput"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TopicDetailDto"];
+                };
+            };
+            /** @description VALIDATION_FAILED */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description UNAUTHENTICATED */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description FORBIDDEN | ACCOUNT_DISABLED | CSRF_INVALID */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description NOT_FOUND */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description PRECONDITION_FAILED | DISCUSSION_CHANGED | SELF_REVIEW */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+        };
+    };
+    TopicsController_entries: {
+        parameters: {
+            query?: {
+                cursor?: string;
+                limit?: number;
+            };
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Entries oldest first; cursor = seq */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TopicEntryPageDto"];
+                };
+            };
+            /** @description VALIDATION_FAILED */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description UNAUTHENTICATED */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description FORBIDDEN | ACCOUNT_DISABLED | CSRF_INVALID */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description NOT_FOUND */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+        };
+    };
+    TopicsController_comment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CommentInput"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TopicDetailDto"];
+                };
+            };
+            /** @description VALIDATION_FAILED */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description UNAUTHENTICATED */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description FORBIDDEN | ACCOUNT_DISABLED | CSRF_INVALID */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description NOT_FOUND */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description PRECONDITION_FAILED | DISCUSSION_CHANGED */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+        };
+    };
+    TopicsController_reopen: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TopicReopenInput"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TopicDetailDto"];
+                };
+            };
+            /** @description VALIDATION_FAILED */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description UNAUTHENTICATED */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description FORBIDDEN | ACCOUNT_DISABLED | CSRF_INVALID */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description NOT_FOUND */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description PRECONDITION_FAILED | DISCUSSION_CHANGED | SELF_REVIEW */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };

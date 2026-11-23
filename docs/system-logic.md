@@ -144,6 +144,8 @@ Proposal(slug unique, title, targetPath, section?, submitterId, origin, state, r
 ProposalRef(proposalId, snapshotId, role target|scope|source, impact?, ord)
 -- Phase 3 (Prisma precise in §7.4.1)
 Assignment, Decision, Publication, Resolution, ConflictResolution, Withdrawal, PublishOutbox, PublishedSection
+-- Phase 6 (Prisma precise in §7.5.1)
+Topic, DiscussionEvent, DisputeEvent
 ```
 
 Later phases (Discussions, AI jobs, agent review, credibility, reading) use the architecture.md data model verbatim; their `-00` spec task turns it into Prisma with indexes.
@@ -168,7 +170,8 @@ Roles are cumulative: `reader < contributor < reviewer < publisher < owner`. Age
 | --- | --- | --- | --- |
 | `wiki.read`, `search`, `history.read` | reader | read | |
 | `follow`, `attest`, `report`, `feedback` | reader | — (humans only) | not on own section version; agents never |
-| `topic.open`, `comment` | reader / contributor | discuss | |
+| `topic.open`, `comment` | reader / contributor | discuss | close/reopen and proposal topics: §7.5.3 |
+| `dispute.write` (proposal dispute log, §7.5.3) | reviewer | review | never own proposal (`SELF_REVIEW`) [D-110] |
 | `draft.*`, `proposal.submit` | contributor | contribute | |
 | `proposal.read` (workspace lists, §7.4.8) | reviewer | review | [D-86] |
 | `proposal.decide` | reviewer | review | must hold an open `Assignment`; never own proposal (`SELF_REVIEW`) |
@@ -242,7 +245,7 @@ interface SearchHitDto { path: string; pageTitle: string; anchor: string; sectio
 | --- | --- |
 | P4 Contribute (**full contract: §7.2**) | `GET/POST/PATCH/DELETE /drafts[/{id}]` (autosave `PATCH` with `If-Match: <updatedAt>`), `POST /drafts/{id}/sources`, `POST /drafts/{id}/rebase`, `POST /drafts/{id}/submit` → `ProposalDto`, `POST /contributions` (agent bundle), `GET /contributions/{slug}`, `POST /contributions/import` (`.contribution.md` v3), `GET /drafts/{id}/export` |
 | P5 Review/publish (**full contract: §7.4**) | `GET /proposals?state&tab&cursor`, `GET /proposals/{slug}` (incl. `preview` artifact + hashes), `GET /proposals/{slug}/diff`, `POST /proposals/{slug}/decisions` `{ approve, reason, bundleHash, artifactHash, previewAt, discussionVersion, disputeVersion }`, `POST /proposals/{slug}/publish`, `POST /proposals/{slug}/conflict` `{ outcome: keep_current\|use_incoming\|merge, replacement? }`, `GET /ops/blocked`, `POST /ops/blocked/{slug}/resolution`, `GET /audit`, `GET /events` (SSE) |
-| P6 Discussions/MCP | `/topics`, `/topics/{id}/comments`, `/proposals/{slug}/discussion`, `/proposals/{slug}/disputes`, MCP at `/mcp` (streamable HTTP) |
+| P6 Discussions/MCP (**full contract: §7.5**) | `/topics`, `/topics/{id}/comments`, `/proposals/{slug}/discussion`, `/proposals/{slug}/disputes`, MCP at `/mcp` (streamable HTTP) |
 | P7 Quality | `POST /proposals/{slug}/quality-check`, `GET /proposals/{slug}/findings`, internal `GET /internal/v1/jobs/{id}/input`, `POST /internal/v1/jobs/{id}/result`, `/admin/models`, `/admin/rules` |
 | P8 Agent review | `GET /inbox?tab`, `POST /proposals/{slug}/escalations`, `/admin/review-settings`, `POST /admin/agent/pause` |
 | P9 Credibility | `/sections/{path}/{anchor}/why`, `/attestations`, `/reports`, `/source-checks`, `/owner-confirmations`, `/page-feedback`, `/follows`, `/notifications`, `/me/*`, `/credibility/queue`, `/credibility/pages`, `/credibility/sources`, internal invalidation/candidate endpoints |
@@ -548,9 +551,9 @@ PublishedSection(publicationId → Publication, path, versionLabel, anchor, sect
 | 4 | `state = pending` | `PRECONDITION_FAILED` | both |
 | 5 | caller holds an open assignment (after the self-heal of §7.4.2) | `NOT_ASSIGNED` | both |
 | 6 | caller ≠ submitter | `SELF_REVIEW` | both |
-| 7 | no open dispute or hold (`DiscussionState.disputed`, Phase 6 port → `false`) | `DISPUTED` | approve |
+| 7 | no open dispute or hold (`DiscussionState.disputed`, §7.5.6) | `DISPUTED` | approve |
 | 8 | `bundleHash = proposal.bundleHash`, recomputed `artifactHash` = sent `artifactHash`, `previewAt` parses and is ≤ now + 5 s | `DECISION_BINDING_MISMATCH` | both |
-| 9 | `discussionVersion`, `disputeVersion` = `DiscussionState` versions (Phase 6 port → `0`, `0`) | `DISCUSSION_CHANGED` | both |
+| 9 | `discussionVersion`, `disputeVersion` = `DiscussionState` versions (§7.5.6) | `DISCUSSION_CHANGED` | both |
 | 10 | target observed live (§7.2.4) still has sha = `baseSha256` (or is still absent for a create) → else `STALE_BASE`; every source/scope pin observed live equals its sha → else `SOURCE_CHANGED` with `fields` as §7.2.4 | `STALE_BASE` / `SOURCE_CHANGED` | approve |
 | 11 | no publication of `targetPath` in phase `unknown` (or another proposal's open `prepared`/`writing`/`written`) | `TARGET_BLOCKED` | approve |
 | 12 | for agent callers: `EscalationTriggers.firing(...)` is empty (Phase 8 port → `[]`) | `ESCALATION_REQUIRED` | approve |
@@ -723,6 +726,158 @@ Every transition writes one `AuditEvent` in the transaction that makes it (subje
 - The web never re-derives permissions: decide/publish/withdraw controls follow `ProposalDetailDto.can`; the Workspace link and WorkNav counts follow D-95.
 - Query keys: `['proposals', {tab, limit}]`, `['proposal', slug]`, `['proposal', slug, 'diff', against]`, `['ops','blocked']`, `['ops','audit']`. Every write caches the returned detail and invalidates `['proposals']`, `['proposal', slug, 'diff']`, `['me.suggestions']`, `['ops','blocked']`. SSE events invalidate per D-96.
 - Decision errors: `DISCUSSION_CHANGED`/`DECISION_BINDING_MISMATCH` lock the form until *Reload* refetches the detail (new preview); every other code shows its `error-copy` text under the form. The reason survives both (sessionStorage, §10).
+
+### 7.5 Phase 6 — Discussions and MCP (full contract, P6-00)
+
+Behavioural spec: `md-wiki/wiki_worker/core/discussions.py` (`create_topic`, `add_discussion_comment`, `close_topic`, `create_discussion`, `add_discussion_message`, `hold_proposal`, `resolve_discussion`, `discuss`, `semantic_discussion`), `md-wiki/wiki_worker/mcp.py` and their tests (`test_mcp.py`, `test_workflow.py` semantic cases, `test_web.py` discussion cases). Decisions D-105 … D-119. UI screens (F-11 Discussions, *Ask a question*, Review › Discussion tab) bind to these contracts in P6-04 … P6-06. Not ported: Slack/Teams mirrors and `reviewer_decision_requests` (chat transports are "later", architecture.md), `open_concurrent_discussion` (Phase 8 escalation), `decision_owners`/`resolve_assignees` (page authors are resolved in Phase 8).
+
+#### 7.5.1 Data model (Prisma) [D-105]
+
+```text
+enum TopicStatus    open | on_hold | resolved | rejected
+enum EntryKind      open | comment | agreement | close | reopen
+enum DisputeAction  open | comment | resolve | reopen
+
+Topic(id, path, anchor?, versionLabel?, title, authorId → User, status default open,
+      proposalId? → Proposal unique, bundleHash?, version int default 1, participantIds uuid[],
+      closedById? → User, closeReason?, closedAt?, createdAt, updatedAt)
+      index(path, anchor)  index(status, updatedAt)  index(updatedAt, id)
+DiscussionEvent(id, topicId → Topic, seq int, kind, authorId → User, body, parentSeq?, agreesWith?,
+      outcome TopicStatus?, mentions uuid[], bundleHash?, createdAt)        unique(topicId, seq)   append-only
+DisputeEvent(id, proposalId → Proposal, seq int, actorId → User, action, reason, resolutionKind?,
+      relatedSlugs text[], bundleHash, createdAt)                           unique(proposalId, seq) append-only
+```
+
+- architecture.md's `Topic` + `Comment` + `ProposalDiscussion` + `DiscussionEvent` collapse into **`Topic` + `DiscussionEvent`** [D-105]: a *comment* is a `DiscussionEvent` of kind `comment`/`agreement` (with `parentSeq` as the reply relation), and the **proposal discussion** is the one `Topic` whose `proposalId` is set (unique), bound to the frozen `bundleHash`. One entry model gives one version counter and one thread for the Discussions screen, which lists proposal discussions next to page topics (F-11).
+- `Topic.version` = the `seq` of its latest entry; the opening body is entry 1 (`kind: open`). Every change (comment, close, reopen) appends exactly one entry with `seq = version + 1` and updates `version`, `status`, `participantIds`, `updatedAt` (and the `closed*` fields) in the same transaction, conditioned on the old version.
+- Triggers: `DiscussionEvent` and `DisputeEvent` reject `UPDATE`/`DELETE` (§4). `Topic` rejects `DELETE`, any change of `id, path, anchor, versionLabel, authorId, proposalId, bundleHash, createdAt`, and a decreasing `version`; `CHECK version ≥ 1`, `seq ≥ 1`.
+- `participantIds` = the author, everyone who wrote an entry, and everyone mentioned (deduplicated, insertion order).
+- `DisputeEvent` is md-wiki's `semantic_discussions` log: `disputeVersion` = its last `seq` (0 when empty).
+
+#### 7.5.2 Rules (`domain/discussions.ts`) [D-106, D-107]
+
+- **Topic transitions** `topicTransition(status, action)` (else `PRECONDITION_FAILED`):
+
+| From | comment / agreement | close `on_hold` | close `resolved` / `rejected` | reopen |
+| --- | --- | --- | --- | --- |
+| `open` | `open` | `on_hold` | that outcome | ✗ |
+| `on_hold` | `on_hold` | ✗ | that outcome | `open` |
+| `resolved` / `rejected` | ✗ (reopen first) | ✗ | ✗ | `open` |
+
+  md-wiki `close_topic` outcomes `resolved | on_hold | rejected` map 1:1 (its storage names `blocked`/`decision` are not kept).
+- **Hold** `holdsApproval(topic)` = the topic has a `proposalId` and status ≠ `resolved` (md-wiki `discussion_hold`: only *resolved* releases; *rejected* records that the debate went against the proposal and *on hold* keeps it open) [D-106].
+- **Dispute log** `disputeState(events)`: disputed = the last `open`/`reopen` is not followed by `resolve`. `disputeStep(events, input)` (after the version matched): `open` only on an empty log, `reopen` only when not disputed and the log is not empty, `comment`/`resolve` only while disputed (each `PRECONDITION_FAILED`); `resolutionKind ∈ supported | scoped | attributed | not_a_conflict` required for `resolve` and forbidden otherwise, `relatedSlugs` ≤ 50 unique slugs (each `VALIDATION_FAILED`, field `resolutionKind` / `relatedSlugs`).
+- **Decision facts** `discussionSummary(topic, disputes)` = `{ discussionVersion: topic?.version ?? 0, disputeVersion, held, disputeOpen, disputed: held || disputeOpen }`. This is what `DiscussionState` returns (§7.5.6).
+- **Who may close/reopen** `mayCloseTopic` [D-108]: on a proposal topic a reviewer (role ≥ reviewer) who is not the submitter (`FORBIDDEN`, `SELF_REVIEW`; md-wiki `check_reviewer`); on any other topic its author or a reviewer (`FORBIDDEN`).
+- **Agreement**: `kind: agreement` requires `agreesWith` = an existing entry seq (1 … version); `agreesWith` on a `comment` is refused; `parentSeq` ≤ version. Each `VALIDATION_FAILED` with field code `UNKNOWN_ENTRY` / `NOT_AGREEMENT`.
+
+#### 7.5.3 Permissions [D-109, D-110]
+
+| Operation | Permission (§5.2) | Extra rule |
+| --- | --- | --- |
+| read topics, entries, proposal discussion, dispute log | `wiki.read` | proposal topics and the proposal endpoints are visible to the submitter, roles ≥ reviewer (D-63) and the topic's participants; others get `404 NOT_FOUND` / an empty list |
+| open a topic (*Ask a question*), open a proposal discussion | `topic.open` (reader, scope `discuss`) | proposal discussion: proposal visible to the caller |
+| comment / agreement | `comment` (contributor, `discuss`) | the topic's author may always reply on their own topic with `topic.open` (a reader who asked a question can answer follow-ups) [D-109] |
+| close / reopen | `topic.open` | `mayCloseTopic` (§7.5.2) |
+| dispute log entry | **new action `dispute.write`** (reviewer, scope `review`) | never on own proposal (`SELF_REVIEW`) [D-110] |
+
+Order of checks for every write (first failure wins): base permission (`FORBIDDEN`) → visibility (`NOT_FOUND`) → resource rule (`FORBIDDEN` / `SELF_REVIEW`) → proposal topics: `version` present (`VALIDATION_FAILED`, field code `REQUIRED`) → proposal `pending` (and, when the body carries it, `bundleHash` = the proposal's, else `PRECONDITION_FAILED`) → `version` = current (`DISCUSSION_CHANGED`) → transition (`PRECONDITION_FAILED`) → entry fields and `mentions` (`VALIDATION_FAILED`). For plain topics `version` is optional; when sent it must match.
+
+#### 7.5.4 DTOs
+
+```ts
+type TopicStatus = 'open' | 'on_hold' | 'resolved' | 'rejected';
+type CloseOutcome = 'resolved' | 'rejected' | 'on_hold';
+interface TopicEntryDto { id: string; seq: number; kind: 'open' | 'comment' | 'agreement' | 'close' | 'reopen';
+  author: UserRefDto; body: string; parentSeq: number | null; agreesWith: number | null;
+  outcome: CloseOutcome | null /* close entries */; mentions: UserRefDto[]; createdAt: string }
+interface TopicListItemDto { id: string; title: string; path: string; pageTitle: string; anchor: string | null;
+  sectionTitle: string | null /* in versionLabel, else the current version */; status: TopicStatus;
+  proposal: { slug: string; title: string; state: ProposalState; holds: boolean /* pending and holdsApproval */ } | null;
+  author: UserRefDto; replies: number /* comment + agreement entries */; version: number; createdAt: string; updatedAt: string }
+interface TopicListDto { items: TopicListItemDto[]; nextCursor: string | null; counts: { open: number; mine: number; closed: number; all: number } }
+interface TopicDetailDto extends TopicListItemDto { versionLabel: string | null; bundleHash: string | null;
+  participants: UserRefDto[]; closed: { by: UserRefDto; outcome: CloseOutcome; reason: string; at: string } | null;
+  entries: TopicEntryDto[]; can: { comment: boolean; close: boolean; reopen: boolean } }
+interface DisputeEventDto { seq: number; action: 'open' | 'comment' | 'resolve' | 'reopen'; actor: UserRefDto; reason: string;
+  resolutionKind: 'supported' | 'scoped' | 'attributed' | 'not_a_conflict' | null; relatedSlugs: string[]; createdAt: string }
+interface DisputeLogDto { slug: string; bundleHash: string; disputeVersion: number; disputeOpen: boolean; events: DisputeEventDto[] }
+interface ProposalDiscussionDto { slug: string; bundleHash: string; state: ProposalState; discussionVersion: number;
+  disputeVersion: number; held: boolean; disputeOpen: boolean; disputed: boolean; topic: TopicDetailDto | null; disputes: DisputeLogDto }
+// inputs
+interface TopicCreateInput { path: string; anchor?: string | null; title: string /* trimmed 1..120 */; body: string /* 1..20000 */; mentions?: uuid[] /* ≤ 20, unique */ }
+interface CommentInput { body: string; kind?: 'comment' | 'agreement'; parentSeq?: int ≥ 1; agreesWith?: int ≥ 1; mentions?: uuid[]; version?: int ≥ 1 }
+interface TopicCloseInput { outcome: CloseOutcome; reason: string /* trimmed 1..20000, the rationale */; version?: int ≥ 1 }
+interface TopicReopenInput { reason: string; version?: int ≥ 1 }
+interface ProposalDiscussionInput { bundleHash: hex64; title?: string /* default "Discussion: <proposal title>" cut to 120 */; body: string;
+  anchor?: string | null /* default the proposal's section; must be a section of the base version */; mentions?: uuid[] }
+interface DisputeInput { bundleHash: hex64; disputeVersion: int ≥ 0; action: DisputeAction; reason: string; resolutionKind?: string; relatedSlugs?: string[] }
+```
+
+- `ProposalDetailDto.discussion` (§7.4.8) gains `held: boolean`, `disputeOpen: boolean`, `topicId: string | null` (additive) [D-111]; `disputed` keeps its meaning "approval is blocked" (= `held || disputeOpen`).
+- `mentions`: every id must be an enabled user (`VALIDATION_FAILED`, field `mentions`, code `UNKNOWN_USER`). Notifications for mentions arrive with Phase 9; until then a mention makes the person a participant (visibility + SSE audience).
+
+#### 7.5.5 Endpoints
+
+All under `/api/v1`. Cursor envelope as §2; topics ordered `updatedAt desc, id desc` (cursor `<epoch ms>.<uuid>`), entries `seq asc` (cursor = last seq).
+
+| Method | Path | Perm | Request | Response | Errors |
+| --- | --- | --- | --- | --- | --- |
+| GET | `/topics` | `wiki.read` | `?filter=open\|mine\|closed\|all` (default `open`) `&path&anchor&proposal=<slug>&limit&cursor` | `TopicListDto` | `VALIDATION_FAILED` |
+| POST | `/topics` | `topic.open` | `TopicCreateInput` | `201 TopicDetailDto` | `INVALID_PATH`, `NOT_FOUND` (no indexed page), `VALIDATION_FAILED` (`anchor` not in the current version: field code `UNKNOWN_SECTION`; mentions) |
+| GET | `/topics/{id}` | `wiki.read` | | `TopicDetailDto` | `NOT_FOUND`, `VALIDATION_FAILED` (id not a uuid) |
+| GET | `/topics/{id}/comments` | `wiki.read` | `?limit&cursor` | `{ items: TopicEntryDto[], nextCursor }` | `NOT_FOUND` |
+| POST | `/topics/{id}/comments` | `comment` (§7.5.3) | `CommentInput` | `201 TopicDetailDto` | `FORBIDDEN`, `NOT_FOUND`, `VALIDATION_FAILED`, `PRECONDITION_FAILED`, `DISCUSSION_CHANGED` |
+| POST | `/topics/{id}/close` | §7.5.3 | `TopicCloseInput` | `200 TopicDetailDto` | `FORBIDDEN`, `SELF_REVIEW`, `NOT_FOUND`, `VALIDATION_FAILED`, `PRECONDITION_FAILED`, `DISCUSSION_CHANGED` |
+| POST | `/topics/{id}/reopen` | §7.5.3 | `TopicReopenInput` | `200 TopicDetailDto` | as close |
+| GET | `/proposals/{slug}/discussion` | `wiki.read` + visible | | `ProposalDiscussionDto` | `NOT_FOUND` |
+| POST | `/proposals/{slug}/discussion` | `topic.open` + visible | `ProposalDiscussionInput` | `201 ProposalDiscussionDto` | `NOT_FOUND`, `PRECONDITION_FAILED` (not pending, bundle hash ≠), `ALREADY_EXISTS` (one per proposal), `VALIDATION_FAILED` (`UNKNOWN_SECTION`, mentions) |
+| GET | `/proposals/{slug}/disputes` | `wiki.read` + visible | | `DisputeLogDto` | `NOT_FOUND` |
+| POST | `/proposals/{slug}/disputes` | `dispute.write` | `DisputeInput` | `201 DisputeLogDto` | `FORBIDDEN`, `NOT_FOUND`, `PRECONDITION_FAILED`, `SELF_REVIEW`, `DISCUSSION_CHANGED`, `VALIDATION_FAILED` |
+
+- Filters: `open` = status `open | on_hold`; `closed` = `resolved | rejected`; `mine` = open statuses and the caller is the author or a participant; `counts` covers all four with the `path/anchor/proposal` filters and visibility applied. An unknown `proposal` slug yields an empty list.
+- Topics on a page need an indexed page; a proposal discussion of a *create* has `versionLabel = null` and `anchor = null` unless the proposal's own section.
+- Entries on a proposal topic are only accepted while the proposal is `pending` (md-wiki `_current_discussion`); after a decision the thread is read-only history.
+
+#### 7.5.6 Holds, decision lock and return to the assignee [D-91, D-106, D-107]
+
+- `DiscussionState` (port of §7.4.3) is now `PrismaDiscussionState`: inside the decision transaction (after `SELECT … FOR UPDATE` on the proposal) it reads the proposal topic and the dispute log and returns `discussionSummary` plus `topicId`. Step 7 (`DISPUTED`, approval only) uses `disputed`; step 9 (`DISCUSSION_CHANGED`) compares both versions. A rejection is never blocked by a hold.
+- **Lock order** for every write to a proposal topic or the dispute log: `Proposal` row `FOR UPDATE` → `Topic` row `FOR UPDATE` → re-read → checks → append. A decision and an entry therefore serialize: an entry that commits before the decision's transaction makes the binding stale (`DISCUSSION_CHANGED`, or `DISPUTED` when it opened a hold); an entry posted while the decision holds the lock waits and is then refused because the proposal is no longer pending (`PRECONDITION_FAILED`). Plain topics lock only their `Topic` row.
+- **Return to the assignee** (plan.md Phase 4) [D-107]: when a write releases the last blocker of a pending proposal — the topic closed `resolved`, or a dispute `resolve` — with `disputed` now false: if an assignment is open it stays; otherwise the last assignee (latest `Assignment` by `createdAt`) gets a new one (`reason = 'discussion_resolved'`, audited `proposal.assigned`), falling back to the §7.4.2 rule. Audit `proposal.returned { assigneeId, discussionVersion, disputeVersion }`. The assignee rereads (the preview binding changed) and decides; nothing decides by itself. Phase 8 hooks the reviewer agent's re-run here.
+
+#### 7.5.7 Audit and events [D-115]
+
+- Audit (subject `topic` unless noted): `topic.opened { path, anchor, versionLabel | proposalSlug }` · `topic.closed { outcome, reason, version }` · `topic.reopened { reason, version }` · subject `proposal`: `proposal.discussion_opened { topicId, discussionVersion }` · `proposal.discussion_closed { topicId, outcome, discussionVersion }` · `proposal.discussion_reopened { topicId, discussionVersion }` · `dispute.open|comment|resolve|reopen { disputeVersion, resolutionKind, relatedSlugs }` · `proposal.returned`. Comments are not audited (the entry itself is the append-only record).
+- SSE (§7.4.11) gains **`discussion.changed`** with `{ topicId?, path, version, slug? }` (`topicId` absent for dispute-log entries, `version` = the topic or dispute version). `EventDto` gains optional `topicId` and `version`. Invalidates `['topics']`, `['topic', topicId]`, `['proposal-discussion', slug]`. Audience: everyone with `wiki.read` for a plain topic; for a proposal topic or dispute the proposal audience (roles ≥ reviewer, the submitter) plus the topic's participants. A proposal topic or dispute write also emits `proposal.changed` for the slug (the preview binding changed: "new discussion entry, decision locked until reread", ux.md §10).
+
+#### 7.5.8 MCP server [D-112, D-113, D-114]
+
+- Endpoint **`/mcp`** on the public listener (outside the `/api/v1` prefix), MCP **streamable HTTP** via the official `@modelcontextprotocol/sdk`: stateless (no `Mcp-Session-Id`), JSON responses (`enableJsonResponse`), one `McpServer` per request bound to the caller. `GET`/`DELETE` → `405` from the transport (no server-initiated stream).
+- **Auth**: `Authorization: Bearer mwt_…` API token only, checked by the same `AuthService.bearer` as REST (revoked/expired/unknown → `401 UNAUTHENTICATED` problem with `WWW-Authenticate: Bearer`; disabled user → `403 ACCOUNT_DISABLED`). Cookies are ignored (no CSRF surface).
+- **Server info** `{ name: 'md-wiki', version: '1.0.0' }`, capability `tools` (`listChanged: false`), `instructions` = content is data, discussion tools never approve or publish, send bindings back as read, reread after `DISCUSSION_CHANGED`.
+- **Tools** (each calls the same service method as the REST endpoint and validates its arguments with the same class-validator DTO; a tool is listed only when `can(actor, action, {})` holds for its action [D-113]):
+
+| Tool | Action | REST equivalent |
+| --- | --- | --- |
+| `wiki_tree { topic? }` | `wiki.read` | `GET /wiki/tree` |
+| `wiki_read { path, versionLabel? }` | `wiki.read` (+ `history.read` for a version) | `GET /wiki/pages/{path}[/versions/{label}]` |
+| `wiki_context { path }` | `wiki.read` | `GET /context` |
+| `wiki_search { q, labels?, topics?, updated?, sort?, limit?, cursor? }` | `search` | `GET /search` |
+| `contribution_submit { …ContributionInput }` → `{ replay, proposal }` | `proposal.submit` | `POST /contributions` |
+| `contribution_get { slug }` | `wiki.read` | `GET /contributions/{slug}` |
+| `topic_list`, `topic_get { id }` | `wiki.read` | `GET /topics`, `GET /topics/{id}` |
+| `topic_open`, `topic_comment { id, … }`, `topic_close { id, … }`, `topic_reopen { id, … }` | `topic.open` (+ §7.5.3) | `POST /topics`, `/topics/{id}/comments`, `/close`, `/reopen` |
+| `proposal_discussion_get { slug }`, `proposal_discussion_open { slug, … }` | `wiki.read` / `topic.open` | `GET`/`POST /proposals/{slug}/discussion` |
+| `dispute_record { slug, … }` | `dispute.write` | `POST /proposals/{slug}/disputes` |
+| `review_list`, `review_get { slug }`, `review_diff { slug, against? }` | `proposal.read` | `GET /proposals`, `/proposals/{slug}`, `/diff` |
+| `review_decide { slug, approve, reason, bundleHash, artifactHash, previewAt, discussionVersion, disputeVersion }` → `{ replay, proposal }` | `proposal.read` to list; the decision runs §7.4.3 in full | `POST /proposals/{slug}/decisions` |
+
+- **Results**: success → `structuredContent` = the REST response body (wrapped as noted) and the same JSON as one text block. **Errors** [D-114]: an `AppError` becomes a tool result with `isError: true` and `structuredContent.error = { code, status, detail, fields }` — the same `code`/`status`/`fields` REST returns; anything else is logged and returned as `INTERNAL` (never a stack). Unknown argument keys are refused by the DTO (`VALIDATION_FAILED`); arguments of the wrong JSON type are refused by the SDK's schema check before the tool runs (JSON-RPC/tool error without a code).
+- The server is a protocol adapter only: no tool writes storage or the database except through the services above (md-wiki `mcp.py` "delegates every state transition").
+
+#### 7.5.9 Agent skill (P6-03)
+
+`skills/wiki-knowledge-workflow/` ports md-wiki's skill to this API: `SKILL.md` (roles, scopes ↔ tools, connection, invariant rules), `references/contribution.md`, `reviewer.md`, `discussions.md` (topics, holds, dispute log; replaces `semantic-conflicts.md`), `merge-conflicts.md`, `quality.md` (unchanged), `agents/openai.yaml`. A test (`apps/api/test/skill.test.ts`) fails when the skill names an MCP tool or REST endpoint that does not exist, or omits a tool [D-116].
 
 ## 8. State machines
 

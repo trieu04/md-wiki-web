@@ -6,6 +6,7 @@ export const EVENT_TYPES = [
   'proposal.changed',
   'publication.changed',
   'page.changed',
+  'discussion.changed',
   'ping',
 ] as const;
 export type EventType = (typeof EVENT_TYPES)[number];
@@ -17,11 +18,15 @@ export interface WireEvent {
   path?: string;
   state?: string;
   phase?: PublicationPhase;
+  topicId?: string;
+  version?: number;
   at: string;
 }
 interface Published extends WireEvent {
   /** Proposal events go to reviewers and the submitter only. */
   submitterId?: string;
+  /** Further users who see a restricted event (participants of a proposal topic, §7.5.7). */
+  audience?: readonly string[];
 }
 export interface EventViewer {
   id: string;
@@ -58,9 +63,33 @@ export class EventsService implements OnModuleDestroy {
     this.emit({ type: 'page.changed', path });
   }
 
+  /** A topic or dispute log changed (§7.5.7); restricted like the proposal when it holds one. */
+  discussion(event: {
+    topicId?: string;
+    path: string;
+    version: number;
+    proposal?: { slug: string; submitterId: string; participants: readonly string[] };
+  }) {
+    this.emit({
+      type: 'discussion.changed',
+      path: event.path,
+      version: event.version,
+      ...(event.topicId && { topicId: event.topicId }),
+      ...(event.proposal && {
+        slug: event.proposal.slug,
+        submitterId: event.proposal.submitterId,
+        audience: event.proposal.participants,
+      }),
+    });
+  }
+
   visibleTo(event: Published, viewer: EventViewer): boolean {
     if (event.submitterId === undefined) return true;
-    return event.submitterId === viewer.id || viewer.roles.some((r) => REVIEW_ROLES.has(r));
+    return (
+      event.submitterId === viewer.id ||
+      (event.audience?.includes(viewer.id) ?? false) ||
+      viewer.roles.some((r) => REVIEW_ROLES.has(r))
+    );
   }
 
   /** The viewer's stream, with a keep-alive ping. */
@@ -70,7 +99,7 @@ export class EventsService implements OnModuleDestroy {
       map((): Published => ({ type: 'ping', at: new Date().toISOString() })),
     );
     return merge(events, pings).pipe(
-      map(({ submitterId: _hidden, ...data }) => ({ type: data.type, data })),
+      map(({ submitterId: _hidden, audience: _audience, ...data }) => ({ type: data.type, data })),
     );
   }
 

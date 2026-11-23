@@ -4,14 +4,8 @@ import { PrismaModule } from '../prisma/prisma.module.js';
 import { WikiModule } from '../wiki/wiki.module.js';
 import { ConflictsService } from './conflicts.service.js';
 import { OpsService } from './ops.service.js';
-import {
-  DISCUSSION_STATE,
-  ESCALATION_TRIGGERS,
-  NoDiscussions,
-  NoHooks,
-  NoTriggers,
-  PUBLISH_HOOKS,
-} from './ports.js';
+import { DiscussionsModule } from '../discussions/discussions.module.js';
+import { ESCALATION_TRIGGERS, NoHooks, NoTriggers, PUBLISH_HOOKS } from './ports.js';
 import { PublishService } from './publish.service.js';
 import { AuditController, OpsController, ProposalsController } from './review.controller.js';
 import { ReviewService } from './review.service.js';
@@ -19,10 +13,9 @@ import { ReviewViews } from './views.js';
 
 /** Review and publish (system-logic §7.4). */
 @Module({
-  imports: [PrismaModule, WikiModule, ContributionsModule],
+  imports: [PrismaModule, WikiModule, ContributionsModule, DiscussionsModule],
   controllers: [ProposalsController, OpsController, AuditController],
   providers: [
-    { provide: DISCUSSION_STATE, useClass: NoDiscussions },
     { provide: ESCALATION_TRIGGERS, useClass: NoTriggers },
     { provide: PUBLISH_HOOKS, useClass: NoHooks },
     PublishService,
@@ -31,6 +24,6 @@ import { ReviewViews } from './views.js';
     ConflictsService,
     OpsService,
   ],
-  exports: [PublishService],
+  exports: [PublishService, ReviewService],
 })
 export class ReviewModule {}

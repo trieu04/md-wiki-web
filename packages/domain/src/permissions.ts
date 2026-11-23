@@ -19,6 +19,7 @@ const policies = {
   'proposal.submit': ['contributor', 'contribute'],
   'proposal.read': ['reviewer', 'review'],
   'proposal.decide': ['reviewer', 'review'],
+  'dispute.write': ['reviewer', 'review'],
   'proposal.publish': ['publisher', 'publish'],
   'credibility.decide': ['reviewer', null],
   'admin.*': ['owner', null],

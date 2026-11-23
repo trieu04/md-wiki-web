@@ -1,0 +1,5 @@
+interface:
+  display_name: "Wiki Contributor & Reviewer"
+  short_description: "Contribute, discuss and review md-wiki pages over MCP or REST"
+  brand_color: "#2453D6"
+  default_prompt: "Use $wiki-knowledge-workflow to contribute to, discuss, or review an md-wiki page through its MCP server."

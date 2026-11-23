@@ -2,7 +2,7 @@ import { createHash, timingSafeEqual } from 'node:crypto';
 import { authenticate } from '../auth/auth-http.js';
 import { AuthService } from '../auth/auth.service.js';
 import { validationPipe } from '../common/validation.js';
-import type { INestApplication } from '@nestjs/common';
+import { RequestMethod, type INestApplication } from '@nestjs/common';
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import type { RequestHandler } from 'express';
 import { AppError } from '../common/app-error.js';
@@ -33,7 +33,8 @@ export function configureHttp(
     // A .contribution.md may be 4 MiB + 64 KiB inside a JSON string (system-logic §7.2.6).
     (app as NestExpressApplication).useBodyParser('json', { limit: '5mb' });
     app.use('/api/v1', authenticate(app.get(AuthService)));
-    app.setGlobalPrefix('api/v1');
+    // The MCP endpoint (system-logic §7.5.8) authenticates its bearer token itself.
+    app.setGlobalPrefix('api/v1', { exclude: [{ path: 'mcp', method: RequestMethod.ALL }] });
   }
   app.useGlobalFilters(new ProblemFilter());
   app.useGlobalPipes(validationPipe());

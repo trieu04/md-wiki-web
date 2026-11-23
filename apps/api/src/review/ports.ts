@@ -6,17 +6,18 @@ import type { Prisma, Proposal } from '@prisma/client';
  * row lock, so a discussion entry and a decision serialize.
  */
 export interface DiscussionState {
-  state(
-    tx: Prisma.TransactionClient,
-    proposalId: string,
-  ): Promise<{ discussionVersion: number; disputeVersion: number; disputed: boolean }>;
+  state(tx: Prisma.TransactionClient, proposalId: string): Promise<DiscussionFacts>;
+}
+export interface DiscussionFacts {
+  discussionVersion: number;
+  disputeVersion: number;
+  /** held or disputeOpen: approval is refused with DISPUTED. */
+  disputed: boolean;
+  held: boolean;
+  disputeOpen: boolean;
+  topicId: string | null;
 }
 export const DISCUSSION_STATE = Symbol('DISCUSSION_STATE');
-export class NoDiscussions implements DiscussionState {
-  state() {
-    return Promise.resolve({ discussionVersion: 0, disputeVersion: 0, disputed: false });
-  }
-}
 
 /** Phase 8 port: mandatory escalation triggers that refuse an agent approval (none yet). */
 export interface EscalationTriggers {

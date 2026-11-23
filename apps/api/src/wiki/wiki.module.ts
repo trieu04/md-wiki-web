@@ -40,6 +40,6 @@ export const WIKI_STORAGE = Symbol('WIKI_STORAGE');
         new WikiIndexer(storage, db, lookup),
     },
   ],
-  exports: [WIKI_STORAGE, WikiIndexer, SectionLabels],
+  exports: [WIKI_STORAGE, WikiIndexer, SectionLabels, WikiReadService, SearchService],
 })
 export class WikiModule {}

@@ -73,6 +73,10 @@ model User {
   resolutions  Resolution[]
   conflicts    ConflictResolution[]
   withdrawals  Withdrawal[]
+  topics       Topic[]
+  closedTopics Topic[]              @relation("closedBy")
+  entries      DiscussionEvent[]
+  disputes     DisputeEvent[]
 }
 
 model Session {
@@ -253,6 +257,8 @@ model Proposal {
   replaces       ConflictResolution[] @relation("replacement")
   withdrawal     Withdrawal?
   outbox         PublishOutbox[]
+  topic          Topic?
+  disputes       DisputeEvent[]
 
   @@index([submitterId, createdAt])
   @@index([targetPath, state])
@@ -433,4 +439,91 @@ model PublishedSection {
 
   @@id([publicationId, anchor])
   @@index([path, anchor, sectionHash])
+}
+
+// ---- Phase 6: discussions (system-logic §7.5.1) ----------------------------------------------
+
+enum TopicStatus {
+  open
+  on_hold
+  resolved
+  rejected
+}
+
+enum EntryKind {
+  open
+  comment
+  agreement
+  close
+  reopen
+}
+
+enum DisputeAction {
+  open
+  comment
+  resolve
+  reopen
+}
+
+model Topic {
+  id             String            @id @default(uuid(7)) @db.Uuid
+  path           String
+  anchor         String?
+  versionLabel   String?
+  title          String
+  authorId       String            @db.Uuid
+  author         User              @relation(fields: [authorId], references: [id])
+  status         TopicStatus       @default(open)
+  proposalId     String?           @unique @db.Uuid
+  proposal       Proposal?         @relation(fields: [proposalId], references: [id])
+  bundleHash     String?
+  version        Int               @default(1)
+  participantIds String[]          @db.Uuid
+  closedById     String?           @db.Uuid
+  closedBy       User?             @relation("closedBy", fields: [closedById], references: [id])
+  closeReason    String?
+  closedAt       DateTime?         @db.Timestamptz(3)
+  createdAt      DateTime          @default(now()) @db.Timestamptz(3)
+  updatedAt      DateTime          @default(now()) @db.Timestamptz(3)
+  entries        DiscussionEvent[]
+
+  @@index([path, anchor])
+  @@index([status, updatedAt])
+  @@index([updatedAt, id])
+}
+
+model DiscussionEvent {
+  id         String       @id @default(uuid(7)) @db.Uuid
+  topicId    String       @db.Uuid
+  topic      Topic        @relation(fields: [topicId], references: [id])
+  seq        Int
+  kind       EntryKind
+  authorId   String       @db.Uuid
+  author     User         @relation(fields: [authorId], references: [id])
+  body       String
+  parentSeq  Int?
+  agreesWith Int?
+  outcome    TopicStatus?
+  mentions   String[]     @db.Uuid
+  bundleHash String?
+  createdAt  DateTime     @default(now()) @db.Timestamptz(3)
+
+  @@unique([topicId, seq])
+}
+
+model DisputeEvent {
+  id             String        @id @default(uuid(7)) @db.Uuid
+  proposalId     String        @db.Uuid
+  proposal       Proposal      @relation(fields: [proposalId], references: [id])
+  seq            Int
+  actorId        String        @db.Uuid
+  actor          User          @relation(fields: [actorId], references: [id])
+  action         DisputeAction
+  reason         String
+  resolutionKind String?
+  relatedSlugs   String[]
+  bundleHash     String
+  createdAt      DateTime      @default(now()) @db.Timestamptz(3)
+
+  @@unique([proposalId, seq])
 }

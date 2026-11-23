@@ -283,7 +283,12 @@ export class ConflictDto {
 class DiscussionDto {
   @ApiProperty({ type: 'integer' }) discussionVersion!: number;
   @ApiProperty({ type: 'integer' }) disputeVersion!: number;
-  @ApiProperty({ type: Boolean }) disputed!: boolean;
+  @ApiProperty({ type: Boolean, description: 'held or disputeOpen: approval is blocked' })
+  disputed!: boolean;
+  @ApiProperty({ type: Boolean, description: 'the proposal topic exists and is not resolved' })
+  held!: boolean;
+  @ApiProperty({ type: Boolean, description: 'the dispute log is open' }) disputeOpen!: boolean;
+  @ApiProperty({ type: String, format: 'uuid', nullable: true }) topicId!: string | null;
 }
 class CanDto {
   @ApiProperty({ type: Boolean }) decide!: boolean;
@@ -398,5 +403,7 @@ export class EventDto {
   @ApiPropertyOptional({ type: String }) path?: string;
   @ApiPropertyOptional({ type: String }) state?: string;
   @ApiPropertyOptional({ enum: PHASES, enumName: 'PublicationPhase' }) phase?: Phase;
+  @ApiPropertyOptional({ type: String, format: 'uuid' }) topicId?: string;
+  @ApiPropertyOptional({ type: 'integer' }) version?: number;
   @ApiProperty(timestamp) at!: string;
 }

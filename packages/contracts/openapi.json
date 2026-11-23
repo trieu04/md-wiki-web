@@ -3529,6 +3529,934 @@
         ]
       }
     },
+    "/api/v1/topics": {
+      "get": {
+        "operationId": "TopicsController_list",
+        "parameters": [
+          {
+            "name": "proposal",
+            "required": false,
+            "in": "query",
+            "description": "Proposal slug",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "anchor",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "path",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "filter",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": "open",
+              "enum": [
+                "open",
+                "mine",
+                "closed",
+                "all"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 25
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TopicListDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_FAILED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN | ACCOUNT_DISABLED | CSRF_INVALID",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Topics"
+        ]
+      },
+      "post": {
+        "operationId": "TopicsController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TopicCreateInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TopicDetailDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_FAILED | INVALID_PATH",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN | ACCOUNT_DISABLED | CSRF_INVALID",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Topics"
+        ]
+      }
+    },
+    "/api/v1/topics/{id}": {
+      "get": {
+        "operationId": "TopicsController_get",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TopicDetailDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_FAILED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN | ACCOUNT_DISABLED | CSRF_INVALID",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Topics"
+        ]
+      }
+    },
+    "/api/v1/topics/{id}/comments": {
+      "get": {
+        "operationId": "TopicsController_entries",
+        "parameters": [
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 25
+            }
+          },
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Entries oldest first; cursor = seq",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TopicEntryPageDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_FAILED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN | ACCOUNT_DISABLED | CSRF_INVALID",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Topics"
+        ]
+      },
+      "post": {
+        "operationId": "TopicsController_comment",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CommentInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TopicDetailDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_FAILED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN | ACCOUNT_DISABLED | CSRF_INVALID",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "PRECONDITION_FAILED | DISCUSSION_CHANGED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Topics"
+        ]
+      }
+    },
+    "/api/v1/topics/{id}/close": {
+      "post": {
+        "operationId": "TopicsController_close",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TopicCloseInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TopicDetailDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_FAILED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN | ACCOUNT_DISABLED | CSRF_INVALID",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "PRECONDITION_FAILED | DISCUSSION_CHANGED | SELF_REVIEW",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Topics"
+        ]
+      }
+    },
+    "/api/v1/topics/{id}/reopen": {
+      "post": {
+        "operationId": "TopicsController_reopen",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TopicReopenInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TopicDetailDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_FAILED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN | ACCOUNT_DISABLED | CSRF_INVALID",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "PRECONDITION_FAILED | DISCUSSION_CHANGED | SELF_REVIEW",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Topics"
+        ]
+      }
+    },
+    "/api/v1/proposals/{slug}/discussion": {
+      "get": {
+        "operationId": "ProposalDiscussionController_get",
+        "parameters": [
+          {
+            "name": "slug",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProposalDiscussionDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_FAILED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN | ACCOUNT_DISABLED | CSRF_INVALID",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "ProposalDiscussion"
+        ]
+      },
+      "post": {
+        "operationId": "ProposalDiscussionController_open",
+        "parameters": [
+          {
+            "name": "slug",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProposalDiscussionInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProposalDiscussionDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_FAILED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN | ACCOUNT_DISABLED | CSRF_INVALID",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "PRECONDITION_FAILED | ALREADY_EXISTS",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "ProposalDiscussion"
+        ]
+      }
+    },
+    "/api/v1/proposals/{slug}/disputes": {
+      "get": {
+        "operationId": "ProposalDiscussionController_disputes",
+        "parameters": [
+          {
+            "name": "slug",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DisputeLogDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_FAILED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN | ACCOUNT_DISABLED | CSRF_INVALID",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "ProposalDiscussion"
+        ]
+      },
+      "post": {
+        "operationId": "ProposalDiscussionController_record",
+        "parameters": [
+          {
+            "name": "slug",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DisputeInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DisputeLogDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_FAILED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN | ACCOUNT_DISABLED | CSRF_INVALID",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "PRECONDITION_FAILED | DISCUSSION_CHANGED | SELF_REVIEW",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "ProposalDiscussion"
+        ]
+      }
+    },
     "/api/v1/dev/ping": {
       "post": {
         "operationId": "DevPingController_create",
@@ -5169,6 +6097,7 @@
           "proposal.changed",
           "publication.changed",
           "page.changed",
+          "discussion.changed",
           "ping"
         ]
       },
@@ -5209,6 +6138,13 @@
                 "$ref": "#/components/schemas/PublicationPhase"
               }
             ]
+          },
+          "topicId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "version": {
+            "type": "integer"
           },
           "at": {
             "type": "string",
@@ -6792,13 +7728,30 @@
             "type": "integer"
           },
           "disputed": {
-            "type": "boolean"
+            "type": "boolean",
+            "description": "held or disputeOpen: approval is blocked"
+          },
+          "held": {
+            "type": "boolean",
+            "description": "the proposal topic exists and is not resolved"
+          },
+          "disputeOpen": {
+            "type": "boolean",
+            "description": "the dispute log is open"
+          },
+          "topicId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
           }
         },
         "required": [
           "discussionVersion",
           "disputeVersion",
-          "disputed"
+          "disputed",
+          "held",
+          "disputeOpen",
+          "topicId"
         ]
       },
       "CanDto": {
@@ -7519,6 +8472,772 @@
         "required": [
           "items",
           "nextCursor"
+        ]
+      },
+      "TopicProposalDto": {
+        "type": "object",
+        "properties": {
+          "slug": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "approved",
+              "published",
+              "rejected",
+              "stale"
+            ]
+          },
+          "holds": {
+            "type": "boolean",
+            "description": "This topic currently blocks approval"
+          }
+        },
+        "required": [
+          "slug",
+          "title",
+          "state",
+          "holds"
+        ]
+      },
+      "TopicListItemDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "title": {
+            "type": "string"
+          },
+          "path": {
+            "type": "string"
+          },
+          "pageTitle": {
+            "type": "string"
+          },
+          "anchor": {
+            "type": "string",
+            "nullable": true
+          },
+          "sectionTitle": {
+            "type": "string",
+            "nullable": true
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "open",
+              "on_hold",
+              "resolved",
+              "rejected"
+            ]
+          },
+          "proposal": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/TopicProposalDto"
+              }
+            ]
+          },
+          "author": {
+            "$ref": "#/components/schemas/UserRefDto"
+          },
+          "replies": {
+            "type": "integer",
+            "description": "Entries after the opening one"
+          },
+          "version": {
+            "type": "integer"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "path",
+          "pageTitle",
+          "anchor",
+          "sectionTitle",
+          "status",
+          "proposal",
+          "author",
+          "replies",
+          "version",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "TopicCountsDto": {
+        "type": "object",
+        "properties": {
+          "open": {
+            "type": "integer"
+          },
+          "mine": {
+            "type": "integer"
+          },
+          "closed": {
+            "type": "integer"
+          },
+          "all": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "open",
+          "mine",
+          "closed",
+          "all"
+        ]
+      },
+      "TopicListDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TopicListItemDto"
+            }
+          },
+          "nextCursor": {
+            "type": "string",
+            "nullable": true
+          },
+          "counts": {
+            "$ref": "#/components/schemas/TopicCountsDto"
+          }
+        },
+        "required": [
+          "items",
+          "nextCursor",
+          "counts"
+        ]
+      },
+      "TopicCreateInput": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string",
+            "description": "Wiki path of an indexed page"
+          },
+          "anchor": {
+            "type": "string",
+            "nullable": true,
+            "description": "Section anchor in the current version"
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          },
+          "body": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 20000
+          },
+          "mentions": {
+            "maxItems": 20,
+            "description": "User ids to mention; they become participants",
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        },
+        "required": [
+          "path",
+          "title",
+          "body"
+        ]
+      },
+      "TopicClosedDto": {
+        "type": "object",
+        "properties": {
+          "by": {
+            "$ref": "#/components/schemas/UserRefDto"
+          },
+          "outcome": {
+            "type": "string",
+            "enum": [
+              "resolved",
+              "rejected",
+              "on_hold"
+            ]
+          },
+          "reason": {
+            "type": "string"
+          },
+          "at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "by",
+          "outcome",
+          "reason",
+          "at"
+        ]
+      },
+      "TopicEntryDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "seq": {
+            "type": "integer"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "open",
+              "comment",
+              "agreement",
+              "close",
+              "reopen"
+            ]
+          },
+          "author": {
+            "$ref": "#/components/schemas/UserRefDto"
+          },
+          "body": {
+            "type": "string"
+          },
+          "parentSeq": {
+            "type": "integer",
+            "nullable": true
+          },
+          "agreesWith": {
+            "type": "integer",
+            "nullable": true
+          },
+          "outcome": {
+            "type": "string",
+            "enum": [
+              "resolved",
+              "rejected",
+              "on_hold"
+            ],
+            "nullable": true
+          },
+          "mentions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/UserRefDto"
+            }
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "seq",
+          "kind",
+          "author",
+          "body",
+          "parentSeq",
+          "agreesWith",
+          "outcome",
+          "mentions",
+          "createdAt"
+        ]
+      },
+      "TopicCanDto": {
+        "type": "object",
+        "properties": {
+          "comment": {
+            "type": "boolean"
+          },
+          "close": {
+            "type": "boolean"
+          },
+          "reopen": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "comment",
+          "close",
+          "reopen"
+        ]
+      },
+      "TopicDetailDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "title": {
+            "type": "string"
+          },
+          "path": {
+            "type": "string"
+          },
+          "pageTitle": {
+            "type": "string"
+          },
+          "anchor": {
+            "type": "string",
+            "nullable": true
+          },
+          "sectionTitle": {
+            "type": "string",
+            "nullable": true
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "open",
+              "on_hold",
+              "resolved",
+              "rejected"
+            ]
+          },
+          "proposal": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/TopicProposalDto"
+              }
+            ]
+          },
+          "author": {
+            "$ref": "#/components/schemas/UserRefDto"
+          },
+          "replies": {
+            "type": "integer",
+            "description": "Entries after the opening one"
+          },
+          "version": {
+            "type": "integer"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "versionLabel": {
+            "type": "string",
+            "nullable": true,
+            "description": "Page version the topic was opened on"
+          },
+          "bundleHash": {
+            "type": "string",
+            "nullable": true
+          },
+          "participants": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/UserRefDto"
+            }
+          },
+          "closed": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/TopicClosedDto"
+              }
+            ]
+          },
+          "entries": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TopicEntryDto"
+            }
+          },
+          "can": {
+            "$ref": "#/components/schemas/TopicCanDto"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "path",
+          "pageTitle",
+          "anchor",
+          "sectionTitle",
+          "status",
+          "proposal",
+          "author",
+          "replies",
+          "version",
+          "createdAt",
+          "updatedAt",
+          "versionLabel",
+          "bundleHash",
+          "participants",
+          "closed",
+          "entries",
+          "can"
+        ]
+      },
+      "TopicEntryPageDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TopicEntryDto"
+            }
+          },
+          "nextCursor": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "items",
+          "nextCursor"
+        ]
+      },
+      "CommentInput": {
+        "type": "object",
+        "properties": {
+          "body": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 20000
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "comment",
+              "agreement"
+            ],
+            "default": "comment"
+          },
+          "parentSeq": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "The entry this replies to"
+          },
+          "agreesWith": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "Required for kind agreement: the entry agreed with"
+          },
+          "mentions": {
+            "maxItems": 20,
+            "description": "User ids to mention; they become participants",
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "The topic version the caller read; required on a proposal topic"
+          }
+        },
+        "required": [
+          "body"
+        ]
+      },
+      "TopicCloseInput": {
+        "type": "object",
+        "properties": {
+          "outcome": {
+            "type": "string",
+            "enum": [
+              "resolved",
+              "rejected",
+              "on_hold"
+            ]
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 20000,
+            "description": "Rationale"
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "Required on a proposal topic"
+          }
+        },
+        "required": [
+          "outcome",
+          "reason"
+        ]
+      },
+      "TopicReopenInput": {
+        "type": "object",
+        "properties": {
+          "reason": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 20000
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "Required on a proposal topic"
+          }
+        },
+        "required": [
+          "reason"
+        ]
+      },
+      "DisputeEventDto": {
+        "type": "object",
+        "properties": {
+          "seq": {
+            "type": "integer"
+          },
+          "action": {
+            "type": "string",
+            "enum": [
+              "open",
+              "comment",
+              "resolve",
+              "reopen"
+            ]
+          },
+          "actor": {
+            "$ref": "#/components/schemas/UserRefDto"
+          },
+          "reason": {
+            "type": "string"
+          },
+          "resolutionKind": {
+            "type": "string",
+            "enum": [
+              "supported",
+              "scoped",
+              "attributed",
+              "not_a_conflict"
+            ],
+            "nullable": true
+          },
+          "relatedSlugs": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "seq",
+          "action",
+          "actor",
+          "reason",
+          "resolutionKind",
+          "relatedSlugs",
+          "createdAt"
+        ]
+      },
+      "DisputeLogDto": {
+        "type": "object",
+        "properties": {
+          "slug": {
+            "type": "string"
+          },
+          "bundleHash": {
+            "type": "string"
+          },
+          "disputeVersion": {
+            "type": "integer"
+          },
+          "disputeOpen": {
+            "type": "boolean"
+          },
+          "events": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DisputeEventDto"
+            }
+          }
+        },
+        "required": [
+          "slug",
+          "bundleHash",
+          "disputeVersion",
+          "disputeOpen",
+          "events"
+        ]
+      },
+      "ProposalDiscussionDto": {
+        "type": "object",
+        "properties": {
+          "slug": {
+            "type": "string"
+          },
+          "bundleHash": {
+            "type": "string"
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "approved",
+              "published",
+              "rejected",
+              "stale"
+            ]
+          },
+          "discussionVersion": {
+            "type": "integer"
+          },
+          "disputeVersion": {
+            "type": "integer"
+          },
+          "held": {
+            "type": "boolean"
+          },
+          "disputeOpen": {
+            "type": "boolean"
+          },
+          "disputed": {
+            "type": "boolean",
+            "description": "held or disputeOpen: approval is blocked"
+          },
+          "topic": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/TopicDetailDto"
+              }
+            ]
+          },
+          "disputes": {
+            "$ref": "#/components/schemas/DisputeLogDto"
+          }
+        },
+        "required": [
+          "slug",
+          "bundleHash",
+          "state",
+          "discussionVersion",
+          "disputeVersion",
+          "held",
+          "disputeOpen",
+          "disputed",
+          "topic",
+          "disputes"
+        ]
+      },
+      "ProposalDiscussionInput": {
+        "type": "object",
+        "properties": {
+          "bundleHash": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$",
+            "description": "The bundle the caller read"
+          },
+          "title": {
+            "type": "string",
+            "maxLength": 120
+          },
+          "body": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 20000,
+            "description": "What is in question"
+          },
+          "anchor": {
+            "type": "string",
+            "nullable": true,
+            "description": "Defaults to the proposal's section"
+          },
+          "mentions": {
+            "maxItems": 20,
+            "description": "User ids to mention; they become participants",
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        },
+        "required": [
+          "bundleHash",
+          "body"
+        ]
+      },
+      "DisputeInput": {
+        "type": "object",
+        "properties": {
+          "bundleHash": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "disputeVersion": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "The dispute version the caller read"
+          },
+          "action": {
+            "type": "string",
+            "enum": [
+              "open",
+              "comment",
+              "resolve",
+              "reopen"
+            ]
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 20000
+          },
+          "resolutionKind": {
+            "type": "string",
+            "enum": [
+              "supported",
+              "scoped",
+              "attributed",
+              "not_a_conflict"
+            ],
+            "description": "Required for resolve only"
+          },
+          "relatedSlugs": {
+            "maxItems": 50,
+            "description": "Related proposal slugs",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "bundleHash",
+          "disputeVersion",
+          "action",
+          "reason"
         ]
       }
     }

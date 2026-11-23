@@ -237,6 +237,9 @@ beforeAll(async () => {
           discussionVersion: discussion.discussionVersion,
           disputeVersion: discussion.disputeVersion,
           disputed: discussion.disputed,
+          held: discussion.disputed,
+          disputeOpen: false,
+          topicId: null,
         });
       },
     })

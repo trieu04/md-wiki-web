@@ -7,6 +7,8 @@ import { WikiModule } from './wiki/wiki.module.js';
 import { ContributionsModule } from './contributions/contributions.module.js';
 import { EventsModule } from './events/events.module.js';
 import { ReviewModule } from './review/review.module.js';
+import { DiscussionsModule } from './discussions/discussions.module.js';
+import { McpModule } from './mcp/mcp.module.js';
 import { HealthModule } from './health/health.module.js';
 import { DevPingModule, InternalJobsModule } from './jobs/jobs.module.js';
 
@@ -33,6 +35,8 @@ export class InternalModule {}
     EventsModule,
     ContributionsModule,
     ReviewModule,
+    DiscussionsModule,
+    McpModule,
     ...(process.env.NODE_ENV === 'production' ? [] : [DevPingModule]),
   ],
   controllers: [MetaController],
