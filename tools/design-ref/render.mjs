@@ -12,6 +12,7 @@ import { promisify } from 'node:util';
 import { chromium } from 'playwright';
 import canvas from '../../design/v4/canvas.json' with { type: 'json' };
 import variants from './variants.json' with { type: 'json' };
+import { cropPlan } from './crops.mjs';
 import { serve } from './serve.mjs';
 
 const widths = [390, 768, 1024, 1440];
@@ -135,7 +136,7 @@ function trackNetwork(page) {
   };
 }
 
-async function shoot(context, server, stage, { frame, variant, width, height, config }) {
+async function shoot(context, server, stage, { frame, variant, width, height, config, crops }) {
   const page = await context.newPage();
   const network = trackNetwork(page);
   try {
@@ -189,7 +190,33 @@ async function shoot(context, server, stage, { frame, variant, width, height, co
     const png = await page.screenshot({ fullPage: true, animations: 'disabled', caret: 'hide' });
     network.check();
     await writeFile(join(stage, frame, `${variant}@${width}.png`), png);
-    return { frame, variant, width, sha256: hash(png) };
+    const elements = [];
+    for (const { id, selector } of crops) {
+      try {
+        // A table cell can require scrolling its own container at narrow widths.
+        // Do this after capturing the untouched full frame.
+        const target = page.locator(selector);
+        await target.scrollIntoViewIfNeeded();
+        const geometry = await target.evaluate((element) => {
+          const rect = element.getBoundingClientRect();
+          // Keep the raster origin and unrounded width for matching the gallery host.
+          const phase = (coordinate) => coordinate - Math.floor(coordinate);
+          return {
+            x: phase(rect.x + window.scrollX),
+            y: phase(rect.y + window.scrollY),
+            width: rect.width,
+            parentWidth: element.parentElement.getBoundingClientRect().width,
+          };
+        });
+        const crop = await target.screenshot({ animations: 'disabled', caret: 'hide' });
+        await writeFile(join(stage, 'crops', `${id}@${width}.png`), crop);
+        elements.push({ id, frame, variant, width, geometry, sha256: hash(crop) });
+      } catch (error) {
+        throw new Error(`${id} (${selector}): ${error.message}`, { cause: error });
+      }
+    }
+    network.check();
+    return { frame: { frame, variant, width, sha256: hash(png) }, elements };
   } catch (error) {
     const label = `${frame}/${variant}@${width}`;
     try {
@@ -204,16 +231,28 @@ async function shoot(context, server, stage, { frame, variant, width, height, co
 }
 
 async function captureReferences(stage, runtime) {
+  const frames = Object.fromEntries(Object.entries(variants).filter(([key]) => key !== 'crops'));
+  const crops = cropPlan(variants);
   const tasks = canvas.order.flatMap((file) => {
     const frame = file.replace(/\.dc\.html$/, '');
-    const entries = Object.entries(variants[frame] ?? {});
+    const entries = Object.entries(frames[frame] ?? {});
     if (!entries.length) throw new Error(`No variants configured for ${frame}`);
-    return entries.flatMap(([variant, config]) =>
-      widths.map((width) => ({ frame, variant, width, height: canvas.boards[file].h, config })),
-    );
+    return entries.flatMap(([variant, config]) => {
+      const elements = crops.filter((crop) => crop.frame === frame && crop.variant === variant);
+      return widths.map((width) => ({
+        frame,
+        variant,
+        width,
+        height: canvas.boards[file].h,
+        config,
+        crops: elements,
+      }));
+    });
   });
-  for (const frame of Object.keys(variants)) await mkdir(join(stage, frame));
-  const server = await serve(variants, runtime);
+  for (const frame of Object.keys(frames)) await mkdir(join(stage, frame));
+  for (const { component } of crops)
+    await mkdir(join(stage, 'crops', component), { recursive: true });
+  const server = await serve(frames, runtime);
   try {
     const browser = await chromium.launch({
       // Render a complete, software-rasterized frame with one raster thread, rather than
@@ -245,8 +284,22 @@ async function captureReferences(stage, runtime) {
       });
       await Promise.all(workers);
       if (failure) throw failure;
-      await writeFile(join(stage, 'manifest.json'), `${JSON.stringify(manifest, null, 2)}\n`);
-      return manifest.length;
+      await writeFile(
+        join(stage, 'manifest.json'),
+        `${JSON.stringify(
+          manifest.map((entry) => entry.frame),
+          null,
+          2,
+        )}\n`,
+      );
+      const elements = manifest.flatMap((entry) => entry.elements);
+      if (elements.length) {
+        await writeFile(
+          join(stage, 'crops', 'manifest.json'),
+          `${JSON.stringify(elements, null, 2)}\n`,
+        );
+      }
+      return { frames: manifest.length, crops: elements.length };
     } finally {
       await browser.close();
     }
@@ -259,6 +312,6 @@ if (argv[1] && pathToFileURL(argv[1]).href === import.meta.url) {
   const runtime = await loadRuntime();
   const count = await publishReferences(output, (stage) => captureReferences(stage, runtime));
   log(
-    `Rendered ${count} images from ${Object.keys(variants).length} frames into design/reference/`,
+    `Rendered ${count.frames} frame images and ${count.crops} element crops into design/reference/`,
   );
 }

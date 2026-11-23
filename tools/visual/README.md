@@ -22,4 +22,25 @@ The runner builds the actual React app in Vite's `visual` mode into a temporary 
 
 Open `visual/report/<ID>/index.html` for original-size reference, actual, and diff PNGs. The TopBar's first 56px are excluded only for full frames, not for standalone TopBar or WorkNav. Image dimensions that differ count as mismatches outside the overlap (excluding the mask). Mismatch percentages are diagnostic; there is no implicit pass/fail threshold for a screen.
 
+## Component gallery (D-32/D-35)
+
+After building the domain workspace (`pnpm --filter @md-wiki/domain build`), run
+`pnpm design:shots` and `pnpm visual:shots --task P2-A --gallery`. The latter compares
+`/__gallery` examples against `design/reference/crops/` at 390, 768, 1024 and 1440px,
+without a TopBar mask. Open `visual/report/P2-A/index.html` for the pixel diffs.
+
+Crops are declared in `tools/design-ref/variants.json` under `crops` as
+`"Component/variant": { "frame": ..., "variant": ..., "selector": ... }`.
+Selectors must resolve to one rendered element. A gallery crop defaults to the
+first child of the matching `data-gallery` wrapper; `gallery` and `part` can
+select a different wrapper or descendant (such as a SpreadBar caption). Set
+`fit: true` for stretch-to-parent elements, or `fit: "parent"` to reproduce the
+available width of a wrapping row. Only the gallery host is sized; the element
+itself lays out naturally. The reference renderer publishes the full frames and
+crops atomically, with separate checksum manifests.
+
+Use `/__gallery` in the dev server for Tokens and examples under
+**Not in frames (§6.1)**. Review their hover, pressed, disabled and busy states
+against §6.1, not a reference crop. Only drawn states get pixel comparisons.
+
 Run `pnpm visual:shots --self-test` to exercise preview and MSW without a completed screen. This reports a real reference compared against itself (0%) and a separate preview probe with a 1px-shifted element (40 pixels detected), at `visual/report/P0-09/index.html`.

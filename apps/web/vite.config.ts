@@ -1,11 +1,24 @@
 import { readFile } from 'node:fs/promises';
 import { createRequire } from 'node:module';
+import { fileURLToPath, URL } from 'node:url';
+import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
 import { defineConfig } from 'vitest/config';
 
 export default defineConfig(({ mode }) => ({
+  // Filtered Vitest runs don't build workspace dependencies first.
+  ...(mode === 'test' && {
+    resolve: {
+      alias: {
+        '@md-wiki/domain': fileURLToPath(
+          new URL('../../packages/domain/src/index.ts', import.meta.url),
+        ),
+      },
+    },
+  }),
   plugins: [
     react(),
+    tailwindcss(),
     mode === 'visual' && {
       name: 'visual-msw-worker',
       apply: 'build',
@@ -22,5 +35,5 @@ export default defineConfig(({ mode }) => ({
     strictPort: true,
     proxy: { '/api/v1': `http://127.0.0.1:${process.env.API_PORT || '3000'}` },
   },
-  test: { environment: 'jsdom' },
+  test: { environment: 'jsdom', css: { include: [/theme\.css\?raw$/] } },
 }));

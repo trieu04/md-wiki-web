@@ -1,0 +1,177 @@
+@import 'tailwindcss';
+@import '@fontsource-variable/inter';
+@import '@fontsource-variable/source-serif-4/opsz.css';
+@import '@fontsource-variable/jetbrains-mono';
+
+/* Static emits the entire design palette and scale as root custom properties,
+   including tokens whose consuming screens do not exist yet. */
+@theme static {
+  --color-*: initial;
+  --color-canvas: #f6f7f9;
+  --color-surface: #ffffff;
+  --color-subtle-gutter: #fafbfc;
+  --color-subtle-section: #f4f6fb;
+  --color-selected: #eef2fc;
+  --color-nav-current: #eef1f6;
+  --color-avatar: #e7ecfa;
+  --color-edge: #e4e7ec;
+  --color-control: #d5d9e0;
+  --color-input-strong: #c9ced8;
+  --color-divider: #eef0f3;
+  --color-row: #f1f2f5;
+  --color-muted-drawer: #e9ebef;
+  --color-muted-toc: #e9edf5;
+  --color-primary: #14161b;
+  --color-native-button: #000000;
+  --color-body-strong: #2a2f38;
+  --color-wiki-body: #22252b;
+  --color-secondary: #3a404c;
+  --color-muted: #545b68;
+  --color-placeholder: #8a909c;
+  --color-accent: #2453d6;
+  --color-accent-hover: #1c42ae;
+  --color-accent-tint: #c9d3f2;
+  --color-trust-checked: #1e7f45;
+  --color-trust-checked-bg: #e6f4ec;
+  --color-trust-checked-fg: #11512e;
+  --color-trust-checked-border: #bfe0cc;
+  --color-trust-checked-saved-bg: #f1f9f4;
+  --color-trust-reviewed: #7a5a00;
+  --color-trust-reviewed-bar: #b07c00;
+  --color-trust-reviewed-bg: #fff4db;
+  --color-trust-reviewed-fg: #5c4300;
+  --color-trust-none: #6b7280;
+  --color-trust-none-bar: #c5c9d1;
+  --color-trust-recheck: #c25a0a;
+  --color-trust-recheck-bg: #fdf1e7;
+  --color-trust-recheck-fg: #8a3d05;
+  --color-trust-recheck-note-fg: #5e2a03;
+  --color-trust-recheck-border: #f0c9a6;
+  --color-trust-error: #c33027;
+  --color-trust-error-bg: #fcedec;
+  --color-trust-error-fg: #7d1b16;
+  --color-trust-error-action-fg: #a1261f;
+  --color-trust-error-border: #f0c2bf;
+  --color-ai: #5b3fb8;
+  --color-ai-bg: #ede8fa;
+  --color-ai-border: #cdbff0;
+  --color-mark: #fff0b8;
+  --color-disabled-bg: #e4e7ec;
+  --color-disabled-fg: #545b68;
+
+  --font-*: initial;
+  --font-ui: 'Inter Variable', system-ui, sans-serif;
+  --font-content: 'Source Serif 4 Variable', Georgia, serif;
+  --font-mono: 'JetBrains Mono Variable', monospace;
+  --text-*: initial;
+  --text-11: 11px;
+  --text-12: 12px;
+  --text-12-5: 12.5px;
+  --text-13: 13px;
+  --text-14: 14px;
+  --text-15: 15px;
+  --text-16: 16px;
+  --text-17: 17px;
+  --text-17-5: 17.5px;
+  --text-18: 18px;
+  --text-19: 19px;
+  --text-20: 20px;
+  --text-22: 22px;
+  --text-23: 23px;
+  --text-24: 24px;
+  --text-30: 30px;
+  --text-34: 34px;
+  --text-36: 36px;
+  --font-weight-normal: 400;
+  --font-weight-nav: 450;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+  --tracking-overline: 0.06em;
+  --leading-base: 1.5;
+  --leading-control: normal;
+
+  --radius-*: initial;
+  --radius-mark: 2px;
+  --radius-spread-sm: 3px;
+  --radius-4: 4px;
+  --radius-6: 6px;
+  --radius-7: 7px;
+  --radius-8: 8px;
+  --radius-9: 9px;
+  --radius-10: 10px;
+  --radius-12: 12px;
+  --radius-14: 14px;
+  --radius-17: 17px;
+  --radius-chip: 999px;
+
+  --spacing-mark-x: 1px;
+  --spacing-2px: 2px;
+  --spacing-3px: 3px;
+  --spacing-4px: 4px;
+  --spacing-5px: 5px;
+  --spacing-6px: 6px;
+  --spacing-7px: 7px;
+  --spacing-8px: 8px;
+  --spacing-9px: 9px;
+  --spacing-10px: 10px;
+  --spacing-12px: 12px;
+  --spacing-14px: 14px;
+  --spacing-16px: 16px;
+  --spacing-18px: 18px;
+  --spacing-20px: 20px;
+  --spacing-22px: 22px;
+  --spacing-24px: 24px;
+  --spacing-28px: 28px;
+  --spacing-32px: 32px;
+  --spacing-48px: 48px;
+
+  --container-reading: 1240px;
+  --container-workspace: 1400px;
+  --container-rail-min: 260px;
+  --container-rail-max: 400px;
+  --spacing-topbar: 56px;
+  --spacing-topbar-search: 38px;
+  --spacing-home-control: 48px;
+  --spacing-icon-button: 40px;
+  --spacing-avatar: 34px;
+  --spacing-count: 20px;
+  --spacing-icon-sm: 12px;
+  --spacing-icon-md: 14px;
+  --spacing-icon-lg: 18px;
+  --spacing-icon-badge-sm: 13px;
+  --spacing-spread-md: 8px;
+  --spacing-spread-sm: 6px;
+  --spacing-spread-sm-width: 120px;
+  --shadow-avatar: 0 0 0 2px #ffffff, 0 0 0 4px #2453d6;
+  --focus-width: 2px;
+  --focus-offset: 2px;
+  --stroke-trust: 1.5;
+  --stroke-trust-lg: 1.3;
+}
+
+@layer base {
+  body {
+    background: var(--color-canvas);
+    color: var(--color-primary);
+    font: var(--text-14) / var(--leading-base) var(--font-ui);
+  }
+
+  a {
+    color: var(--color-accent);
+    text-decoration: underline;
+  }
+
+  a:hover {
+    color: var(--color-accent-hover);
+  }
+
+  button:enabled {
+    cursor: pointer;
+  }
+
+  :is(a, button, input, textarea, select):focus-visible {
+    outline: var(--focus-width) solid var(--color-accent);
+    outline-offset: var(--focus-offset);
+  }
+}

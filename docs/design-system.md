@@ -83,7 +83,7 @@ Implementers must open the cited frame for colours marked "frame-specific" and u
 | Weights | 400, 450 (WorkNav idle), 500, 600 (dominant), 700 |
 | Overline | 11px, 600, `letter-spacing: 0.06em`, uppercase, `text.muted` (WorkNav group titles) |
 
-Fonts: the frames load Google Fonts. **Deviation DV-1 (proposed)**: self-host the same families via `@fontsource-variable/inter`, `@fontsource-variable/source-serif-4`, `@fontsource-variable/jetbrains-mono` to avoid a third-party request from an internal app. Same glyphs; needs approval (Q-UI-4).
+Fonts: the frames load Google Fonts. **Deviation DV-1 (approved, D-17)**: self-host the same families via `@fontsource-variable/inter`, `@fontsource-variable/source-serif-4`, `@fontsource-variable/jetbrains-mono` to avoid a third-party request from an internal app. The local CSS family names have the ` Variable` suffix; Source Serif 4 includes the optical size axis.
 
 ### 2.3 Radius, spacing, size
 
@@ -104,6 +104,10 @@ Exact values that appear in a frame but were missing from §2.1–2.3 are added 
 | `size.icon-badge-sm` | 13px | F-03 page header badge |
 | `space.mark-x` | 1px (horizontal padding of search highlight) | F-02 result snippet |
 | `radius.mark` | 2px | F-02 result snippet |
+| `space.9` | 9px | F-03 section badge horizontal padding |
+| `size.spread-sm-width` / `size.spread-sm` / `radius.spread-sm` | 120px / 6px / 3px | F-03 page header spread bar |
+| `leading.control` | `normal` | F-01 scope pills, F-02 sort pills, F-03 section badge/link-style button, F-10 decision/secondary buttons, C-TopBar count badge |
+| `text.native-button` | `#000000` (native `ButtonText` in the light reference render) | F-10 secondary buttons |
 
 ## 3. Trust label system (exact, from every frame's `TL` table)
 

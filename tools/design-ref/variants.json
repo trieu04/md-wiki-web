@@ -330,5 +330,212 @@
       "props": { "active": "settings" },
       "expect": "a[href='Settings.dc.html'][aria-current=page]"
     }
+  },
+  "crops": {
+    "TrustIcon/12-checked": {
+      "frame": "Page",
+      "variant": "principle",
+      "selector": "nav button:has-text('Resolution') svg"
+    },
+    "TrustIcon/12-reviewed": {
+      "frame": "Page",
+      "variant": "principle",
+      "selector": "nav button:has-text('Detectors') svg"
+    },
+    "TrustIcon/12-not_reviewed": {
+      "frame": "Page",
+      "variant": "principle",
+      "selector": "nav button:has-text('History') svg"
+    },
+    "TrustIcon/12-recheck": {
+      "frame": "Page",
+      "variant": "overview",
+      "selector": "nav button:has-text('Principle') svg"
+    },
+    "TrustIcon/13-checked": {
+      "frame": "Page",
+      "variant": "principle",
+      "selector": "article section[aria-label=Resolution] button svg"
+    },
+    "TrustIcon/13-reviewed": {
+      "frame": "Page",
+      "variant": "principle",
+      "selector": "article section[aria-label=Overview] button svg"
+    },
+    "TrustIcon/13-not_reviewed": {
+      "frame": "Page",
+      "variant": "principle",
+      "selector": "article section[aria-label=History] button svg"
+    },
+    "TrustIcon/13-recheck": {
+      "frame": "Page",
+      "variant": "overview",
+      "selector": "article section[aria-label=Principle] button[aria-label$='Why this label'] svg"
+    },
+    "TrustIcon/13-error": {
+      "frame": "Credibility",
+      "variant": "queue",
+      "selector": "span:has(> svg[width='13']):has-text('Confirmed error') > svg"
+    },
+    "TrustIcon/14-checked": {
+      "frame": "Main",
+      "variant": "mine",
+      "selector": "section[aria-labelledby=labels-h] li:nth-of-type(1) svg"
+    },
+    "TrustIcon/14-reviewed": {
+      "frame": "Main",
+      "variant": "mine",
+      "selector": "section[aria-labelledby=labels-h] li:nth-of-type(2) svg"
+    },
+    "TrustIcon/14-not_reviewed": {
+      "frame": "Main",
+      "variant": "mine",
+      "selector": "section[aria-labelledby=labels-h] li:nth-of-type(3) svg"
+    },
+    "TrustIcon/14-recheck": {
+      "frame": "Main",
+      "variant": "mine",
+      "selector": "section[aria-labelledby=labels-h] li:nth-of-type(4) svg"
+    },
+    "TrustIcon/14-error": {
+      "frame": "Main",
+      "variant": "mine",
+      "selector": "section[aria-labelledby=labels-h] li:nth-of-type(5) svg"
+    },
+    "TrustIcon/18-checked": {
+      "frame": "Main",
+      "variant": "mine",
+      "selector": "section[aria-labelledby=notices-h] li:nth-of-type(3) svg"
+    },
+    "TrustIcon/18-recheck": {
+      "frame": "Main",
+      "variant": "mine",
+      "selector": "section[aria-labelledby=notices-h] li:nth-of-type(1) svg"
+    },
+    "TrustBadge/inline": {
+      "frame": "Main",
+      "variant": "mine",
+      "selector": "#recent td span:has(svg) >> nth=0"
+    },
+    "TrustBadge/link": {
+      "frame": "Search",
+      "variant": "relevance",
+      "selector": "article a[aria-label^='Confocal microscopy, Principle:']"
+    },
+    "TrustBadge/section": {
+      "frame": "Page",
+      "variant": "principle",
+      "selector": "article section[aria-label=Overview] button"
+    },
+    "SpreadBar/md": {
+      "frame": "Main",
+      "variant": "mine",
+      "selector": "section[aria-labelledby=labels-h] [role=img]",
+      "part": "[role=img]",
+      "fit": true
+    },
+    "SpreadBar/md-caption": {
+      "frame": "Main",
+      "variant": "mine",
+      "selector": "section[aria-labelledby=labels-h] [role=img] + span",
+      "gallery": "SpreadBar/md",
+      "part": "[role=img] + span",
+      "fit": true
+    },
+    "SpreadBar/sm": {
+      "frame": "Page",
+      "variant": "principle",
+      "selector": "article header [role=img]",
+      "part": "[role=img]"
+    },
+    "SpreadBar/sm-caption": {
+      "frame": "Page",
+      "variant": "principle",
+      "selector": "article header [role=img] + span",
+      "gallery": "SpreadBar/sm",
+      "part": "[role=img] + span"
+    },
+    "Button/primary-home": {
+      "frame": "Main",
+      "variant": "mine",
+      "selector": "main form[role=search] a"
+    },
+    "Button/primary": {
+      "frame": "Review",
+      "variant": "escalated",
+      "selector": "section[aria-label=Decision] button:not([role]):has-text('Approve and publish')",
+      "fit": true
+    },
+    "Button/secondary": {
+      "frame": "Review",
+      "variant": "escalated",
+      "selector": "button:text-is('Assign')",
+      "part": "button:last-child",
+      "fit": "parent"
+    },
+    "Button/secondary-compact": {
+      "frame": "Review",
+      "variant": "escalated",
+      "selector": "button:text-is('Record source check for line 14')"
+    },
+    "Button/disabled": {
+      "frame": "Review",
+      "variant": "disputed",
+      "selector": "section[aria-label=Decision] button:disabled",
+      "fit": true
+    },
+    "Button/link": {
+      "frame": "Page",
+      "variant": "principle",
+      "selector": "button:has-text('Show anyway')"
+    },
+    "PillToggle/scope-on": {
+      "frame": "Main",
+      "variant": "mine",
+      "selector": "button[aria-pressed=true]:has-text('Pages you use')"
+    },
+    "PillToggle/scope-off": {
+      "frame": "Main",
+      "variant": "mine",
+      "selector": "button[aria-pressed=false]:has-text('All pages')"
+    },
+    "PillToggle/sort-on": {
+      "frame": "Search",
+      "variant": "relevance",
+      "selector": "button[aria-pressed=true]:has-text('Best match')"
+    },
+    "PillToggle/sort-off": {
+      "frame": "Search",
+      "variant": "relevance",
+      "selector": "button[aria-pressed=false]:has-text('Most checked first')"
+    },
+    "Chip/link": {
+      "frame": "Main",
+      "variant": "mine",
+      "selector": "main a:has-text('pinhole size')"
+    },
+    "CountBadge/default": {
+      "frame": "TopBar",
+      "variant": "home",
+      "selector": "a[href='Inbox.dc.html'] span:text-is('4')"
+    },
+    "AITag/default": {
+      "frame": "Review",
+      "variant": "escalated",
+      "selector": "h2:has-text('Agent review') span:text-is('AI')",
+      "part": "span"
+    },
+    "Mono/default": {
+      "frame": "Review",
+      "variant": "escalated",
+      "selector": "span:text-is('fix-pinhole-units')",
+      "part": "span > span"
+    },
+    "Mark/default": {
+      "frame": "Search",
+      "variant": "relevance",
+      "selector": "article mark >> nth=0",
+      "part": "mark"
+    }
   }
 }

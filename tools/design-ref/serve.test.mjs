@@ -6,7 +6,9 @@ import { URL } from 'node:url';
 import canvas from '../../design/v4/canvas.json' with { type: 'json' };
 import { loadRuntime } from './render.mjs';
 import { serve, variantDocument } from './serve.mjs';
-import frames from './variants.json' with { type: 'json' };
+import variants from './variants.json' with { type: 'json' };
+
+const frames = Object.fromEntries(Object.entries(variants).filter(([key]) => key !== 'crops'));
 
 const designFile = (relativePath) =>
   readFile(new URL(`../../design/${relativePath}`, import.meta.url), 'utf8');

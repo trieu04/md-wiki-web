@@ -1,6 +1,7 @@
 export const domainPlaceholder = 'md-wiki-domain';
 
 export * from './errors.js';
+export * from './label-meta.js';
 export * from './result.js';
 export * from './paths.js';
 export * from './sections.js';

@@ -10,6 +10,8 @@ import { argv } from 'node:process';
 import { parseArgs } from 'node:util';
 import { fileURLToPath, pathToFileURL, URL } from 'node:url';
 import { chromium } from 'playwright';
+import { cropPlan } from '../design-ref/crops.mjs';
+import referenceConfig from '../design-ref/variants.json' with { type: 'json' };
 import canvas from '../../design/v4/canvas.json' with { type: 'json' };
 import { diffPng, maskRowsFor } from './diff.mjs';
 import { writeReport } from './report.mjs';
@@ -113,7 +115,7 @@ async function withApp(run) {
   }
 }
 
-async function capture(browser, origin, { path, ready, prepare, width, height }) {
+async function capture(browser, origin, { path, ready, prepare, width, height, crop }) {
   const context = await browser.newContext({
     baseURL: origin,
     viewport: { width, height },
@@ -151,7 +153,29 @@ async function capture(browser, origin, { path, ready, prepare, width, height })
         }
         for (let i = 0; i < 2; i++) await new Promise(requestAnimationFrame);
       });
-      const png = await page.screenshot({ fullPage: true, animations: 'disabled', caret: 'hide' });
+      const options = { animations: 'disabled', caret: 'hide' };
+      let png;
+      if (crop) {
+        const element = page.locator(crop.selector);
+        const position = await element.evaluate((target) => {
+          const rect = target.getBoundingClientRect();
+          return { x: rect.x + window.scrollX, y: rect.y + window.scrollY };
+        });
+        // Align the sample's fractional-pixel origin, not its dimensions, so
+        // Chromium doesn't add a different row/column when rounding the crop.
+        await page.locator(ready).evaluate(
+          (host, { x, y }) => {
+            Object.assign(host.style, { position: 'relative', left: `${x}px`, top: `${y}px` });
+          },
+          {
+            x: Math.floor(position.x) + crop.x - position.x,
+            y: Math.floor(position.y) + crop.y - position.y,
+          },
+        );
+        png = await element.screenshot(options);
+      } else {
+        png = await page.screenshot({ ...options, fullPage: true });
+      }
       if (failures.length) throw new Error(failures.join('\n'));
       return png;
     } catch (error) {
@@ -186,6 +210,56 @@ async function runCases(cases, manifest) {
       }
     }
     return images;
+  });
+}
+
+async function runGallery() {
+  const manifest = JSON.parse(await readFile(join(references, 'crops', 'manifest.json'), 'utf8'));
+  const plan = cropPlan(referenceConfig);
+  return withApp(async (browser, origin) => {
+    const batches = await Promise.all(
+      widths.map(async (width) => {
+        const images = [];
+        for (const { id, frame, variant, gallery = id, part = '> :first-child', fit } of plan) {
+          const label = `${id}@${width}`;
+          const match = manifest.find((entry) => entry.id === id && entry.width === width);
+          if (!match?.geometry || match.frame !== frame || match.variant !== variant) {
+            throw new Error(`${label}: missing or stale crop; run pnpm design:shots`);
+          }
+          const reference = await readFile(join(references, 'crops', `${label}.png`));
+          if (createHash('sha256').update(reference).digest('hex') !== match.sha256) {
+            throw new Error(`${label}: crop checksum mismatch; run pnpm design:shots`);
+          }
+          const ready = `[data-gallery=${JSON.stringify(gallery)}]`;
+          try {
+            const actual = await capture(browser, origin, {
+              path: '/__gallery',
+              ready,
+              width,
+              height: canvas.boards[`${frame}.dc.html`].h,
+              crop: { selector: `${ready} ${part}`, ...match.geometry },
+              async prepare(page) {
+                // Stretch examples need the same available width as their frame parent.
+                // Apply it to the host only so incorrect component sizing still diffs.
+                if (fit) {
+                  await page.locator(ready).evaluate(
+                    (host, pixels) => {
+                      host.style.width = `${pixels}px`;
+                    },
+                    fit === 'parent' ? match.geometry.parentWidth : match.geometry.width,
+                  );
+                }
+              },
+            });
+            images.push({ label: `${label} · ${frame}/${variant}`, reference, actual });
+          } catch (error) {
+            throw new Error(`${label}: ${error.message}`, { cause: error });
+          }
+        }
+        return images;
+      }),
+    );
+    return batches.flat();
   });
 }
 
@@ -259,27 +333,37 @@ async function main() {
       task: { type: 'string' },
       config: { type: 'string' },
       'self-test': { type: 'boolean' },
+      gallery: { type: 'boolean' },
       help: { type: 'boolean' },
     },
   });
-  if (values.help || (!values.config && !values.task && !values['self-test'])) {
+  if (values.help || (!values.config && !values.task && !values['self-test'] && !values.gallery)) {
     log(
-      'Usage: pnpm visual:shots --task <ID> --config <cases.mjs> | pnpm visual:shots --self-test',
+      'Usage: pnpm visual:shots --task <ID> [--config <cases.mjs> | --gallery] | pnpm visual:shots --self-test',
     );
     log(
       'A config default-exports [{ frame, variant, path, ready, prepare? }]; see tools/visual/README.md.',
     );
     return;
   }
-  if (values['self-test'] ? values.config : !values.task || !values.config) {
-    throw new Error('Supply --task and --config, or use --self-test without --config');
+  const modes = [values.config, values.gallery, values['self-test']].filter(Boolean);
+  if (modes.length !== 1 || (!values['self-test'] && !values.task)) {
+    throw new Error('Supply --task and either --config or --gallery, or use --self-test');
   }
   const task = values.task ?? 'P0-09';
   if (!/^[a-z0-9][a-z0-9_-]*$/i.test(task)) throw new Error(`Invalid task ID: ${task}`);
-  const manifest = JSON.parse(await readFile(join(references, 'manifest.json'), 'utf8'));
-  const images = values['self-test']
-    ? await selfTest(manifest)
-    : await runCases((await import(pathToFileURL(resolve(values.config)).href)).default, manifest);
+  let images;
+  if (values.gallery) {
+    images = await runGallery();
+  } else {
+    const manifest = JSON.parse(await readFile(join(references, 'manifest.json'), 'utf8'));
+    images = values['self-test']
+      ? await selfTest(manifest)
+      : await runCases(
+          (await import(pathToFileURL(resolve(values.config)).href)).default,
+          manifest,
+        );
+  }
   const { index } = await writeReport(join(root, 'visual/report'), task, images);
   log(`Wrote ${images.length} comparisons to ${index}`);
 }
