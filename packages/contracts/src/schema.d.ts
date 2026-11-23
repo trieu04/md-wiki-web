@@ -1566,6 +1566,11 @@ export interface components {
         };
         /** @enum {string} */
         AgentOutcome: "approved" | "rejected" | "escalated" | "left_pending";
+        AgentPauseInput: {
+            /** @description true pauses, false resumes the reviewer agent */
+            paused: boolean;
+            reason?: string;
+        };
         AgentRefusalDto: {
             code: string;
             triggers: string[];
@@ -1622,6 +1627,11 @@ export interface components {
             newHash: string;
             oldAnchor: string;
             oldHash: string;
+            path: string;
+        };
+        AnchorLinkInput: {
+            newAnchor: string;
+            oldAnchor: string;
             path: string;
         };
         ApiTokenDto: {
@@ -1683,12 +1693,26 @@ export interface components {
             undoUntil: string;
             versionLabel: string;
         };
+        AttestationInput: {
+            anchor: string;
+            checked?: components["schemas"]["CheckedDetailsInput"];
+            /** @enum {string} */
+            kind: "useful" | "checked" | "used";
+            note?: string;
+            path: string;
+            sawCounts: boolean;
+            sectionHash: string;
+            used?: components["schemas"]["UsedDetailsInput"];
+        };
         AttestationResultDto: {
             attestation: components["schemas"]["AttestationDto"];
             following: boolean;
             label: components["schemas"]["LabelDto"];
             people: components["schemas"]["PeopleDto"];
             report: components["schemas"]["AttestationDto"] | null;
+        };
+        AttestationWithdrawInput: {
+            reason?: string;
         };
         AuditEventDto: {
             action: string;
@@ -1752,6 +1776,17 @@ export interface components {
             resolveBlocked: boolean;
             resolveConflict: boolean;
             withdraw: boolean;
+        };
+        CheckedDetailsInput: {
+            comparedNumbers: boolean;
+            location: string;
+            /** @enum {string} */
+            result: "supports" | "partly" | "contradicts" | "unverifiable";
+            source: components["schemas"]["CheckedSourceInput"];
+        };
+        CheckedSourceInput: {
+            cited: boolean;
+            ref: string;
         };
         CommentInput: {
             /** @description Required for kind agreement: the entry agreed with */
@@ -1890,6 +1925,13 @@ export interface components {
             /** Format: uuid */
             teamId: string | null;
         };
+        CredibilityDecisionInput: {
+            id: string;
+            outcome: string;
+            reason: string;
+            /** @enum {string} */
+            type: "report" | "retraction" | "flag" | "candidate" | "pair" | "fix";
+        };
         CredibilityGateDto: {
             /** @enum {string} */
             capability: "label_threshold" | "recheck_ordering" | "attestation_weights" | "report_detection" | "assistant_disclosure";
@@ -1964,6 +2006,12 @@ export interface components {
         CredibilitySourcesDto: {
             items: components["schemas"]["CredibilitySourceDto"][];
             nextCursor: string | null;
+        };
+        CustomTriggerInput: {
+            id: string;
+            kind: components["schemas"]["CustomTriggerKind"];
+            reason: string;
+            value: string;
         };
         /** @enum {string} */
         CustomTriggerKind: "path" | "term";
@@ -2125,6 +2173,16 @@ export interface components {
             unknownBlock: number;
             unknownRule: number;
         };
+        EdgeCandidateInput: {
+            detail?: {
+                [key: string]: unknown;
+            };
+            dst: components["schemas"]["SectionPointInput"];
+            /** @enum {string} */
+            kind: "copy" | "corroborates" | "contradicts" | "lab_data";
+            score: number;
+            src: components["schemas"]["SectionPointInput"];
+        };
         /** @enum {string} */
         ErrorCode: "VALIDATION_FAILED" | "INVALID_PATH" | "UNAUTHENTICATED" | "INVALID_CREDENTIALS" | "CSRF_INVALID" | "FORBIDDEN" | "ACCOUNT_DISABLED" | "NOT_FOUND" | "ALREADY_EXISTS" | "PRECONDITION_FAILED" | "SELF_REVIEW" | "NOT_ASSIGNED" | "DISPUTED" | "DECISION_BINDING_MISMATCH" | "DISCUSSION_CHANGED" | "SOURCE_CHANGED" | "TARGET_BLOCKED" | "ESCALATION_REQUIRED" | "SECTION_CHANGED" | "STALE_BASE" | "EMAIL_TAKEN" | "LAST_OWNER" | "PAYLOAD_TOO_LARGE" | "RATE_LIMITED" | "STORAGE_ERROR" | "VERIFY_FAILED" | "INTERNAL";
         EscalatedCountsDto: {
@@ -2154,6 +2212,14 @@ export interface components {
             /** Format: uuid */
             topicId: string | null;
             triggers: string[];
+        };
+        EscalationInput: {
+            bundleHash: string;
+            kind: components["schemas"]["EscalationKind"];
+            /** @description Why: the notes page authors read (claims checked, what is uncertain) */
+            reason: string;
+            /** @description Trigger ids the caller cites (`judgement` for its own); firing ones are added */
+            triggers?: string[];
         };
         /** @enum {string} */
         EscalationKind: "rereview" | "discussion";
@@ -2277,6 +2343,12 @@ export interface components {
             muted?: boolean;
             path: string;
         };
+        GateInput: {
+            enabled: boolean;
+            /** Format: date */
+            runDate?: string;
+            runRecord?: string;
+        };
         GateReferenceDto: {
             /** Format: date */
             runDate: string;
@@ -2354,6 +2426,12 @@ export interface components {
             slug: string;
             state: string;
             title: string;
+        };
+        InvalidationInput: {
+            detail: string;
+            /** @enum {string} */
+            kind: "retraction" | "concern" | "source_changed" | "version_changed" | "contradiction" | "root_wrong";
+            ref: string;
         };
         InvalidationResultDto: {
             affected: components["schemas"]["SectionKeyDto"][];
@@ -2563,6 +2641,12 @@ export interface components {
             /** @description scheme://host:port only */
             baseUrl: string | null;
         };
+        OwnerConfirmationInput: {
+            anchor: string;
+            note: string;
+            path: string;
+            sectionHash: string;
+        };
         OwnersFileDto: {
             path: string;
             rules: number;
@@ -2599,6 +2683,12 @@ export interface components {
             answer: "yes" | "partly" | "no";
             /** Format: date-time */
             createdAt: string;
+            versionLabel: string;
+        };
+        PageFeedbackInput: {
+            /** @enum {string} */
+            answer: "yes" | "partly" | "no";
+            path: string;
             versionLabel: string;
         };
         PageLabelDto: {
@@ -2986,6 +3076,18 @@ export interface components {
         ReportCanDto: {
             rerun: boolean;
         };
+        ReportInput: {
+            anchor: string;
+            blocking: boolean;
+            evidence?: string;
+            /** @enum {string} */
+            kind: "wrong" | "outdated" | "unclear" | "source" | "other";
+            path: string;
+            quote?: string;
+            sawCounts: boolean;
+            sectionHash: string;
+            suggestion?: string;
+        };
         ResolutionDto: {
             actor: components["schemas"]["UserRefDto"];
             /** Format: date-time */
@@ -3015,6 +3117,16 @@ export interface components {
             /** Format: date-time */
             updatedAt: string | null;
             updatedBy: components["schemas"]["UserRefDto"] | null;
+        };
+        ReviewSettingsInput: {
+            /** @description The one default trigger the owner may turn off (agent edits of human pages) */
+            agentEditsHumanPages?: boolean;
+            /** @description Replaces the owner-added triggers (defaults cannot be removed) */
+            customTriggers?: components["schemas"]["CustomTriggerInput"][];
+            reminderDays?: number;
+            reviewModel?: components["schemas"]["ReviewModel"];
+            /** @description Steps of 0.01 */
+            spotCheckRate?: number;
         };
         RuleDto: {
             body: string;
@@ -3092,6 +3204,10 @@ export interface components {
             sectionHash: string;
             sectionTitle: string | null;
         };
+        SectionPointInput: {
+            anchor: string;
+            path: string;
+        };
         SectionRefDto: {
             anchor: string;
             title: string;
@@ -3117,6 +3233,22 @@ export interface components {
             before: string;
             hit: string;
         };
+        SourceCheckInput: {
+            anchor: string;
+            comparedNumbers?: boolean;
+            excerpt?: string;
+            location?: string;
+            note?: string;
+            path: string;
+            proposalSlug?: string;
+            /** @enum {string} */
+            result: "supported" | "not_supported" | "unverifiable";
+            sectionHash: string;
+            sourceRef: string;
+            /** Format: uuid */
+            sourceSnapshotId?: string;
+            sourceTitle?: string;
+        };
         SourceCheckResultDto: {
             /** Format: date-time */
             createdAt: string;
@@ -3140,6 +3272,10 @@ export interface components {
         };
         SourceWarningsDto: {
             added: components["schemas"]["AddedSourceDto"][];
+        };
+        SourceWarningsInput: {
+            content: string;
+            path: string;
         };
         SpotCheckCountsDto: {
             failed: number;
@@ -3168,6 +3304,12 @@ export interface components {
             targetPath: string;
             title: string;
             versionLabel: string;
+        };
+        SpotCheckInput: {
+            /** @description Sections at fault (failed only); default the proposal section or every section */
+            anchors?: string[];
+            outcome: components["schemas"]["SpotCheckOutcome"];
+            reason: string;
         };
         /** @enum {string} */
         SpotCheckOutcome: "passed" | "failed";
@@ -3431,6 +3573,13 @@ export interface components {
             /** Format: uuid */
             teamId?: string | null;
         };
+        UsedDetailsInput: {
+            change?: string;
+            /** @enum {string} */
+            use: "acquisition" | "analysis" | "training" | "protocol" | "other";
+            /** @enum {string} */
+            worked: "yes" | "with_changes" | "no";
+        };
         UserDto: {
             /** Format: date-time */
             createdAt: string;
@@ -3525,7 +3674,11 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AgentPauseInput"];
+            };
+        };
         responses: {
             200: {
                 headers: {
@@ -3610,7 +3763,11 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GateInput"];
+            };
+        };
         responses: {
             200: {
                 headers: {
@@ -3822,7 +3979,11 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReviewSettingsInput"];
+            };
+        };
         responses: {
             200: {
                 headers: {
@@ -4354,7 +4515,11 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AttestationInput"];
+            };
+        };
         responses: {
             201: {
                 headers: {
@@ -4429,7 +4594,11 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AttestationWithdrawInput"];
+            };
+        };
         responses: {
             200: {
                 headers: {
@@ -4936,7 +5105,11 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AnchorLinkInput"];
+            };
+        };
         responses: {
             201: {
                 headers: {
@@ -5000,7 +5173,11 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EdgeCandidateInput"];
+            };
+        };
         responses: {
             201: {
                 headers: {
@@ -5046,7 +5223,11 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CredibilityDecisionInput"];
+            };
+        };
         responses: {
             200: {
                 headers: {
@@ -5110,7 +5291,11 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["InvalidationInput"];
+            };
+        };
         responses: {
             201: {
                 headers: {
@@ -5350,7 +5535,11 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SourceWarningsInput"];
+            };
+        };
         responses: {
             200: {
                 headers: {
@@ -7210,7 +7399,11 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OwnerConfirmationInput"];
+            };
+        };
         responses: {
             201: {
                 headers: {
@@ -7274,7 +7467,11 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PageFeedbackInput"];
+            };
+        };
         responses: {
             201: {
                 headers: {
@@ -7978,7 +8175,11 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EscalationInput"];
+            };
+        };
         responses: {
             201: {
                 headers: {
@@ -8321,7 +8522,11 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReportInput"];
+            };
+        };
         responses: {
             201: {
                 headers: {
@@ -8570,7 +8775,11 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SourceCheckInput"];
+            };
+        };
         responses: {
             201: {
                 headers: {
@@ -8693,7 +8902,11 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SpotCheckInput"];
+            };
+        };
         responses: {
             200: {
                 headers: {

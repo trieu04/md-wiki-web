@@ -28,7 +28,7 @@ import type {
   CredibilityPagesDto,
   CredibilityQueueDto,
   CredibilitySourcesDto,
-  DecisionInput,
+  CredibilityDecisionInput,
   QueueItemDetailDto,
   QueueItemDto,
   SectionKeyDto,
@@ -391,7 +391,7 @@ export class QueueService {
 
   // ---- decisions ----------------------------------------------------------------------------
 
-  async decide(identity: Identity, input: DecisionInput): Promise<Wire<QueueItemDetailDto>> {
+  async decide(identity: Identity, input: CredibilityDecisionInput): Promise<Wire<QueueItemDetailDto>> {
     this.requireRead(identity);
     if (!QUEUE_OUTCOMES[input.type].includes(input.outcome))
       throw new AppError('PRECONDITION_FAILED', 'That choice is not available for this item');

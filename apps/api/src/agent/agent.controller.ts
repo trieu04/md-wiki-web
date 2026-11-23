@@ -1,5 +1,5 @@
 import { Controller, Get, HttpCode, Inject, Patch, Post, Req } from '@nestjs/common';
-import { ApiCreatedResponse, ApiOkResponse, ApiParam, ApiQuery } from '@nestjs/swagger';
+import { ApiBody, ApiCreatedResponse, ApiOkResponse, ApiParam, ApiQuery } from '@nestjs/swagger';
 import { INBOX_TABS } from '@md-wiki/domain';
 import { principal, Requires } from '../auth/auth-http.js';
 import type { AuthRequest } from '../auth/auth.service.js';
@@ -35,6 +35,7 @@ import { SpotChecksService } from './spot-checks.service.js';
 export class EscalationsController {
   constructor(@Inject(EscalationsService) private readonly escalations: EscalationsService) {}
 
+  @ApiBody({ type: EscalationInput })
   @Post(':slug/escalations')
   @ApiParam({ name: 'slug', type: String })
   @Requires('wiki.read')
@@ -96,6 +97,7 @@ export class SpotChecksController {
     return this.spots.get(principal(req), id);
   }
 
+  @ApiBody({ type: SpotCheckInput })
   @Post(':id/outcome')
   @HttpCode(200)
   @ApiParam({ name: 'id', type: String, format: 'uuid' })
@@ -130,6 +132,7 @@ export class ReviewAdminController {
     return this.settings.dto();
   }
 
+  @ApiBody({ type: ReviewSettingsInput })
   @Patch('review-settings')
   @Requires('admin.settings')
   @ApiOkResponse({ type: ReviewSettingsDto })
@@ -138,6 +141,7 @@ export class ReviewAdminController {
     return this.settings.update(principal(req), input);
   }
 
+  @ApiBody({ type: AgentPauseInput })
   @Post('agent/pause')
   @HttpCode(200)
   @Requires('admin.settings')

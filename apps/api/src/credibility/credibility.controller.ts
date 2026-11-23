@@ -1,5 +1,5 @@
 import { Controller, Get, HttpCode, Inject, Param, Post, Put, Req } from '@nestjs/common';
-import { ApiCreatedResponse, ApiOkResponse, ApiParam, ApiQuery } from '@nestjs/swagger';
+import { ApiBody, ApiCreatedResponse, ApiOkResponse, ApiParam, ApiQuery } from '@nestjs/swagger';
 import { QUEUE_TYPES } from '@md-wiki/domain';
 import { principal, Requires } from '../auth/auth-http.js';
 import type { AuthRequest } from '../auth/auth.service.js';
@@ -20,7 +20,7 @@ import {
   CredibilityPagesDto,
   CredibilityQueueDto,
   CredibilitySourcesDto,
-  DecisionInput,
+  CredibilityDecisionInput,
   EdgeCandidateInput,
   GateInput,
   GateParams,
@@ -48,7 +48,7 @@ import {
   SummaryDto,
   WhyDto,
   WhyInput,
-  WithdrawInput,
+  AttestationWithdrawInput,
 } from './credibility.dto.js';
 import { EvidenceService } from './evidence.service.js';
 import { CredibilityGates } from './gates.service.js';
@@ -67,6 +67,7 @@ const Authenticated = (): ClassDecorator => (target) => {
 export class EvidenceController {
   constructor(@Inject(EvidenceService) private readonly evidence: EvidenceService) {}
 
+  @ApiBody({ type: SourceCheckInput })
   @Post('source-checks')
   @ApiCreatedResponse({ type: SourceCheckResultDto })
   @ApiProblemResponse('NOT_FOUND')
@@ -76,6 +77,7 @@ export class EvidenceController {
     return this.evidence.recordSourceCheck(principal(req), input);
   }
 
+  @ApiBody({ type: OwnerConfirmationInput })
   @Post('owner-confirmations')
   @ApiCreatedResponse({ type: SourceCheckResultDto })
   @ApiProblemResponse('NOT_FOUND')
@@ -85,6 +87,7 @@ export class EvidenceController {
     return this.evidence.confirm(principal(req), input);
   }
 
+  @ApiBody({ type: AnchorLinkInput })
   @Post('credibility/anchor-links')
   @ApiCreatedResponse({ type: AnchorLinkDto })
   @ApiProblemResponse('NOT_FOUND')
@@ -100,6 +103,7 @@ export class EvidenceController {
     return this.evidence.sourceTiers();
   }
 
+  @ApiBody({ type: SourceWarningsInput })
   @Post('credibility/source-warnings')
   @HttpCode(200)
   @ApiOkResponse({ type: SourceWarningsDto })
@@ -159,6 +163,7 @@ export class SectionsController {
 export class ReaderActionsController {
   constructor(@Inject(AttestationsService) private readonly attestations: AttestationsService) {}
 
+  @ApiBody({ type: AttestationInput })
   @Post('attestations')
   @ApiCreatedResponse({ type: AttestationResultDto })
   @ApiProblemResponse('NOT_FOUND')
@@ -169,6 +174,7 @@ export class ReaderActionsController {
     return this.attestations.attest(principal(req), input);
   }
 
+  @ApiBody({ type: AttestationWithdrawInput })
   @Post('attestations/:id/withdraw')
   @HttpCode(200)
   @ApiParam({ name: 'id', type: String, format: 'uuid' })
@@ -179,11 +185,12 @@ export class ReaderActionsController {
   withdraw(
     @Req() req: AuthRequest,
     @InputParams(IdParams) { id }: IdParams,
-    @InputBody(WithdrawInput) input: WithdrawInput,
+    @InputBody(AttestationWithdrawInput) input: AttestationWithdrawInput,
   ) {
     return this.attestations.withdraw(principal(req), id, input.reason);
   }
 
+  @ApiBody({ type: ReportInput })
   @Post('reports')
   @ApiCreatedResponse({ type: AttestationResultDto })
   @ApiProblemResponse('NOT_FOUND')
@@ -194,6 +201,7 @@ export class ReaderActionsController {
     return this.attestations.report(principal(req), input);
   }
 
+  @ApiBody({ type: PageFeedbackInput })
   @Post('page-feedback')
   @ApiCreatedResponse({ type: PageFeedbackDto })
   @ApiProblemResponse('NOT_FOUND')
@@ -255,13 +263,14 @@ export class CredibilityQueueController {
     return this.queue.detail(principal(req), params.type, params.id);
   }
 
+  @ApiBody({ type: CredibilityDecisionInput })
   @Post('decisions')
   @HttpCode(200)
   @ApiOkResponse({ type: QueueItemDetailDto })
   @ApiProblemResponse('NOT_FOUND')
   @ApiProblemResponse('PRECONDITION_FAILED', 'SELF_REVIEW')
   @ApiProblemResponse('VALIDATION_FAILED')
-  decide(@Req() req: AuthRequest, @InputBody(DecisionInput) input: DecisionInput) {
+  decide(@Req() req: AuthRequest, @InputBody(CredibilityDecisionInput) input: CredibilityDecisionInput) {
     return this.queue.decide(principal(req), input);
   }
 
@@ -282,6 +291,7 @@ export class CredibilityQueueController {
     return this.queue.sources(principal(req), query);
   }
 
+  @ApiBody({ type: EdgeCandidateInput })
   @Post('candidates')
   @ApiCreatedResponse({ type: IdDto })
   @ApiProblemResponse('VALIDATION_FAILED')
@@ -289,6 +299,7 @@ export class CredibilityQueueController {
     return this.evidence.candidate(principal(req), input);
   }
 
+  @ApiBody({ type: InvalidationInput })
   @Post('invalidations')
   @ApiCreatedResponse({ type: InvalidationResultDto })
   @ApiProblemResponse('VALIDATION_FAILED')
@@ -313,6 +324,7 @@ export class CredibilityAdminController {
     return this.gates.list();
   }
 
+  @ApiBody({ type: GateInput })
   @Put('credibility-gates/:capability')
   @Requires('admin.settings')
   @ApiParam({ name: 'capability', type: String })

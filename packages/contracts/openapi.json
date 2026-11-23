@@ -5445,6 +5445,16 @@
       "post": {
         "operationId": "EvidenceController_sourceCheck",
         "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SourceCheckInput"
+              }
+            }
+          }
+        },
         "responses": {
           "201": {
             "description": "",
@@ -5516,6 +5526,16 @@
       "post": {
         "operationId": "EvidenceController_confirm",
         "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OwnerConfirmationInput"
+              }
+            }
+          }
+        },
         "responses": {
           "201": {
             "description": "",
@@ -5587,6 +5607,16 @@
       "post": {
         "operationId": "EvidenceController_link",
         "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AnchorLinkInput"
+              }
+            }
+          }
+        },
         "responses": {
           "201": {
             "description": "",
@@ -5699,6 +5729,16 @@
       "post": {
         "operationId": "EvidenceController_warnings",
         "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SourceWarningsInput"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": "",
@@ -5928,6 +5968,16 @@
       "post": {
         "operationId": "ReaderActionsController_attest",
         "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AttestationInput"
+              }
+            }
+          }
+        },
         "responses": {
           "201": {
             "description": "",
@@ -6019,6 +6069,16 @@
             }
           }
         ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AttestationWithdrawInput"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": "",
@@ -6090,6 +6150,16 @@
       "post": {
         "operationId": "ReaderActionsController_report",
         "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReportInput"
+              }
+            }
+          }
+        },
         "responses": {
           "201": {
             "description": "",
@@ -6171,6 +6241,16 @@
       "post": {
         "operationId": "ReaderActionsController_feedback",
         "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PageFeedbackInput"
+              }
+            }
+          }
+        },
         "responses": {
           "201": {
             "description": "",
@@ -6530,6 +6610,16 @@
       "post": {
         "operationId": "CredibilityQueueController_decide",
         "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CredibilityDecisionInput"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": "",
@@ -6751,6 +6841,16 @@
       "post": {
         "operationId": "CredibilityQueueController_candidate",
         "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EdgeCandidateInput"
+              }
+            }
+          }
+        },
         "responses": {
           "201": {
             "description": "",
@@ -6802,6 +6902,16 @@
       "post": {
         "operationId": "CredibilityQueueController_invalidation",
         "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InvalidationInput"
+              }
+            }
+          }
+        },
         "responses": {
           "201": {
             "description": "",
@@ -6903,6 +7013,16 @@
             }
           }
         ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GateInput"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": "",
@@ -7014,6 +7134,16 @@
             }
           }
         ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EscalationInput"
+              }
+            }
+          }
+        },
         "responses": {
           "201": {
             "description": "",
@@ -7323,6 +7453,16 @@
             }
           }
         ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SpotCheckInput"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": "",
@@ -7433,6 +7573,16 @@
       "patch": {
         "operationId": "ReviewAdminController_update",
         "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReviewSettingsInput"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": "",
@@ -7484,6 +7634,16 @@
       "post": {
         "operationId": "ReviewAdminController_pause",
         "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AgentPauseInput"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": "",
@@ -13611,6 +13771,67 @@
           "items"
         ]
       },
+      "SourceCheckInput": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string"
+          },
+          "anchor": {
+            "type": "string"
+          },
+          "sectionHash": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "sourceRef": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500
+          },
+          "sourceTitle": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "result": {
+            "type": "string",
+            "enum": [
+              "supported",
+              "not_supported",
+              "unverifiable"
+            ]
+          },
+          "excerpt": {
+            "type": "string",
+            "maxLength": 4000
+          },
+          "location": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "comparedNumbers": {
+            "type": "boolean"
+          },
+          "note": {
+            "type": "string",
+            "maxLength": 2000
+          },
+          "proposalSlug": {
+            "type": "string"
+          },
+          "sourceSnapshotId": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "path",
+          "anchor",
+          "sectionHash",
+          "sourceRef",
+          "result"
+        ]
+      },
       "SourceCheckResultDto": {
         "type": "object",
         "properties": {
@@ -13630,6 +13851,51 @@
           "id",
           "label",
           "createdAt"
+        ]
+      },
+      "OwnerConfirmationInput": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string"
+          },
+          "anchor": {
+            "type": "string"
+          },
+          "sectionHash": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "note": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2000
+          }
+        },
+        "required": [
+          "path",
+          "anchor",
+          "sectionHash",
+          "note"
+        ]
+      },
+      "AnchorLinkInput": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string"
+          },
+          "oldAnchor": {
+            "type": "string"
+          },
+          "newAnchor": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "path",
+          "oldAnchor",
+          "newAnchor"
         ]
       },
       "AnchorLinkDto": {
@@ -13743,6 +14009,22 @@
           "versionLabel",
           "tiers",
           "warnings"
+        ]
+      },
+      "SourceWarningsInput": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string"
+          },
+          "content": {
+            "type": "string",
+            "maxLength": 1048576
+          }
+        },
+        "required": [
+          "path",
+          "content"
         ]
       },
       "AddedSourceDto": {
@@ -14160,6 +14442,128 @@
           "mine"
         ]
       },
+      "CheckedSourceInput": {
+        "type": "object",
+        "properties": {
+          "ref": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500
+          },
+          "cited": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "ref",
+          "cited"
+        ]
+      },
+      "CheckedDetailsInput": {
+        "type": "object",
+        "properties": {
+          "source": {
+            "$ref": "#/components/schemas/CheckedSourceInput"
+          },
+          "location": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "result": {
+            "type": "string",
+            "enum": [
+              "supports",
+              "partly",
+              "contradicts",
+              "unverifiable"
+            ]
+          },
+          "comparedNumbers": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "source",
+          "location",
+          "result",
+          "comparedNumbers"
+        ]
+      },
+      "UsedDetailsInput": {
+        "type": "object",
+        "properties": {
+          "use": {
+            "type": "string",
+            "enum": [
+              "acquisition",
+              "analysis",
+              "training",
+              "protocol",
+              "other"
+            ]
+          },
+          "worked": {
+            "type": "string",
+            "enum": [
+              "yes",
+              "with_changes",
+              "no"
+            ]
+          },
+          "change": {
+            "type": "string",
+            "maxLength": 2000
+          }
+        },
+        "required": [
+          "use",
+          "worked"
+        ]
+      },
+      "AttestationInput": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string"
+          },
+          "anchor": {
+            "type": "string"
+          },
+          "sectionHash": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "useful",
+              "checked",
+              "used"
+            ]
+          },
+          "sawCounts": {
+            "type": "boolean"
+          },
+          "note": {
+            "type": "string",
+            "maxLength": 2000
+          },
+          "checked": {
+            "$ref": "#/components/schemas/CheckedDetailsInput"
+          },
+          "used": {
+            "$ref": "#/components/schemas/UsedDetailsInput"
+          }
+        },
+        "required": [
+          "path",
+          "anchor",
+          "sectionHash",
+          "kind",
+          "sawCounts"
+        ]
+      },
       "AttestationResultDto": {
         "type": "object",
         "properties": {
@@ -14191,6 +14595,90 @@
           "people",
           "label",
           "following"
+        ]
+      },
+      "AttestationWithdrawInput": {
+        "type": "object",
+        "properties": {
+          "reason": {
+            "type": "string",
+            "maxLength": 2000
+          }
+        }
+      },
+      "ReportInput": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string"
+          },
+          "anchor": {
+            "type": "string"
+          },
+          "sectionHash": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "wrong",
+              "outdated",
+              "unclear",
+              "source",
+              "other"
+            ]
+          },
+          "quote": {
+            "type": "string",
+            "maxLength": 2000
+          },
+          "suggestion": {
+            "type": "string",
+            "maxLength": 4000
+          },
+          "evidence": {
+            "type": "string",
+            "maxLength": 4000
+          },
+          "blocking": {
+            "type": "boolean"
+          },
+          "sawCounts": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "path",
+          "anchor",
+          "sectionHash",
+          "kind",
+          "blocking",
+          "sawCounts"
+        ]
+      },
+      "PageFeedbackInput": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string"
+          },
+          "versionLabel": {
+            "type": "string"
+          },
+          "answer": {
+            "type": "string",
+            "enum": [
+              "yes",
+              "partly",
+              "no"
+            ]
+          }
+        },
+        "required": [
+          "path",
+          "versionLabel",
+          "answer"
         ]
       },
       "PageFeedbackDto": {
@@ -14597,6 +15085,39 @@
           "can"
         ]
       },
+      "CredibilityDecisionInput": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "report",
+              "retraction",
+              "flag",
+              "candidate",
+              "pair",
+              "fix"
+            ]
+          },
+          "id": {
+            "type": "string"
+          },
+          "outcome": {
+            "type": "string"
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 4000
+          }
+        },
+        "required": [
+          "type",
+          "id",
+          "outcome",
+          "reason"
+        ]
+      },
       "OldestUncheckedDto": {
         "type": "object",
         "properties": {
@@ -14845,6 +15366,56 @@
           "nextCursor"
         ]
       },
+      "SectionPointInput": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string"
+          },
+          "anchor": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "path",
+          "anchor"
+        ]
+      },
+      "EdgeCandidateInput": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "copy",
+              "corroborates",
+              "contradicts",
+              "lab_data"
+            ]
+          },
+          "src": {
+            "$ref": "#/components/schemas/SectionPointInput"
+          },
+          "dst": {
+            "$ref": "#/components/schemas/SectionPointInput"
+          },
+          "score": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          },
+          "detail": {
+            "type": "object",
+            "additionalProperties": true
+          }
+        },
+        "required": [
+          "kind",
+          "src",
+          "dst",
+          "score"
+        ]
+      },
       "IdDto": {
         "type": "object",
         "properties": {
@@ -14855,6 +15426,37 @@
         },
         "required": [
           "id"
+        ]
+      },
+      "InvalidationInput": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "retraction",
+              "concern",
+              "source_changed",
+              "version_changed",
+              "contradiction",
+              "root_wrong"
+            ]
+          },
+          "ref": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500
+          },
+          "detail": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2000
+          }
+        },
+        "required": [
+          "kind",
+          "ref",
+          "detail"
         ]
       },
       "InvalidationResultDto": {
@@ -14967,6 +15569,25 @@
           "items"
         ]
       },
+      "GateInput": {
+        "type": "object",
+        "properties": {
+          "enabled": {
+            "type": "boolean"
+          },
+          "runRecord": {
+            "type": "string",
+            "maxLength": 300
+          },
+          "runDate": {
+            "type": "string",
+            "format": "date"
+          }
+        },
+        "required": [
+          "enabled"
+        ]
+      },
       "PurgedDto": {
         "type": "object",
         "properties": {
@@ -14999,6 +15620,48 @@
           "purged",
           "pairs",
           "digests"
+        ]
+      },
+      "EscalationKind": {
+        "type": "string",
+        "enum": [
+          "rereview",
+          "discussion"
+        ]
+      },
+      "EscalationInput": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EscalationKind"
+              }
+            ]
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 4000,
+            "description": "Why: the notes page authors read (claims checked, what is uncertain)"
+          },
+          "triggers": {
+            "maxItems": 20,
+            "description": "Trigger ids the caller cites (`judgement` for its own); firing ones are added",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "bundleHash": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          }
+        },
+        "required": [
+          "kind",
+          "reason",
+          "bundleHash"
         ]
       },
       "FiredTriggerDto": {
@@ -15048,13 +15711,6 @@
         "required": [
           "users",
           "source"
-        ]
-      },
-      "EscalationKind": {
-        "type": "string",
-        "enum": [
-          "rereview",
-          "discussion"
         ]
       },
       "EscalationResolution": {
@@ -15733,6 +16389,35 @@
           "counts"
         ]
       },
+      "SpotCheckInput": {
+        "type": "object",
+        "properties": {
+          "outcome": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SpotCheckOutcome"
+              }
+            ]
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 4000
+          },
+          "anchors": {
+            "maxItems": 50,
+            "description": "Sections at fault (failed only); default the proposal section or every section",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "outcome",
+          "reason"
+        ]
+      },
       "ReviewModel": {
         "type": "string",
         "enum": [
@@ -15992,6 +16677,89 @@
           "qualityCheck",
           "updatedAt",
           "updatedBy"
+        ]
+      },
+      "CustomTriggerInput": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]{0,39}$"
+          },
+          "kind": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CustomTriggerKind"
+              }
+            ]
+          },
+          "value": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "value",
+          "reason"
+        ]
+      },
+      "ReviewSettingsInput": {
+        "type": "object",
+        "properties": {
+          "reviewModel": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ReviewModel"
+              }
+            ]
+          },
+          "spotCheckRate": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1,
+            "description": "Steps of 0.01"
+          },
+          "reminderDays": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 30
+          },
+          "agentEditsHumanPages": {
+            "type": "boolean",
+            "description": "The one default trigger the owner may turn off (agent edits of human pages)"
+          },
+          "customTriggers": {
+            "maxItems": 20,
+            "description": "Replaces the owner-added triggers (defaults cannot be removed)",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CustomTriggerInput"
+            }
+          }
+        }
+      },
+      "AgentPauseInput": {
+        "type": "object",
+        "properties": {
+          "paused": {
+            "type": "boolean",
+            "description": "true pauses, false resumes the reviewer agent"
+          },
+          "reason": {
+            "type": "string",
+            "maxLength": 500
+          }
+        },
+        "required": [
+          "paused"
         ]
       },
       "EscalatedCountsDto": {

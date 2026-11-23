@@ -180,7 +180,7 @@ export class ReportInput extends SectionRefInput {
   @ApiProperty({ type: Boolean }) @IsBoolean() blocking!: boolean;
   @ApiProperty({ type: Boolean }) @IsBoolean() sawCounts!: boolean;
 }
-export class WithdrawInput {
+export class AttestationWithdrawInput {
   @ApiPropertyOptional({ type: String, maxLength: 2000 }) @IsOptional() @IsString() @MaxLength(2000) reason?: string;
 }
 export class IdParams {
@@ -202,7 +202,7 @@ export class QueueItemParams {
   @IsIn(QUEUE_TYPES) type!: (typeof QUEUE_TYPES)[number];
   @IsString() @Length(1, 200) id!: string;
 }
-export class DecisionInput {
+export class CredibilityDecisionInput {
   @ApiProperty({ enum: QUEUE_TYPES }) @IsIn(QUEUE_TYPES) type!: (typeof QUEUE_TYPES)[number];
   @ApiProperty({ type: String }) @IsString() @Length(1, 200) id!: string;
   @ApiProperty({ type: String }) @IsString() @Length(1, 40) outcome!: string;
