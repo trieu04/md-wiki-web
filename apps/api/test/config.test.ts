@@ -7,7 +7,14 @@ const example = parseEnv(readFileSync(new URL('../../../.env.example', import.me
 
 it('reports all missing API keys in one boot error', () => {
   const required = Object.keys(parseConfig(example)).filter(
-    (key) => !['API_HOST', 'INTERNAL_HOST', 'WIKI_NAME', 'WIKI_DESCRIPTION'].includes(key),
+    (key) =>
+      ![
+        'API_HOST',
+        'INTERNAL_HOST',
+        'WIKI_NAME',
+        'WIKI_DESCRIPTION',
+        'QUALITY_RULES_PATH',
+      ].includes(key),
   );
   for (const key of required) expect(() => parseConfig({})).toThrow(key);
 });
@@ -43,4 +50,11 @@ it('validates URLs, port ranges, booleans, and credentials without echoing secre
   const parse = () => parseConfig({ ...example, ...invalid });
   for (const key of Object.keys(invalid)) expect(parse).toThrow(key);
   expect(parse).not.toThrow(/secret/);
+});
+
+it('defaults the quality rules file to rules/quality.md and keeps model settings optional', () => {
+  const parsed = parseConfig(example);
+  expect(parsed.QUALITY_RULES_PATH.endsWith('/rules/quality.md')).toBe(true);
+  expect(parsed.AI_DEFAULT__MODEL).toBeUndefined();
+  expect(parseConfig({ ...example, AI_DEFAULT__MODEL: 'm' }).AI_DEFAULT__MODEL).toBe('m');
 });

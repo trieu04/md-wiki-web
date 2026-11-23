@@ -16,6 +16,7 @@ import {
   ApiHeader,
   ApiNoContentResponse,
   ApiOkResponse,
+  ApiAcceptedResponse,
   ApiParam,
   ApiProduces,
 } from '@nestjs/swagger';
@@ -44,6 +45,7 @@ import { ContributionsService } from './contributions.service.js';
 import { DraftsService } from './drafts.service.js';
 import type { Frozen } from './freezer.service.js';
 import { ifMatch } from './pins.js';
+import { QualityReportDto, QualityRunDto } from '../quality/quality.dto.js';
 
 const idParam = () => ApiParam({ name: 'id', type: String, format: 'uuid' });
 const ifMatchHeader = () =>
@@ -200,6 +202,33 @@ export class DraftsController {
     const expected = ifMatch(req.get('If-Match'));
     const frozen = await this.drafts.submit(principal(req).user, id, expected);
     return this.contributions.proposalDto(frozen.proposalId);
+  }
+
+  @Post(':id/self-check')
+  @idParam()
+  @Requires('draft.check')
+  @ApiAcceptedResponse({ type: QualityRunDto, description: 'A new self-check was queued' })
+  @ApiOkResponse({ type: QualityRunDto, description: 'The same draft is already being checked' })
+  @ApiProblemResponse('NOT_FOUND')
+  @ApiProblemResponse('VALIDATION_FAILED')
+  async selfCheck(
+    @Req() req: AuthRequest,
+    @InputParams(DraftIdInput) { id }: DraftIdInput,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const { created, run } = await this.drafts.selfCheck(principal(req).user, id);
+    res.status(created ? 202 : 200);
+    return run;
+  }
+
+  @Get(':id/self-check')
+  @idParam()
+  @Requires('draft.read')
+  @ApiOkResponse({ type: QualityReportDto })
+  @ApiProblemResponse('NOT_FOUND')
+  @ApiProblemResponse('VALIDATION_FAILED')
+  selfCheckReport(@Req() req: AuthRequest, @InputParams(DraftIdInput) { id }: DraftIdInput) {
+    return this.drafts.selfCheckReport(principal(req).user, id);
   }
 
   @Get(':id/export')

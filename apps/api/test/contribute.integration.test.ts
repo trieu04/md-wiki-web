@@ -22,6 +22,7 @@ import type {
 import { PrismaService } from '../src/prisma/prisma.service.js';
 import { WikiIndexer } from '../src/wiki/indexer/wiki-indexer.js';
 import type { ContextDto } from '../src/wiki/read.dto.js';
+import { NO_QUEUE } from './no-queue.js';
 import { testSchema } from './test-schema.js';
 
 const database = testSchema();
@@ -112,6 +113,8 @@ beforeAll(async () => {
   const module = await Test.createTestingModule({ imports: [AppModule] })
     .overrideProvider(API_CONFIG)
     .useValue(config)
+    .overrideProvider(NO_QUEUE.provide)
+    .useValue(NO_QUEUE.value)
     .compile();
   app = module.createNestApplication();
   configureHttp(app, { public: true });

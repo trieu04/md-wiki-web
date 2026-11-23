@@ -1,4 +1,4 @@
-"""Pure helpers for the ``quality_check`` job (wired in a later phase)."""
+"""The ``quality_check`` job, its pure helpers and the offline scorer (system-logic §7.6)."""
 
 from .fencing import DataBlock, data_instruction, fence_blocks, new_nonce, unfence
 from .findings import ModelFinding, ModelOutput, Quote, Verified, normalize_ws, verify_findings

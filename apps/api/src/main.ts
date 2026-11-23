@@ -8,6 +8,7 @@ import { configureHttp } from './config/http.js';
 
 import { AuthService } from './auth/auth.service.js';
 import { PublishService } from './review/publish.service.js';
+import { QualityJobs } from './quality/quality-jobs.service.js';
 import { WikiIndexer } from './wiki/indexer/wiki-indexer.js';
 
 async function bootstrap(): Promise<void> {
@@ -23,6 +24,8 @@ async function bootstrap(): Promise<void> {
     await app.get(WikiIndexer).reindex();
     // Resume or classify publications a crash interrupted (system-logic §7.4.5).
     await app.get(PublishService).recover();
+    // Quality runs whose enqueue was lost (Redis down at submit) go out again (§7.6.5).
+    await app.get(QualityJobs).redispatch();
     await internal.listen(config.INTERNAL_PORT, config.INTERNAL_HOST);
     await app.listen(config.API_PORT, config.API_HOST);
     logger.info(

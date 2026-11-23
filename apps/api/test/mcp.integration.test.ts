@@ -21,6 +21,7 @@ import { WikiIndexer } from '../src/wiki/indexer/wiki-indexer.js';
 import { FixtureStorage } from '../src/wiki/storage/fixture-storage.js';
 import { wikiPath } from '../src/wiki/storage/wiki-storage.js';
 import { WIKI_STORAGE } from '../src/wiki/wiki.module.js';
+import { NO_QUEUE } from './no-queue.js';
 import { testSchema } from './test-schema.js';
 
 /**
@@ -101,6 +102,8 @@ beforeAll(async () => {
   const module = await Test.createTestingModule({ imports: [AppModule] })
     .overrideProvider(API_CONFIG)
     .useValue(config)
+    .overrideProvider(NO_QUEUE.provide)
+    .useValue(NO_QUEUE.value)
     .overrideProvider(WIKI_STORAGE)
     .useValue(storage)
     .compile();

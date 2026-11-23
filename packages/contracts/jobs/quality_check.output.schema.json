@@ -1,0 +1,68 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "QualityCheckOutput",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["promptVersion", "provider", "model", "rulesSha256", "usage", "findings", "dropped"],
+  "$defs": {
+    "QuoteRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["block", "text"],
+      "properties": {
+        "block": { "type": "string", "pattern": "^[a-z][a-z0-9-]{0,39}$" },
+        "text": { "type": "string", "minLength": 1, "maxLength": 4000 }
+      }
+    }
+  },
+  "properties": {
+    "promptVersion": { "type": "string", "minLength": 1, "maxLength": 40 },
+    "provider": { "type": "string", "minLength": 1, "maxLength": 40 },
+    "model": { "type": "string", "minLength": 1, "maxLength": 200 },
+    "rulesSha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "usage": {
+      "title": "QualityUsage",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["inputTokens", "outputTokens"],
+      "properties": {
+        "inputTokens": { "type": "integer", "minimum": 0 },
+        "outputTokens": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "findings": {
+      "type": "array",
+      "maxItems": 200,
+      "items": {
+        "title": "QualityFinding",
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["rule", "severity", "message", "quote", "origin", "original"],
+        "properties": {
+          "rule": { "type": "string", "minLength": 1, "maxLength": 64 },
+          "severity": {
+            "title": "FindingSeverity",
+            "type": "string",
+            "enum": ["info", "warning", "blocking"]
+          },
+          "message": { "type": "string", "minLength": 1, "maxLength": 2000 },
+          "quote": { "$ref": "#/$defs/QuoteRef" },
+          "origin": { "title": "FindingOrigin", "type": "string", "enum": ["model", "rule"] },
+          "original": { "anyOf": [{ "$ref": "#/$defs/QuoteRef" }, { "type": "null" }] }
+        }
+      }
+    },
+    "dropped": {
+      "title": "QualityDropped",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["unknownRule", "unknownBlock", "emptyQuote", "quoteNotFound"],
+      "properties": {
+        "unknownRule": { "type": "integer", "minimum": 0 },
+        "unknownBlock": { "type": "integer", "minimum": 0 },
+        "emptyQuote": { "type": "integer", "minimum": 0 },
+        "quoteNotFound": { "type": "integer", "minimum": 0 }
+      }
+    }
+  }
+}

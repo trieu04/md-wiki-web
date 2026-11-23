@@ -9,6 +9,7 @@ import { EventsModule } from './events/events.module.js';
 import { ReviewModule } from './review/review.module.js';
 import { DiscussionsModule } from './discussions/discussions.module.js';
 import { McpModule } from './mcp/mcp.module.js';
+import { QualityModule } from './quality/quality.module.js';
 import { HealthModule } from './health/health.module.js';
 import { DevPingModule, InternalJobsModule } from './jobs/jobs.module.js';
 
@@ -37,6 +38,7 @@ export class InternalModule {}
     ReviewModule,
     DiscussionsModule,
     McpModule,
+    QualityModule,
     ...(process.env.NODE_ENV === 'production' ? [] : [DevPingModule]),
   ],
   controllers: [MetaController],

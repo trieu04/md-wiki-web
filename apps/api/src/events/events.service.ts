@@ -1,12 +1,13 @@
 import { Injectable, type OnModuleDestroy } from '@nestjs/common';
 import type { PublicationPhase } from '@md-wiki/domain';
-import { interval, map, merge, Observable, filter, Subject } from 'rxjs';
+import { interval, map, merge, Observable, filter, Subject, type Subscription } from 'rxjs';
 
 export const EVENT_TYPES = [
   'proposal.changed',
   'publication.changed',
   'page.changed',
   'discussion.changed',
+  'quality.changed',
   'ping',
 ] as const;
 export type EventType = (typeof EVENT_TYPES)[number];
@@ -20,6 +21,7 @@ export interface WireEvent {
   phase?: PublicationPhase;
   topicId?: string;
   version?: number;
+  draftId?: string;
   at: string;
 }
 interface Published extends WireEvent {
@@ -27,6 +29,8 @@ interface Published extends WireEvent {
   submitterId?: string;
   /** Further users who see a restricted event (participants of a proposal topic, §7.5.7). */
   audience?: readonly string[];
+  /** Only `submitterId` (and `audience`) see it, not reviewers (a draft self-check). */
+  private?: boolean;
 }
 export interface EventViewer {
   id: string;
@@ -35,14 +39,36 @@ export interface EventViewer {
 const REVIEW_ROLES = new Set(['reviewer', 'publisher', 'owner']);
 export const PING_MS = 25_000;
 
+/**
+ * One bus per process: the public and the internal Nest apps each hold an EventsService, and a
+ * job result stored by the internal listener reaches the public SSE streams (§7.6.7).
+ */
+const processBus = new Subject<Published>();
+
 /** In-process fan-out of committed state changes (one API process per host, D-88). */
 @Injectable()
 export class EventsService implements OnModuleDestroy {
   private readonly subject = new Subject<Published>();
+  private readonly bridge: Subscription = processBus.subscribe((event) => {
+    this.subject.next(event);
+  });
 
   /** Call after the transaction that made the change has committed. */
   emit(event: Omit<Published, 'at'>) {
-    this.subject.next({ ...event, at: new Date().toISOString() });
+    processBus.next({ ...event, at: new Date().toISOString() });
+  }
+
+  /** A quality run of a proposal (proposal audience) or a draft self-check (its author only). */
+  quality(subject: { slug: string; submitterId: string } | { draftId: string; authorId: string }) {
+    if ('slug' in subject)
+      this.emit({ type: 'quality.changed', slug: subject.slug, submitterId: subject.submitterId });
+    else
+      this.emit({
+        type: 'quality.changed',
+        draftId: subject.draftId,
+        submitterId: subject.authorId,
+        private: true,
+      });
   }
 
   proposal(slug: string, submitterId: string, state: string, phase?: PublicationPhase | null) {
@@ -88,7 +114,7 @@ export class EventsService implements OnModuleDestroy {
     return (
       event.submitterId === viewer.id ||
       (event.audience?.includes(viewer.id) ?? false) ||
-      viewer.roles.some((r) => REVIEW_ROLES.has(r))
+      (!event.private && viewer.roles.some((r) => REVIEW_ROLES.has(r)))
     );
   }
 
@@ -99,11 +125,15 @@ export class EventsService implements OnModuleDestroy {
       map((): Published => ({ type: 'ping', at: new Date().toISOString() })),
     );
     return merge(events, pings).pipe(
-      map(({ submitterId: _hidden, audience: _audience, ...data }) => ({ type: data.type, data })),
+      map(({ submitterId: _hidden, audience: _audience, private: _private, ...data }) => ({
+        type: data.type,
+        data,
+      })),
     );
   }
 
   onModuleDestroy() {
+    this.bridge.unsubscribe();
     this.subject.complete();
   }
 }

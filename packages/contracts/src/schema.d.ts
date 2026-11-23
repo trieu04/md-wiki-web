@@ -4,6 +4,22 @@
  */
 
 export interface paths {
+    "/api/v1/admin/models": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["QualityAdminController_models"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/reindex": {
         parameters: {
             query?: never;
@@ -14,6 +30,22 @@ export interface paths {
         get?: never;
         put?: never;
         post: operations["AdminController_reindex"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/rules": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["QualityAdminController_rules"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -324,6 +356,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/drafts/{id}/self-check": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["DraftsController_selfCheckReport"];
+        put?: never;
+        post: operations["DraftsController_selfCheck"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/drafts/{id}/sources": {
         parameters: {
             query?: never;
@@ -468,6 +516,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/ops/jobs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["JobsOpsController_jobs"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/proposals": {
         parameters: {
             query?: never;
@@ -580,6 +644,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/proposals/{slug}/findings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["QualityController_findings"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/proposals/{slug}/publish": {
         parameters: {
             query?: never;
@@ -590,6 +670,22 @@ export interface paths {
         get?: never;
         put?: never;
         post: operations["ProposalsController_publish"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/proposals/{slug}/quality-check": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["QualityController_rerun"];
         delete?: never;
         options?: never;
         head?: never;
@@ -918,6 +1014,8 @@ export interface components {
         CanDto: {
             decide: boolean;
             publish: boolean;
+            /** @description May ask for a new quality check (§7.6.5) */
+            rerunQuality: boolean;
             resolveBlocked: boolean;
             resolveConflict: boolean;
             withdraw: boolean;
@@ -1200,11 +1298,20 @@ export interface components {
             sha256: string;
             versionLabel: string;
         };
+        DroppedDto: {
+            emptyQuote: number;
+            quoteNotFound: number;
+            total: number;
+            unknownBlock: number;
+            unknownRule: number;
+        };
         /** @enum {string} */
         ErrorCode: "VALIDATION_FAILED" | "INVALID_PATH" | "UNAUTHENTICATED" | "INVALID_CREDENTIALS" | "CSRF_INVALID" | "FORBIDDEN" | "ACCOUNT_DISABLED" | "NOT_FOUND" | "ALREADY_EXISTS" | "PRECONDITION_FAILED" | "SELF_REVIEW" | "NOT_ASSIGNED" | "DISPUTED" | "DECISION_BINDING_MISMATCH" | "DISCUSSION_CHANGED" | "SOURCE_CHANGED" | "TARGET_BLOCKED" | "ESCALATION_REQUIRED" | "SECTION_CHANGED" | "STALE_BASE" | "EMAIL_TAKEN" | "LAST_OWNER" | "PAYLOAD_TOO_LARGE" | "RATE_LIMITED" | "STORAGE_ERROR" | "VERIFY_FAILED" | "INTERNAL";
         EventDto: {
             /** Format: date-time */
             at: string;
+            /** Format: uuid */
+            draftId?: string;
             path?: string;
             phase?: components["schemas"]["PublicationPhase"];
             slug?: string;
@@ -1215,7 +1322,7 @@ export interface components {
             version?: number;
         };
         /** @enum {string} */
-        EventType: "proposal.changed" | "publication.changed" | "page.changed" | "discussion.changed" | "ping";
+        EventType: "proposal.changed" | "publication.changed" | "page.changed" | "discussion.changed" | "quality.changed" | "ping";
         FieldProblemDto: {
             code: string;
             message: string;
@@ -1225,6 +1332,25 @@ export interface components {
             artifact: string;
             artifactHash: string;
         };
+        FindingDto: {
+            /** @description Data block id the quote is from */
+            block: string;
+            /** Format: uuid */
+            id: string;
+            lineEnd: number | null;
+            lineStart: number | null;
+            message: string;
+            origin: components["schemas"]["FindingOrigin"];
+            original: components["schemas"]["QuoteRefDto"] | null;
+            quote: string;
+            rule: string;
+            ruleTitle: string | null;
+            severity: components["schemas"]["FindingSeverity"];
+        };
+        /** @enum {string} */
+        FindingOrigin: "model" | "rule";
+        /** @enum {string} */
+        FindingSeverity: "info" | "warning" | "blocking";
         HealthDto: {
             /** @enum {string} */
             db: "ok" | "down";
@@ -1244,6 +1370,59 @@ export interface components {
             /** @description The `.contribution.md` v3 file text */
             file: string;
         };
+        JobErrorDto: {
+            code: string;
+            message: string;
+        };
+        /** @enum {string} */
+        JobKind: "ping" | "quality_check";
+        JobKindSummaryDto: {
+            failed24h: number;
+            kind: components["schemas"]["JobKind"];
+            /** @description Latest finished run */
+            last: components["schemas"]["JobListItemDto"] | null;
+            queued: number;
+            running: number;
+        };
+        JobListDto: {
+            items: components["schemas"]["JobListItemDto"][];
+            kinds: components["schemas"]["JobKindSummaryDto"][];
+            nextCursor: string | null;
+        };
+        JobListItemDto: {
+            /** Format: date-time */
+            createdAt: string;
+            durationMs: number | null;
+            error: components["schemas"]["JobErrorDto"] | null;
+            findings: number | null;
+            /** Format: date-time */
+            finishedAt: string | null;
+            /** Format: uuid */
+            id: string;
+            kind: components["schemas"]["JobKind"];
+            model: string | null;
+            promptVersion: string | null;
+            provider: string | null;
+            /** Format: date-time */
+            startedAt: string | null;
+            status: components["schemas"]["JobStatus"];
+            subject: components["schemas"]["JobSubjectDto"] | null;
+            tokensIn: number | null;
+            tokensOut: number | null;
+            trigger: components["schemas"]["JobTrigger"];
+        };
+        /** @enum {string} */
+        JobStatus: "queued" | "running" | "succeeded" | "failed";
+        JobSubjectDto: {
+            /** @enum {string} */
+            kind: "proposal" | "draft";
+            /** @description null for drafts */
+            slug: string | null;
+            /** @description null for drafts */
+            title: string | null;
+        };
+        /** @enum {string} */
+        JobTrigger: "dev" | "submit" | "rerun" | "self_check";
         LabelDto: {
             /** @enum {string} */
             label: "checked" | "reviewed" | "not_reviewed" | "recheck" | "error";
@@ -1252,6 +1431,14 @@ export interface components {
             reviewerKind: "agent" | "person" | null;
             /** Format: date-time */
             since: string | null;
+        };
+        LastUsedDto: {
+            /** Format: date-time */
+            at: string;
+            kind: string;
+            model: string;
+            promptVersion: string | null;
+            provider: string;
         };
         ListDecisionDto: {
             approve: boolean;
@@ -1288,8 +1475,28 @@ export interface components {
             wikiDescription: string;
             wikiName: string;
         };
+        ModelJobDto: {
+            /** @enum {string} */
+            kind: "quality_check";
+            maxAttempts: number;
+            maxTokens: number;
+            model: string;
+            /** @description A per-kind override is set */
+            overridden: boolean;
+            provider: string;
+            timeoutS: number;
+        };
+        ModelsDto: {
+            jobs: components["schemas"]["ModelJobDto"][];
+            lastUsed: components["schemas"]["LastUsedDto"][];
+            openaiCompat: components["schemas"]["OpenAiCompatDto"];
+        };
         OldShaDto: {
             sha256: string | null;
+        };
+        OpenAiCompatDto: {
+            /** @description scheme://host:port only */
+            baseUrl: string | null;
         };
         PageDto: {
             changedOutsideReview: boolean;
@@ -1373,6 +1580,7 @@ export interface components {
             proposedSha256: string;
             publication: components["schemas"]["PublicationDto"] | null;
             publications: components["schemas"]["PublicationDto"][];
+            quality: components["schemas"]["QualitySummaryDto"];
             reason: string;
             refs: components["schemas"]["RefStatusDto"][];
             scope: components["schemas"]["ScopeRowDto"][];
@@ -1473,6 +1681,7 @@ export interface components {
             pageTitle: string;
             phase: components["schemas"]["PublicationPhase"] | null;
             publishedVersion: string | null;
+            quality: components["schemas"]["QualitySummaryDto"];
             section: string | null;
             sectionTitle: string | null;
             slug: string;
@@ -1516,6 +1725,70 @@ export interface components {
             reviewerKind: "agent" | "person";
             slug: string;
         };
+        /** @enum {string} */
+        QualityFlag: "blocking_finding" | "dropped_hedge" | "check_failed";
+        QualityReportDto: {
+            /** @description The subject's current hash */
+            bundleHash: string;
+            can: components["schemas"]["ReportCanDto"];
+            current: components["schemas"]["QualityRunDto"] | null;
+            latest: components["schemas"]["QualityRunDto"] | null;
+            /** @description Newest first, at most 10; findings only on current and latest */
+            runs: components["schemas"]["QualityRunDto"][];
+            subject: components["schemas"]["QualitySubjectDto"];
+            summary: components["schemas"]["QualitySummaryDto"];
+        };
+        QualityRunDto: {
+            bundleHash: string;
+            counts: components["schemas"]["SeverityCountsDto"];
+            /** Format: date-time */
+            createdAt: string;
+            /** @description bundleHash equals the subject's current hash */
+            current: boolean;
+            dropped: components["schemas"]["DroppedDto"] | null;
+            error: components["schemas"]["JobErrorDto"] | null;
+            findings: components["schemas"]["FindingDto"][];
+            /** Format: date-time */
+            finishedAt: string | null;
+            /** Format: uuid */
+            id: string;
+            model: string | null;
+            promptVersion: string | null;
+            provider: string | null;
+            requestedBy: components["schemas"]["UserRefDto"] | null;
+            rulesChanged: boolean;
+            rulesSha256: string | null;
+            /** Format: date-time */
+            startedAt: string | null;
+            status: components["schemas"]["JobStatus"];
+            tokensIn: number | null;
+            tokensOut: number | null;
+            trigger: components["schemas"]["QualityTrigger"];
+        };
+        /** @enum {string} */
+        QualityStatus: "none" | "queued" | "running" | "succeeded" | "failed";
+        QualitySubjectDto: {
+            /** Format: uuid */
+            id: string;
+            /** @enum {string} */
+            kind: "proposal" | "draft";
+            slug: string | null;
+        };
+        QualitySummaryDto: {
+            counts: components["schemas"]["SeverityCountsDto"];
+            /** @description A succeeded run bound to the current hash exists */
+            current: boolean;
+            /** @description Findings of the current run */
+            findings: number;
+            flags: components["schemas"]["QualityFlag"][];
+            status: components["schemas"]["QualityStatus"];
+        };
+        /** @enum {string} */
+        QualityTrigger: "submit" | "rerun" | "self_check";
+        QuoteRefDto: {
+            block: string;
+            text: string;
+        };
         RebaseInput: {
             /**
              * @default auto
@@ -1553,6 +1826,9 @@ export interface components {
             durationMs: number;
             scanned: number;
         };
+        ReportCanDto: {
+            rerun: boolean;
+        };
         ResolutionDto: {
             actor: components["schemas"]["UserRefDto"];
             /** Format: date-time */
@@ -1566,6 +1842,19 @@ export interface components {
             evidence: string;
             /** @enum {string} */
             outcome: "written" | "not_written";
+        };
+        RuleDto: {
+            body: string;
+            id: string;
+            title: string;
+        };
+        RulesDto: {
+            error: string | null;
+            path: string;
+            preamble: string;
+            rules: components["schemas"]["RuleDto"][];
+            sha256: string | null;
+            size: number | null;
         };
         ScopeInput: {
             /** @description Only null (whole page) is accepted */
@@ -1629,6 +1918,11 @@ export interface components {
         SessionDto: {
             csrfToken: string | null;
             user: components["schemas"]["MeDto"] | null;
+        };
+        SeverityCountsDto: {
+            blocking: number;
+            info: number;
+            warning: number;
         };
         ShaDto: {
             sha256: string;
@@ -1926,6 +2220,43 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    QualityAdminController_models: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ModelsDto"];
+                };
+            };
+            /** @description UNAUTHENTICATED */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description FORBIDDEN | ACCOUNT_DISABLED */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+        };
+    };
     AdminController_reindex: {
         parameters: {
             query?: never;
@@ -1962,6 +2293,43 @@ export interface operations {
                 };
             };
             /** @description FORBIDDEN | ACCOUNT_DISABLED | CSRF_INVALID */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+        };
+    };
+    QualityAdminController_rules: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RulesDto"];
+                };
+            };
+            /** @description UNAUTHENTICATED */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description FORBIDDEN | ACCOUNT_DISABLED */
             403: {
                 headers: {
                     [name: string]: unknown;
@@ -3414,6 +3782,130 @@ export interface operations {
             };
         };
     };
+    DraftsController_selfCheckReport: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QualityReportDto"];
+                };
+            };
+            /** @description VALIDATION_FAILED */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description UNAUTHENTICATED */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description FORBIDDEN | ACCOUNT_DISABLED | CSRF_INVALID */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description NOT_FOUND */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+        };
+    };
+    DraftsController_selfCheck: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The same draft is already being checked */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QualityRunDto"];
+                };
+            };
+            /** @description A new self-check was queued */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QualityRunDto"];
+                };
+            };
+            /** @description VALIDATION_FAILED */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description UNAUTHENTICATED */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description FORBIDDEN | ACCOUNT_DISABLED | CSRF_INVALID */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description NOT_FOUND */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+        };
+    };
     DraftsController_addSource: {
         parameters: {
             query?: never;
@@ -3871,6 +4363,57 @@ export interface operations {
             };
             /** @description STORAGE_ERROR */
             500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+        };
+    };
+    JobsOpsController_jobs: {
+        parameters: {
+            query?: {
+                cursor?: string;
+                kind?: "ping" | "quality_check";
+                limit?: number;
+                status?: "queued" | "running" | "succeeded" | "failed";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JobListDto"];
+                };
+            };
+            /** @description VALIDATION_FAILED */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description UNAUTHENTICATED */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description FORBIDDEN | ACCOUNT_DISABLED */
+            403: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -4470,6 +5013,63 @@ export interface operations {
             };
         };
     };
+    QualityController_findings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QualityReportDto"];
+                };
+            };
+            /** @description VALIDATION_FAILED */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description UNAUTHENTICATED */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description FORBIDDEN | ACCOUNT_DISABLED | CSRF_INVALID */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description NOT_FOUND */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+        };
+    };
     ProposalsController_publish: {
         parameters: {
             query?: never;
@@ -4537,6 +5137,82 @@ export interface operations {
             };
             /** @description STORAGE_ERROR */
             500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+        };
+    };
+    QualityController_rerun: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description A run is already queued or running */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QualityRunDto"];
+                };
+            };
+            /** @description A new run was queued */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QualityRunDto"];
+                };
+            };
+            /** @description VALIDATION_FAILED */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description UNAUTHENTICATED */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description FORBIDDEN | ACCOUNT_DISABLED | CSRF_INVALID */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description NOT_FOUND */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description PRECONDITION_FAILED */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };

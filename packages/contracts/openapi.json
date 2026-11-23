@@ -2237,6 +2237,156 @@
         ]
       }
     },
+    "/api/v1/drafts/{id}/self-check": {
+      "post": {
+        "operationId": "DraftsController_selfCheck",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The same draft is already being checked",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QualityRunDto"
+                }
+              }
+            }
+          },
+          "202": {
+            "description": "A new self-check was queued",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QualityRunDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_FAILED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN | ACCOUNT_DISABLED | CSRF_INVALID",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Drafts"
+        ]
+      },
+      "get": {
+        "operationId": "DraftsController_selfCheckReport",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QualityReportDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_FAILED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN | ACCOUNT_DISABLED | CSRF_INVALID",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Drafts"
+        ]
+      }
+    },
     "/api/v1/drafts/{id}/export": {
       "get": {
         "operationId": "DraftsController_export",
@@ -2628,6 +2778,345 @@
         },
         "tags": [
           "Contributions"
+        ]
+      }
+    },
+    "/api/v1/proposals/{slug}/quality-check": {
+      "post": {
+        "operationId": "QualityController_rerun",
+        "parameters": [
+          {
+            "name": "slug",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A run is already queued or running",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QualityRunDto"
+                }
+              }
+            }
+          },
+          "202": {
+            "description": "A new run was queued",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QualityRunDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_FAILED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN | ACCOUNT_DISABLED | CSRF_INVALID",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "PRECONDITION_FAILED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Quality"
+        ]
+      }
+    },
+    "/api/v1/proposals/{slug}/findings": {
+      "get": {
+        "operationId": "QualityController_findings",
+        "parameters": [
+          {
+            "name": "slug",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QualityReportDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_FAILED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN | ACCOUNT_DISABLED | CSRF_INVALID",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Quality"
+        ]
+      }
+    },
+    "/api/v1/admin/models": {
+      "get": {
+        "operationId": "QualityAdminController_models",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ModelsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN | ACCOUNT_DISABLED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "QualityAdmin"
+        ]
+      }
+    },
+    "/api/v1/admin/rules": {
+      "get": {
+        "operationId": "QualityAdminController_rules",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RulesDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN | ACCOUNT_DISABLED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "QualityAdmin"
+        ]
+      }
+    },
+    "/api/v1/ops/jobs": {
+      "get": {
+        "operationId": "JobsOpsController_jobs",
+        "parameters": [
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "enum": [
+                "queued",
+                "running",
+                "succeeded",
+                "failed"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "kind",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "enum": [
+                "ping",
+                "quality_check"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 25
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobListDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_FAILED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN | ACCOUNT_DISABLED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "JobsOps"
         ]
       }
     },
@@ -6098,6 +6587,7 @@
           "publication.changed",
           "page.changed",
           "discussion.changed",
+          "quality.changed",
           "ping"
         ]
       },
@@ -6145,6 +6635,10 @@
           },
           "version": {
             "type": "integer"
+          },
+          "draftId": {
+            "type": "string",
+            "format": "uuid"
           },
           "at": {
             "type": "string",
@@ -6623,6 +7117,479 @@
           "createdAt"
         ]
       },
+      "QualityTrigger": {
+        "type": "string",
+        "enum": [
+          "submit",
+          "rerun",
+          "self_check"
+        ]
+      },
+      "JobStatus": {
+        "type": "string",
+        "enum": [
+          "queued",
+          "running",
+          "succeeded",
+          "failed"
+        ]
+      },
+      "JobErrorDto": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "message"
+        ]
+      },
+      "DroppedDto": {
+        "type": "object",
+        "properties": {
+          "unknownRule": {
+            "type": "integer"
+          },
+          "unknownBlock": {
+            "type": "integer"
+          },
+          "emptyQuote": {
+            "type": "integer"
+          },
+          "quoteNotFound": {
+            "type": "integer"
+          },
+          "total": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "unknownRule",
+          "unknownBlock",
+          "emptyQuote",
+          "quoteNotFound",
+          "total"
+        ]
+      },
+      "SeverityCountsDto": {
+        "type": "object",
+        "properties": {
+          "info": {
+            "type": "integer"
+          },
+          "warning": {
+            "type": "integer"
+          },
+          "blocking": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "info",
+          "warning",
+          "blocking"
+        ]
+      },
+      "FindingSeverity": {
+        "type": "string",
+        "enum": [
+          "info",
+          "warning",
+          "blocking"
+        ]
+      },
+      "FindingOrigin": {
+        "type": "string",
+        "enum": [
+          "model",
+          "rule"
+        ]
+      },
+      "QuoteRefDto": {
+        "type": "object",
+        "properties": {
+          "block": {
+            "type": "string"
+          },
+          "text": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "block",
+          "text"
+        ]
+      },
+      "FindingDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "rule": {
+            "type": "string"
+          },
+          "ruleTitle": {
+            "type": "string",
+            "nullable": true
+          },
+          "severity": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/FindingSeverity"
+              }
+            ]
+          },
+          "message": {
+            "type": "string"
+          },
+          "block": {
+            "type": "string",
+            "description": "Data block id the quote is from"
+          },
+          "quote": {
+            "type": "string"
+          },
+          "lineStart": {
+            "type": "integer",
+            "nullable": true
+          },
+          "lineEnd": {
+            "type": "integer",
+            "nullable": true
+          },
+          "origin": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/FindingOrigin"
+              }
+            ]
+          },
+          "original": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/QuoteRefDto"
+              }
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "rule",
+          "ruleTitle",
+          "severity",
+          "message",
+          "block",
+          "quote",
+          "lineStart",
+          "lineEnd",
+          "origin",
+          "original"
+        ]
+      },
+      "UserRefDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "human",
+              "agent"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "kind"
+        ]
+      },
+      "QualityRunDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "trigger": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/QualityTrigger"
+              }
+            ]
+          },
+          "status": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/JobStatus"
+              }
+            ]
+          },
+          "bundleHash": {
+            "type": "string"
+          },
+          "current": {
+            "type": "boolean",
+            "description": "bundleHash equals the subject's current hash"
+          },
+          "rulesSha256": {
+            "type": "string",
+            "nullable": true
+          },
+          "rulesChanged": {
+            "type": "boolean"
+          },
+          "provider": {
+            "type": "string",
+            "nullable": true
+          },
+          "model": {
+            "type": "string",
+            "nullable": true
+          },
+          "promptVersion": {
+            "type": "string",
+            "nullable": true
+          },
+          "tokensIn": {
+            "type": "integer",
+            "nullable": true
+          },
+          "tokensOut": {
+            "type": "integer",
+            "nullable": true
+          },
+          "error": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/JobErrorDto"
+              }
+            ]
+          },
+          "dropped": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DroppedDto"
+              }
+            ]
+          },
+          "counts": {
+            "$ref": "#/components/schemas/SeverityCountsDto"
+          },
+          "findings": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FindingDto"
+            }
+          },
+          "requestedBy": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/UserRefDto"
+              }
+            ]
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "startedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "finishedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          }
+        },
+        "required": [
+          "id",
+          "trigger",
+          "status",
+          "bundleHash",
+          "current",
+          "rulesSha256",
+          "rulesChanged",
+          "provider",
+          "model",
+          "promptVersion",
+          "tokensIn",
+          "tokensOut",
+          "error",
+          "dropped",
+          "counts",
+          "findings",
+          "requestedBy",
+          "createdAt",
+          "startedAt",
+          "finishedAt"
+        ]
+      },
+      "QualitySubjectDto": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "proposal",
+              "draft"
+            ]
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "slug": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "kind",
+          "id",
+          "slug"
+        ]
+      },
+      "QualityStatus": {
+        "type": "string",
+        "enum": [
+          "none",
+          "queued",
+          "running",
+          "succeeded",
+          "failed"
+        ]
+      },
+      "QualityFlag": {
+        "type": "string",
+        "enum": [
+          "blocking_finding",
+          "dropped_hedge",
+          "check_failed"
+        ]
+      },
+      "QualitySummaryDto": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/QualityStatus"
+              }
+            ]
+          },
+          "findings": {
+            "type": "integer",
+            "description": "Findings of the current run"
+          },
+          "counts": {
+            "$ref": "#/components/schemas/SeverityCountsDto"
+          },
+          "flags": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/QualityFlag"
+            }
+          },
+          "current": {
+            "type": "boolean",
+            "description": "A succeeded run bound to the current hash exists"
+          }
+        },
+        "required": [
+          "status",
+          "findings",
+          "counts",
+          "flags",
+          "current"
+        ]
+      },
+      "ReportCanDto": {
+        "type": "object",
+        "properties": {
+          "rerun": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "rerun"
+        ]
+      },
+      "QualityReportDto": {
+        "type": "object",
+        "properties": {
+          "subject": {
+            "$ref": "#/components/schemas/QualitySubjectDto"
+          },
+          "bundleHash": {
+            "type": "string",
+            "description": "The subject's current hash"
+          },
+          "summary": {
+            "$ref": "#/components/schemas/QualitySummaryDto"
+          },
+          "current": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/QualityRunDto"
+              }
+            ]
+          },
+          "latest": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/QualityRunDto"
+              }
+            ]
+          },
+          "runs": {
+            "description": "Newest first, at most 10; findings only on current and latest",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/QualityRunDto"
+            }
+          },
+          "can": {
+            "$ref": "#/components/schemas/ReportCanDto"
+          }
+        },
+        "required": [
+          "subject",
+          "bundleHash",
+          "summary",
+          "current",
+          "latest",
+          "runs",
+          "can"
+        ]
+      },
       "BaseRefInput": {
         "type": "object",
         "properties": {
@@ -6963,28 +7930,381 @@
           "items"
         ]
       },
-      "UserRefDto": {
+      "ModelJobDto": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "quality_check"
+            ]
+          },
+          "provider": {
+            "type": "string"
+          },
+          "model": {
+            "type": "string"
+          },
+          "maxTokens": {
+            "type": "integer"
+          },
+          "timeoutS": {
+            "type": "number"
+          },
+          "maxAttempts": {
+            "type": "integer"
+          },
+          "overridden": {
+            "type": "boolean",
+            "description": "A per-kind override is set"
+          }
+        },
+        "required": [
+          "kind",
+          "provider",
+          "model",
+          "maxTokens",
+          "timeoutS",
+          "maxAttempts",
+          "overridden"
+        ]
+      },
+      "OpenAiCompatDto": {
+        "type": "object",
+        "properties": {
+          "baseUrl": {
+            "type": "string",
+            "nullable": true,
+            "description": "scheme://host:port only"
+          }
+        },
+        "required": [
+          "baseUrl"
+        ]
+      },
+      "LastUsedDto": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string"
+          },
+          "provider": {
+            "type": "string"
+          },
+          "model": {
+            "type": "string"
+          },
+          "promptVersion": {
+            "type": "string",
+            "nullable": true
+          },
+          "at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "kind",
+          "provider",
+          "model",
+          "promptVersion",
+          "at"
+        ]
+      },
+      "ModelsDto": {
+        "type": "object",
+        "properties": {
+          "jobs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ModelJobDto"
+            }
+          },
+          "openaiCompat": {
+            "$ref": "#/components/schemas/OpenAiCompatDto"
+          },
+          "lastUsed": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LastUsedDto"
+            }
+          }
+        },
+        "required": [
+          "jobs",
+          "openaiCompat",
+          "lastUsed"
+        ]
+      },
+      "RuleDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "body": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "body"
+        ]
+      },
+      "RulesDto": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string"
+          },
+          "sha256": {
+            "type": "string",
+            "nullable": true
+          },
+          "size": {
+            "type": "integer",
+            "nullable": true
+          },
+          "error": {
+            "type": "string",
+            "nullable": true
+          },
+          "rules": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RuleDto"
+            }
+          },
+          "preamble": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "path",
+          "sha256",
+          "size",
+          "error",
+          "rules",
+          "preamble"
+        ]
+      },
+      "JobKind": {
+        "type": "string",
+        "enum": [
+          "ping",
+          "quality_check"
+        ]
+      },
+      "JobTrigger": {
+        "type": "string",
+        "enum": [
+          "dev",
+          "submit",
+          "rerun",
+          "self_check"
+        ]
+      },
+      "JobSubjectDto": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "proposal",
+              "draft"
+            ]
+          },
+          "slug": {
+            "type": "string",
+            "nullable": true,
+            "description": "null for drafts"
+          },
+          "title": {
+            "type": "string",
+            "nullable": true,
+            "description": "null for drafts"
+          }
+        },
+        "required": [
+          "kind",
+          "slug",
+          "title"
+        ]
+      },
+      "JobListItemDto": {
         "type": "object",
         "properties": {
           "id": {
             "type": "string",
             "format": "uuid"
           },
-          "name": {
-            "type": "string"
-          },
           "kind": {
-            "type": "string",
-            "enum": [
-              "human",
-              "agent"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/JobKind"
+              }
             ]
+          },
+          "trigger": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/JobTrigger"
+              }
+            ]
+          },
+          "status": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/JobStatus"
+              }
+            ]
+          },
+          "subject": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/JobSubjectDto"
+              }
+            ]
+          },
+          "provider": {
+            "type": "string",
+            "nullable": true
+          },
+          "model": {
+            "type": "string",
+            "nullable": true
+          },
+          "promptVersion": {
+            "type": "string",
+            "nullable": true
+          },
+          "tokensIn": {
+            "type": "integer",
+            "nullable": true
+          },
+          "tokensOut": {
+            "type": "integer",
+            "nullable": true
+          },
+          "findings": {
+            "type": "integer",
+            "nullable": true
+          },
+          "error": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/JobErrorDto"
+              }
+            ]
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "startedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "finishedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "durationMs": {
+            "type": "integer",
+            "nullable": true
           }
         },
         "required": [
           "id",
-          "name",
-          "kind"
+          "kind",
+          "trigger",
+          "status",
+          "subject",
+          "provider",
+          "model",
+          "promptVersion",
+          "tokensIn",
+          "tokensOut",
+          "findings",
+          "error",
+          "createdAt",
+          "startedAt",
+          "finishedAt",
+          "durationMs"
+        ]
+      },
+      "JobKindSummaryDto": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/JobKind"
+              }
+            ]
+          },
+          "queued": {
+            "type": "integer"
+          },
+          "running": {
+            "type": "integer"
+          },
+          "failed24h": {
+            "type": "integer"
+          },
+          "last": {
+            "nullable": true,
+            "description": "Latest finished run",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/JobListItemDto"
+              }
+            ]
+          }
+        },
+        "required": [
+          "kind",
+          "queued",
+          "running",
+          "failed24h",
+          "last"
+        ]
+      },
+      "JobListDto": {
+        "type": "object",
+        "properties": {
+          "kinds": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/JobKindSummaryDto"
+            }
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/JobListItemDto"
+            }
+          },
+          "nextCursor": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "kinds",
+          "items",
+          "nextCursor"
         ]
       },
       "ListDecisionDto": {
@@ -7098,6 +8418,9 @@
             "type": "boolean",
             "nullable": true
           },
+          "quality": {
+            "$ref": "#/components/schemas/QualitySummaryDto"
+          },
           "createdAt": {
             "type": "string",
             "format": "date-time"
@@ -7124,6 +8447,7 @@
           "decision",
           "publishedVersion",
           "autoPublished",
+          "quality",
           "createdAt",
           "updatedAt"
         ]
@@ -7771,6 +9095,10 @@
           },
           "resolveBlocked": {
             "type": "boolean"
+          },
+          "rerunQuality": {
+            "type": "boolean",
+            "description": "May ask for a new quality check (§7.6.5)"
           }
         },
         "required": [
@@ -7778,7 +9106,8 @@
           "publish",
           "withdraw",
           "resolveConflict",
-          "resolveBlocked"
+          "resolveBlocked",
+          "rerunQuality"
         ]
       },
       "ProposalEventDto": {
@@ -8000,6 +9329,9 @@
           "discussion": {
             "$ref": "#/components/schemas/DiscussionDto"
           },
+          "quality": {
+            "$ref": "#/components/schemas/QualitySummaryDto"
+          },
           "can": {
             "$ref": "#/components/schemas/CanDto"
           },
@@ -8041,6 +9373,7 @@
           "refs",
           "conflict",
           "discussion",
+          "quality",
           "can",
           "history"
         ]

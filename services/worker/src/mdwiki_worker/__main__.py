@@ -1,6 +1,6 @@
-"""Enable ``python -m mdwiki_worker`` as the worker executable."""
+"""Enable ``python -m mdwiki_worker`` as the worker executable (``serve`` or ``eval``)."""
 
-from .main import run
+from .cli import main
 
 if __name__ == "__main__":
-    run()
+    raise SystemExit(main())

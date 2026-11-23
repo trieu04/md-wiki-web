@@ -146,11 +146,13 @@ ProposalRef(proposalId, snapshotId, role target|scope|source, impact?, ord)
 Assignment, Decision, Publication, Resolution, ConflictResolution, Withdrawal, PublishOutbox, PublishedSection
 -- Phase 6 (Prisma precise in §7.5.1)
 Topic, DiscussionEvent, DisputeEvent
+-- Phase 7 (Prisma precise in §7.6.1)
+AiJob proposal columns, Finding
 ```
 
 Later phases (Discussions, AI jobs, agent review, credibility, reading) use the architecture.md data model verbatim; their `-00` spec task turns it into Prisma with indexes.
 
-**Append-only enforcement**: `AuditEvent`, `DiscussionEvent`, `DisputeEvent`, and all credibility record tables get a Postgres trigger rejecting `UPDATE` and `DELETE` (migration test asserts it).
+**Append-only enforcement**: `AuditEvent`, `DiscussionEvent`, `DisputeEvent`, `Finding`, and all credibility record tables get a Postgres trigger rejecting `UPDATE` and `DELETE` (migration test asserts it).
 
 ## 5. Identity, roles, permissions
 
@@ -246,7 +248,7 @@ interface SearchHitDto { path: string; pageTitle: string; anchor: string; sectio
 | P4 Contribute (**full contract: §7.2**) | `GET/POST/PATCH/DELETE /drafts[/{id}]` (autosave `PATCH` with `If-Match: <updatedAt>`), `POST /drafts/{id}/sources`, `POST /drafts/{id}/rebase`, `POST /drafts/{id}/submit` → `ProposalDto`, `POST /contributions` (agent bundle), `GET /contributions/{slug}`, `POST /contributions/import` (`.contribution.md` v3), `GET /drafts/{id}/export` |
 | P5 Review/publish (**full contract: §7.4**) | `GET /proposals?state&tab&cursor`, `GET /proposals/{slug}` (incl. `preview` artifact + hashes), `GET /proposals/{slug}/diff`, `POST /proposals/{slug}/decisions` `{ approve, reason, bundleHash, artifactHash, previewAt, discussionVersion, disputeVersion }`, `POST /proposals/{slug}/publish`, `POST /proposals/{slug}/conflict` `{ outcome: keep_current\|use_incoming\|merge, replacement? }`, `GET /ops/blocked`, `POST /ops/blocked/{slug}/resolution`, `GET /audit`, `GET /events` (SSE) |
 | P6 Discussions/MCP (**full contract: §7.5**) | `/topics`, `/topics/{id}/comments`, `/proposals/{slug}/discussion`, `/proposals/{slug}/disputes`, MCP at `/mcp` (streamable HTTP) |
-| P7 Quality | `POST /proposals/{slug}/quality-check`, `GET /proposals/{slug}/findings`, internal `GET /internal/v1/jobs/{id}/input`, `POST /internal/v1/jobs/{id}/result`, `/admin/models`, `/admin/rules` |
+| P7 Quality (**full contract: §7.6**) | `POST /proposals/{slug}/quality-check`, `GET /proposals/{slug}/findings`, internal `GET /internal/v1/jobs/{id}/input`, `POST /internal/v1/jobs/{id}/result`, `/admin/models`, `/admin/rules` |
 | P8 Agent review | `GET /inbox?tab`, `POST /proposals/{slug}/escalations`, `/admin/review-settings`, `POST /admin/agent/pause` |
 | P9 Credibility | `/sections/{path}/{anchor}/why`, `/attestations`, `/reports`, `/source-checks`, `/owner-confirmations`, `/page-feedback`, `/follows`, `/notifications`, `/me/*`, `/credibility/queue`, `/credibility/pages`, `/credibility/sources`, internal invalidation/candidate endpoints |
 
@@ -254,7 +256,7 @@ interface SearchHitDto { path: string; pageTitle: string; anchor: string; sectio
 
 - **Queue**: one BullMQ queue `mw-jobs` on `REDIS_URL`. BullMQ job **name** = `kind`, BullMQ job **id** = `AiJob.id` (UUIDv7, so re-enqueueing the same row is a no-op). Attempts 3, exponential backoff 5 s; the API owns retries of the row state, the worker never writes to Postgres.
 - **Queue payload** `JobEnvelope` (JSON Schema `packages/contracts/jobs/envelope.schema.json`): `{ "v": 1, "jobId": uuid, "kind": JobKind }`. Nothing else travels through Redis; inputs are fetched from the internal API so secrets and large inputs never sit in Redis.
-- `JobKind` (Phase 0): `"ping"`. Later phases add `quality_check`, `agent_review`, credibility kinds.
+- `JobKind` (Phase 0): `"ping"`; Phase 7 adds `"quality_check"` (§7.6.3). Later phases add `quality_check`, `agent_review`, credibility kinds.
 - **Input**: `GET /internal/v1/jobs/{id}/input` → `200 { "jobId", "kind", "input": <kind input> }`; `404 NOT_FOUND` unknown id; `409 PRECONDITION_FAILED` when the job is not `queued`/`running` (already finished). First fetch moves the row `queued → running` and sets `startedAt`.
 - **Result**: `POST /internal/v1/jobs/{id}/result` body `JobResult` = `{ "status": "ok", "output": <kind output> }` or `{ "status": "failed", "error": { "code": string (1..64, `^[a-z0-9_]+$`), "message": string (1..500) } }` → `204`. Output validated against the kind's schema (`400 VALIDATION_FAILED` otherwise). Posting to a finished job: identical body → `204` (idempotent), different body → `409 PRECONDITION_FAILED`.
 - **Ping** (dev only): `PingInput { "message": string 1..200 }`, `PingOutput { "echo": string (must equal input.message), "workerVersion": string 1..40 }`. The API rejects an `ok` result whose `echo` ≠ `message` with `400 VALIDATION_FAILED` (row stays running).
@@ -889,6 +891,149 @@ All under `/api/v1`. Cursor envelope as §2; topics ordered `updatedAt desc, id 
 #### 7.5.9 Agent skill (P6-03)
 
 `skills/wiki-knowledge-workflow/` ports md-wiki's skill to this API: `SKILL.md` (roles, scopes ↔ tools, connection, invariant rules), `references/contribution.md`, `reviewer.md`, `discussions.md` (topics, holds, dispute log; replaces `semantic-conflicts.md`), `merge-conflicts.md`, `quality.md` (unchanged), `agents/openai.yaml`. A test (`apps/api/test/skill.test.ts`) fails when the skill names an MCP tool or REST endpoint that does not exist, or omits a tool [D-116].
+
+### 7.6 Phase 7 — Quality check (full contract, P7-00)
+
+Behavioural spec: plan.md › Phase 5, architecture.md › services/worker and Trust boundary, md-wiki `skills/wiki-knowledge-workflow/references/quality.md` (the rules) and `experiments/poisoning/quality.py` (the E3 quality set the eval runs on). Worker foundation: §7.3. Decisions D-130 … D-144. UI tasks (P7-05 Quality card in F-10 and Self-check in F-06, P7-06 Settings › Models, Operations › AI jobs) bind to these contracts.
+
+**AI output is advisory** (architecture.md › Trust boundary): no quality result changes a proposal's state, assignment, preview binding or decision checks (§7.4.3 is unchanged). Review, decide and publish work with the worker stopped, Redis down or the provider failing.
+
+#### 7.6.1 Data model (Prisma) [D-130]
+
+```text
+enum AiJobKind      ping | quality_check
+enum AiJobTrigger   dev | submit | rerun | self_check
+enum FindingSeverity info | warning | blocking
+enum FindingOrigin  model | rule
+
+AiJob(+ trigger AiJobTrigger default dev, proposalId? → Proposal, draftId? uuid (no FK: drafts are deleted on submit),
+      requestedById? → User, bundleHash?, rulesSha256?, provider?, model?, promptVersion?, tokensIn?, tokensOut?,
+      dropped jsonb?)                     index(proposalId, createdAt)  index(draftId, createdAt)  index(kind, createdAt)
+                                          index(status, createdAt)
+Finding(id, jobId → AiJob, proposalId? → Proposal, draftId? uuid, ord int, rule, severity, message, block, quote,
+      lineStart int?, lineEnd int?, origin, original jsonb?, createdAt)
+      unique(jobId, ord)  index(proposalId)                                   append-only
+```
+
+- architecture.md's `queued_at` is `createdAt`; `error` keeps the §7.1 `{ code, message }` JSON; `explanation` is `message`; `rule_id` is `rule`. **`quote_verified` is not stored**: only verified findings are stored, the dropped ones are counted in `AiJob.dropped = { unknownRule, unknownBlock, emptyQuote, quoteNotFound }` (§7.3, D-73).
+- `Finding` rejects `UPDATE`/`DELETE` (trigger, §4). A job's findings are inserted once, in the transaction that moves the job to `succeeded`.
+- `bundleHash` binds a run to what was checked: the proposal's frozen `bundleHash`, or for a draft self-check the **draft digest** (§7.6.6). `rulesSha256` is the SHA-256 of the rules file bytes the API sent.
+- Idempotency (architecture.md "kind + proposal + bundle hash + prompt version"): at most one **active** run (`queued`/`running`, younger than the lease of 15 min) per subject and kind; asking again returns it (§7.6.5). A finished run is never re-run in place: a re-run is a new row.
+
+#### 7.6.2 Rules file [D-132]
+
+- `rules/quality.md` at the repo root (API env `QUALITY_RULES_PATH`, default `rules/quality.md`, resolved like `WIKI_ROOT`). Format §7.3: each `## ` heading outside code fences is a rule, id = explicit `{#id}` or the heading slug; ≤ 64 KiB UTF-8; duplicate ids / no rules / invalid UTF-8 → invalid. The text before the first rule is the preamble (sent, not a rule).
+- Parsed by `domain/quality.ts#parseQualityRules(bytes)` (TS port of the worker parser; both are tested on the same cases and on the real file). The API is the **only reader** of the file: it reads it when a run is created and copies `{ path, sha256, text }` into the job input, so a run always uses the rules it was created with and the worker needs no file access. The worker re-hashes `text` (UTF-8) and refuses a mismatch (`input_invalid`).
+- The rule `dropped-hedge` names the deterministic rule of §7.3; it runs only when the rules file declares it.
+- An unreadable or invalid rules file never fails a submission: the run is inserted directly as `failed` with `error = { code: 'rules_invalid', message }`; `GET /admin/rules` reports the problem (§7.6.7).
+
+#### 7.6.3 Job kind `quality_check` (wire, §7.1) [D-133, D-134, D-143]
+
+Schemas `packages/contracts/jobs/quality_check.input.schema.json` and `quality_check.output.schema.json`; `envelope.kind` gains `quality_check`; `result.output` becomes `oneOf` the kinds' outputs (each kind's output is validated against its own schema by the API, §7.1).
+
+```ts
+interface QualityCheckInput {
+  subject: { kind: 'proposal' | 'draft'; id: uuid; slug: string | null; targetPath: string; section: string | null };
+  bundleHash: hex64;
+  blocks: { id: string /* ^[a-z][a-z0-9-]{0,39}$, unique */; kind: 'proposal' | 'base' | 'source';
+            label: string /* path@version, "proposed", "reason", "title" */; text: string }[];   // 1..40
+  rules: { path: string; sha256: hex64; text: string /* ≤ 65536 chars */ };
+}
+interface QualityCheckOutput {
+  promptVersion: string /* 1..40 */; provider: string /* 1..40 */; model: string /* 1..200 */;
+  rulesSha256: hex64 /* = input.rules.sha256 */;
+  usage: { inputTokens: int ≥ 0; outputTokens: int ≥ 0 };
+  findings: { rule: string; severity: 'info' | 'warning' | 'blocking'; message: string /* 1..2000 */;
+              quote: { block: string; text: string /* 1..4000 */ }; origin: 'model' | 'rule';
+              original: { block: string; text: string } | null /* dropped-hedge: the hedged sentence */ }[];   // ≤ 200
+  dropped: { unknownRule: int; unknownBlock: int; emptyQuote: int; quoteNotFound: int };
+}
+```
+
+- **Blocks** (built by the API, in this order): `title` (kind `proposal`, the proposal/draft title; omitted when empty), `reason` (`proposal`; omitted when empty), `proposed` (`proposal`, the proposed file), `base` (`base`, the base snapshot; absent for a create), `source-1` … `source-n` (`source`, each declared source snapshot, in manifest order). Base and source texts have their status block stripped (`domain/status-block`); `proposed` never has one. Bytes are decoded as UTF-8 (they were validated at freeze). Every block is untrusted data and is fenced (§7.3).
+- **Worker** (`services/worker/src/mdwiki_worker/quality/job.py`, P7-02): fetch input (§7.1) → validate → parse rules from `text` (sha check) → fence blocks with a fresh nonce → system prompt = instructions + rule ids + rules text + `data_instruction(nonce)`, user = fenced blocks + task → `complete_structured(provider, request, ModelOutput)` with the kind's model config (§7.3) → `verify_findings` (drops counted) → dropped-hedge candidates (`proposed` against `base` and each source; one finding per derived sentence, best match; `severity: warning`, `origin: rule`) → post `ok`. `promptVersion` is the worker constant `quality-v1`.
+- **Worker failures** → `{ status: 'failed', error }` with the §7.3 codes (`provider_error`, `provider_timeout`, `rate_limited`, `schema_invalid`) plus `input_invalid` (input fails its schema or the rules sha), `rules_invalid` (rules text does not parse), `worker_error` (any other exception in the handler; message = exception class only). A missing provider credential is `provider_error`. Transport errors to the internal API propagate (BullMQ retries, §7.1).
+- **API result handling** (`POST /internal/v1/jobs/{id}/result`, §7.1 order): finished-job replay rules unchanged; `ok` output must match the output schema and `rulesSha256 = job.rulesSha256` (else `400 VALIDATION_FAILED`, job stays `running`). Then the API **re-verifies every finding** against the job's own input [D-134]: `rule` ∈ rule ids of `input.rules.text`, `quote.block` ∈ input blocks (and `original.block` when present), normalised quote (`normalizeQuote` = NFC, whitespace incl. NBSP/ZW/BOM runs → one space, trimmed) is a non-empty substring of the normalised block — a failing finding is **dropped and counted** (the counts are added to the worker's), never stored. Identical findings (rule, block, normalised quote) collapse. `lineStart`/`lineEnd` = 1-based lines of the first occurrence of the quote in the block's text (`locateQuote`). For `proposed` these are lines of the proposed file (the preview artifact adds the status block's lines above them, D-33). One transaction stores findings (`ord` = output order), `provider`, `model`, `promptVersion`, tokens, `dropped`, `status = succeeded`; then SSE `quality.changed`. A `failed` result stores `error` (and nothing else) as in §7.1.
+
+#### 7.6.4 Runs, freshness and flags (`domain/quality.ts`) [D-135, D-138, D-139]
+
+- `runStatus` of a subject = the latest run's status, or `none`. **Current** run = the latest **succeeded** run whose `bundleHash` equals the subject's current hash (proposal: always its frozen `bundleHash`; draft: the current draft digest). A run whose hash differs is **stale**: it is listed in `runs` with `current: false` and never feeds counts, flags or the summary.
+- `rulesChanged` = the run's `rulesSha256` ≠ the rules file's current sha (informational; the findings stay current).
+- **Severity** vocabulary is `info | warning | blocking` (D-73); the frame's "medium" is `warning` (presentation belongs to P7-05).
+- **Flags** `qualityFlags(currentRun, latestRun)` (advisory; Phase 8's escalation triggers read them, nothing else does): `blocking_finding` (current run has a `blocking` finding), `dropped_hedge` (current run has an `origin: rule` finding), `check_failed` (latest run `failed`). Order as listed.
+- `QualitySummaryDto = { status: 'none'|'queued'|'running'|'succeeded'|'failed', findings: int, counts: { info, warning, blocking }, flags: QualityFlag[], current: boolean /* a current run exists */ }` — counts/flags from the current run (0 / `[]` without one; `check_failed` from the latest run).
+- Lease: an active run older than 15 min (`createdAt`) counts as lost: a new run supersedes it (it is set `failed`, `error = { code: 'superseded', message: 'Superseded by a newer run' }`; a late result for it is then refused as a finished job, §7.1). A self-check whose draft digest changed also supersedes the active run.
+
+#### 7.6.5 Proposal quality check (submit, on demand) [D-131, D-136]
+
+- **On submit**: the single freeze path (§7.2, `ProposalFreezer`) inserts the `quality_check` run (`trigger: submit`, `requestedById: null`) **in the proposal's insert transaction** (an outbox row: the job input is built from the bytes being frozen); after commit the API enqueues the §7.1 envelope best-effort (errors logged, never surfaced; the submit response does not wait for Redis). Replays (§7.2.5) create nothing. Conflict replacements (§7.4.7) are submissions and get a run.
+- **Dispatch recovery**: at boot (after publish recovery) every `queued` `quality_check` row is enqueued again (BullMQ job id = row id, so a still-queued job is not duplicated).
+- **On demand**: `POST /proposals/{slug}/quality-check` (permission `proposal.read`, i.e. reviewer+, token scope `review`; a submitter without that role gets `FORBIDDEN`, D-136) → state must be `pending` (else `PRECONDITION_FAILED`); an active run within the lease → `200 QualityRunDto` of that run (nothing created); else a new run (`trigger: rerun`, `requestedById` = caller, audit `quality.requested { jobId, trigger }` on the proposal) → `202 QualityRunDto`.
+- `GET /proposals/{slug}/findings` (visibility = proposal detail: submitter or role ≥ reviewer, else `NOT_FOUND`) → `QualityReportDto`.
+- `ProposalListItemDto.quality` and `ProposalDetailDto.quality` = `QualitySummaryDto`; `ProposalDetailDto.can.rerunQuality` = `proposal.read` allowed and `pending`.
+
+#### 7.6.6 Author self-check on drafts [D-137]
+
+- `POST /drafts/{id}/self-check` (`draft.*`, own draft else `NOT_FOUND`): composes the draft like submit (§7.2.3: `UNKNOWN_SECTION` when the section left the base; a blank reason is allowed) and creates a run (`trigger: self_check`, `draftId`, `requestedById` = author) → `202 QualityRunDto`; an active run of the same draft within the lease **and the same digest** → `200` with it (a different digest supersedes it).
+- **Draft digest** `draftDigest({ targetPath, baseSha256, section, proposedSha256, title, reason, sources: [{ path, sha256 }] })` = SHA-256 of the canonical JSON (keys in that order, sources in draft order). Every autosave that changes one of these makes earlier runs stale.
+- `GET /drafts/{id}/self-check` (own draft) → `QualityReportDto` (subject `draft`); `current` per §7.6.4 against the draft's current digest.
+- Self-check runs and findings are visible only to the draft's author (and, without content, in Operations). Submitting the draft does not carry them over: the proposal gets its own `submit` run.
+
+#### 7.6.7 Endpoints and DTOs
+
+| Method | Path | Perm | Request | Response | Errors |
+| --- | --- | --- | --- | --- | --- |
+| POST | `/proposals/{slug}/quality-check` | `proposal.read` | — | `202 QualityRunDto` · `200` active run | `NOT_FOUND`, `PRECONDITION_FAILED`, `VALIDATION_FAILED` |
+| GET | `/proposals/{slug}/findings` | `wiki.read` + visible | — | `QualityReportDto` | `NOT_FOUND`, `VALIDATION_FAILED` |
+| POST | `/drafts/{id}/self-check` | `draft.*` + own | — | `202 QualityRunDto` · `200` active run | `NOT_FOUND`, `VALIDATION_FAILED` (`UNKNOWN_SECTION`) |
+| GET | `/drafts/{id}/self-check` | `draft.*` + own | — | `QualityReportDto` | `NOT_FOUND` |
+| GET | `/admin/models` | `admin.models` | — | `ModelsDto` | |
+| GET | `/admin/rules` | `admin.rules` | — | `RulesDto` | |
+| GET | `/ops/jobs` | `admin.jobs` | `?kind&status&limit&cursor` | `JobListDto` (`createdAt desc, id desc`, cursor `<epoch ms>.<uuid>`) | `VALIDATION_FAILED` |
+
+```ts
+type QualityFlag = 'blocking_finding' | 'dropped_hedge' | 'check_failed';
+interface FindingDto { id: string; rule: string; ruleTitle: string | null /* from the run's rules */; severity: 'info'|'warning'|'blocking';
+  message: string; block: string; quote: string; lineStart: number | null; lineEnd: number | null;
+  origin: 'model' | 'rule'; original: { block: string; text: string } | null }
+interface DroppedDto { unknownRule: number; unknownBlock: number; emptyQuote: number; quoteNotFound: number; total: number }
+interface QualityRunDto { id: string; trigger: 'submit'|'rerun'|'self_check'; status: 'queued'|'running'|'succeeded'|'failed';
+  bundleHash: string; current: boolean /* bundleHash = subject's current hash */; rulesSha256: string | null; rulesChanged: boolean;
+  provider: string | null; model: string | null; promptVersion: string | null; tokensIn: number | null; tokensOut: number | null;
+  error: { code: string; message: string } | null; dropped: DroppedDto | null; counts: { info; warning; blocking };
+  findings: FindingDto[]; requestedBy: UserRefDto | null; createdAt: string; startedAt: string | null; finishedAt: string | null }
+interface QualityReportDto { subject: { kind: 'proposal' | 'draft'; id: string; slug: string | null }; bundleHash: string /* current */;
+  summary: QualitySummaryDto; current: QualityRunDto | null; latest: QualityRunDto | null;
+  runs: QualityRunDto[] /* newest first, ≤ 10; findings only on current and latest, [] otherwise */;
+  can: { rerun: boolean } }
+interface ModelsDto { jobs: { kind: 'quality_check'; provider: string; model: string; maxTokens: number; timeoutS: number;
+    maxAttempts: number; overridden: boolean }[];
+  openaiCompat: { baseUrl: string | null /* scheme://host:port only */ };
+  lastUsed: { kind: string; provider: string; model: string; promptVersion: string | null; at: string }[] }
+interface RulesDto { path: string; sha256: string | null; size: number | null; error: string | null;
+  rules: { id: string; title: string; body: string }[]; preamble: string }
+interface JobListItemDto { id: string; kind: 'ping' | 'quality_check'; trigger: 'dev'|'submit'|'rerun'|'self_check'; status;
+  subject: { kind: 'proposal'; slug: string | null; title: string | null } | { kind: 'draft'; slug: null; title: null } | null;
+  provider: string | null; model: string | null; promptVersion: string | null; tokensIn: number | null; tokensOut: number | null;
+  findings: number | null; error: { code: string; message: string } | null;
+  createdAt: string; startedAt: string | null; finishedAt: string | null; durationMs: number | null }
+interface JobKindSummaryDto { kind; queued: number; running: number; failed24h: number; last: JobListItemDto | null /* latest finished */ }
+interface JobListDto { kinds: JobKindSummaryDto[] /* quality_check always; ping only when rows exist */; items: JobListItemDto[]; nextCursor: string | null }
+```
+
+- **Permissions**: `admin.models`, `admin.rules`, `admin.jobs` are `admin.*` (owner) [D-141]. The F-14 *Models* tab and Operations › Background jobs are owner screens.
+- **Models** [D-140] are configured by environment only (shared `.env`: `AI_DEFAULT__*`, `AI_JOBS__QUALITY_CHECK__*`, `OPENAI_COMPAT_BASE_URL`, §7.3); `/admin/models` reports what the API process sees with the worker defaults applied, and `lastUsed` from the latest succeeded run per kind (what the worker really used). Secrets are never returned.
+- **Rules** [D-140]: `GET /admin/rules` parses the file at request time; a missing/invalid file → `200` with `error` set, `rules: []`, `sha256` of the bytes when readable.
+- `/ops/jobs` lists metadata only (no prompt, input or finding text); a draft subject shows no title or path.
+- **Audit** [D-144]: `quality.requested { jobId, trigger }` (subject `proposal`, actor the caller) for on-demand re-runs; submit and self-check runs are not audited (the job row is the record).
+- **SSE** [D-144]: `quality.changed { slug }` (proposal runs; audience = proposal audience) or `{ draftId }` (self-check; audience = the author only) after a run is created and after its result is stored. `EventDto` gains optional `draftId`. Invalidates `['proposal', slug]`, `['proposals']`, `['quality', slug]` / `['draft', id, 'self-check']`. Result events are emitted by the internal listener; both Nest apps of one process share one in-process event bus.
+
+#### 7.6.8 Eval command (P7-04) [D-142]
+
+`uv run mdwiki-worker eval DATASET.jsonl [--rules ../../rules/quality.md] [--out report.json] [--limit N]` runs the same prompt, verification and hedge rule as the job (no API, no Redis) with the `quality_check` model config from the environment, and prints a per-rule table. The dataset lives outside the repo (the E3 quality set from md-wiki is converted to this format by the caller); a real-model run spends credits and is only started by the orchestrator.
+
+- **Dataset line**: `{ "id": string, "targetPath"?: string, "title"?: string, "reason": string, "base": string | null, "proposed": string, "sources"?: [{ "path", "text" }], "expected": string[] /* rule ids */ }` or, instead of `expected`, `"class": <E3 class name>` mapped by `E3_CLASS_RULES` (clean classes → `[]`, `real_reverted` → bad with no specific rule). Blank lines are skipped; a bad line stops the run with its line number.
+- **Report** (JSON to `--out`, table to stdout): per rule `tp, fp, fn, precision, recall` (a rule is *predicted* for an item when a kept finding cites it; `null` when undefined); per item `{ id, expected, predicted, bad, flagged, dropped, error }`; overall `items: { bad, clean, caught, falseAlarms, detection, falseAlarmRate }` (an item with any expected rule or a bad class counts as bad; flagged by any finding = caught; a clean item with any finding = false alarm), dropped counts by reason, provider, model, prompt version, rules sha. Items whose call fails are counted under `errors` and excluded from P/R and detection.
 
 ## 8. State machines
 

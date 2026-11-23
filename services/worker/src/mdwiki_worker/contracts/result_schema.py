@@ -7,15 +7,7 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, RootModel, StrictStr
 
-from . import ping_output_schema
-
-
-class JobResultOk(BaseModel):
-    model_config = ConfigDict(
-        extra="forbid",
-    )
-    status: Literal["ok"]
-    output: ping_output_schema.PingOutput
+from . import ping_output_schema, quality_check_output_schema
 
 
 class JobError(BaseModel):
@@ -24,6 +16,16 @@ class JobError(BaseModel):
     )
     code: StrictStr = Field(..., max_length=64, min_length=1, pattern="^[a-z0-9_]+$")
     message: StrictStr = Field(..., max_length=500, min_length=1)
+
+
+class JobResultOk(BaseModel):
+    model_config = ConfigDict(
+        extra="forbid",
+    )
+    status: Literal["ok"]
+    output: (
+        ping_output_schema.PingOutput | quality_check_output_schema.QualityCheckOutput
+    )
 
 
 class JobResultFailed(BaseModel):

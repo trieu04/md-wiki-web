@@ -16,6 +16,7 @@ import type { Identity } from '../auth/auth.service.js';
 import { API_CONFIG, type ApiConfig } from '../config/env.js';
 import { parseManifest, ContributionViews } from '../contributions/views.js';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { QualityJobs } from '../quality/quality-jobs.service.js';
 import type { Wire } from '../wiki/read.dto.js';
 import { decodeMarkdown } from '../wiki/storage/wiki-storage.js';
 import { chooseAssignee } from './assignments.js';
@@ -107,6 +108,16 @@ export function conflictResolutionDto(
   };
 }
 
+const noQuality = {
+  status: 'none' as const,
+  findings: 0,
+  counts: { info: 0, warning: 0, blocking: 0 },
+  flags: [],
+  current: false,
+};
+const summaryOf = (map: Awaited<ReturnType<QualityJobs['summaries']>>, id: string) =>
+  map.get(id) ?? noQuality;
+
 /** The preview a caller would approve (system-logic §7.4.3). */
 export function previewFor(
   proposal: Pick<DetailRow, 'id' | 'slug' | 'proposed'>,
@@ -130,6 +141,7 @@ export class ReviewViews {
     @Inject(ContributionViews) private readonly contributions: ContributionViews,
     @Inject(DISCUSSION_STATE) private readonly discussions: DiscussionState,
     @Inject(API_CONFIG) private readonly config: ApiConfig,
+    @Inject(QualityJobs) private readonly quality: QualityJobs,
   ) {}
 
   load(where: Prisma.ProposalWhereUniqueInput) {
@@ -225,7 +237,7 @@ export class ReviewViews {
     const base = await this.contributions.proposal(row);
     const current = await this.currentOf(row.targetPath);
     const latest = row.publications[0] ?? null;
-    const [blocker, discussion, events, pages] = await Promise.all([
+    const [blocker, discussion, events, pages, quality] = await Promise.all([
       this.db.publication.findFirst({
         where: { targetPath: row.targetPath, phase: { in: OPEN }, proposalId: { not: row.id } },
         include: { proposal: { select: { slug: true } } },
@@ -240,6 +252,7 @@ export class ReviewViews {
         where: { path: { in: row.refs.map((r) => r.snapshot.path) } },
         select: { path: true, currentSha256: true, currentVersionLabel: true },
       }),
+      this.quality.summaries([row]),
     ]);
     const pageOf = new Map(pages.map((p) => [p.path, p]));
     const manifest = parseManifest(row);
@@ -310,6 +323,7 @@ export class ReviewViews {
       ],
       conflict,
       discussion,
+      quality: summaryOf(quality, row.id),
       can: {
         decide: await this.mayDecide(row, identity),
         publish:
@@ -328,6 +342,7 @@ export class ReviewViews {
           this.hasConflict(row.state, row.baseSha256, current?.sha256 ?? null) &&
           ((isSubmitter && can(actor, 'proposal.submit', {}).ok) || mayRead(identity)),
         resolveBlocked: can(actor, 'admin.recovery', {}).ok && latest?.phase === 'unknown',
+        rerunQuality: this.quality.mayRerun(identity, row.state),
       },
       history: events.map((e): Wire<ProposalEventDto> => ({
         id: e.id,
@@ -369,6 +384,7 @@ export class ReviewViews {
       select: { path: true, title: true, currentSha256: true },
     });
     const pageOf = new Map(pages.map((p) => [p.path, p]));
+    const quality = await this.quality.summaries(rows);
     const keys = rows.flatMap((r) => {
       const version = parseManifest(r).context.target.version;
       return r.section && version
@@ -416,6 +432,7 @@ export class ReviewViews {
           : null,
         publishedVersion: done?.versionLabel ?? null,
         autoPublished: done ? done.auto : null,
+        quality: summaryOf(quality, r.id),
         createdAt: r.createdAt.toISOString(),
         updatedAt: r.updatedAt.toISOString(),
       };

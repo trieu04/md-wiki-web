@@ -1,17 +1,28 @@
 import { isDeepStrictEqual } from 'node:util';
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, Optional } from '@nestjs/common';
 import type { AiJob } from '@prisma/client';
 import type { JobResult } from '@md-wiki/contracts';
 import { AppError } from '../common/app-error.js';
 import { PrismaService } from '../prisma/prisma.service.js';
-import { readJobError, readJobResult, readPingInput, readPingOutput } from './job-contracts.js';
+import { QualityResults } from '../quality/quality-results.js';
+import {
+  readJobError,
+  readJobResult,
+  readPingInput,
+  readPingOutput,
+  readQualityInput,
+  readQualityOutput,
+} from './job-contracts.js';
 
 const uuid = /^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i;
 const active = ['queued', 'running'] as const;
 
 @Injectable()
 export class JobsService {
-  constructor(@Inject(PrismaService) private readonly prisma: PrismaService) {}
+  constructor(
+    @Inject(PrismaService) private readonly prisma: PrismaService,
+    @Optional() @Inject(QualityResults) private readonly quality?: QualityResults,
+  ) {}
 
   async createPing(body: unknown) {
     return this.prisma.aiJob.create({ data: { kind: 'ping', input: { ...readPingInput(body) } } });
@@ -49,7 +60,8 @@ export class JobsService {
     if (row.status !== 'queued' && row.status !== 'running') {
       throw new AppError('PRECONDITION_FAILED');
     }
-    return { jobId: row.id, kind: row.kind, input: readPingInput(row.input) };
+    const input = row.kind === 'ping' ? readPingInput(row.input) : readQualityInput(row.input);
+    return { jobId: row.id, kind: row.kind, input };
   }
 
   async result(id: string, body: unknown): Promise<void> {
@@ -59,7 +71,14 @@ export class JobsService {
       return;
     }
     const result: JobResult = readJobResult(body);
-    if (result.status === 'ok' && result.output.echo !== readPingInput(row.input).message) {
+    if (row.kind === 'quality_check') {
+      await this.qualityResult(row, result, body);
+      return;
+    }
+    if (
+      result.status === 'ok' &&
+      readPingOutput(result.output).echo !== readPingInput(row.input).message
+    ) {
       throw new AppError('VALIDATION_FAILED', undefined, [
         {
           path: 'output.echo',
@@ -73,10 +92,31 @@ export class JobsService {
       where: { id, status: { in: [...active] } },
       data:
         result.status === 'ok'
-          ? { status: 'succeeded', output: { ...result.output }, finishedAt: new Date() }
+          ? {
+              status: 'succeeded',
+              output: { ...readPingOutput(result.output) },
+              finishedAt: new Date(),
+            }
           : { status: 'failed', error: { ...result.error }, finishedAt: new Date() },
     });
     if (updated.count === 0) this.checkReplay(await this.getJob(id), body);
+  }
+
+  /** §7.6.3: validate the kind's output, re-verify and store findings, or store the failure. */
+  private async qualityResult(row: AiJob, result: JobResult, body: unknown): Promise<void> {
+    if (!this.quality) throw new Error('QualityResults is not provided');
+    if (result.status === 'ok') {
+      const output = readQualityOutput(result.output);
+      if (!(await this.quality.store(row, output)))
+        this.checkReplay(await this.getJob(row.id), body);
+      return;
+    }
+    const updated = await this.prisma.aiJob.updateMany({
+      where: { id: row.id, status: { in: [...active] } },
+      data: { status: 'failed', error: { ...result.error }, finishedAt: new Date() },
+    });
+    if (updated.count === 0) this.checkReplay(await this.getJob(row.id), body);
+    else await this.quality.announce(row);
   }
 
   private checkReplay(row: AiJob, body: unknown): void {

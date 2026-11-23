@@ -7,8 +7,9 @@ import { logger } from '../common/request-id.middleware.js';
 import { API_CONFIG } from '../config/env.js';
 import type { ApiConfig } from '../config/env.js';
 
+/** The `mw-jobs` BullMQ queue (system-logic §7.1). Only the envelope travels through Redis. */
 @Injectable()
-export class PingQueue implements OnModuleDestroy {
+export class JobQueue implements OnModuleDestroy {
   private queue?: Queue<JobEnvelope, void, JobEnvelope['kind']>;
   private redis?: Redis;
 
@@ -35,6 +36,20 @@ export class PingQueue implements OnModuleDestroy {
     });
   }
 
+  /**
+   * Best-effort enqueue after a commit (§7.6.5): the row is the outbox, so a failure is only
+   * logged; boot re-dispatch picks the row up again.
+   */
+  async enqueueQuietly(envelope: JobEnvelope): Promise<boolean> {
+    try {
+      await this.enqueue(envelope);
+      return true;
+    } catch {
+      logger.warn({ jobId: envelope.jobId, kind: envelope.kind }, 'Job enqueue failed');
+      return false;
+    }
+  }
+
   async onModuleDestroy(): Promise<void> {
     try {
       await this.queue?.close();
@@ -43,3 +58,6 @@ export class PingQueue implements OnModuleDestroy {
     }
   }
 }
+
+/** The Phase 0 name of the queue (dev ping endpoints and their tests). */
+export { JobQueue as PingQueue };

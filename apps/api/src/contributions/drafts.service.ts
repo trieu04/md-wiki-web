@@ -2,6 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import {
   composeProposed,
   defaultImpact,
+  draftDigest,
   MAX_SOURCES,
   proposalTitle,
   rebasePlan,
@@ -16,6 +17,7 @@ import type { Identity } from '../auth/auth.service.js';
 import { audit } from '../auth/credentials.js';
 import { AppError } from '../common/app-error.js';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { QualityJobs } from '../quality/quality-jobs.service.js';
 import { WikiIndexer } from '../wiki/indexer/wiki-indexer.js';
 import type { Wire } from '../wiki/read.dto.js';
 import { decodeMarkdown, wikiPath } from '../wiki/storage/wiki-storage.js';
@@ -53,6 +55,7 @@ export class DraftsService {
     @Inject(WikiIndexer) private readonly indexer: WikiIndexer,
     @Inject(ContributionViews) private readonly views: ContributionViews,
     @Inject(ProposalFreezer) private readonly freezer: ProposalFreezer,
+    @Inject(QualityJobs) private readonly quality: QualityJobs,
   ) {}
 
   private async own(user: User, id: string) {
@@ -312,6 +315,61 @@ export class DraftsService {
         if (!count) throw new AppError('PRECONDITION_FAILED', 'The draft changed; reload it');
       },
     });
+  }
+
+  /** What a self-check of this draft checks, and its digest (§7.6.6). */
+  private async selfCheckInput(draft: Draft) {
+    const { section, base, proposed } = await this.proposedOf(draft);
+    const sources = draftSources(draft);
+    const digest = draftDigest({
+      targetPath: draft.targetPath,
+      baseSha256: base?.row.sha256 ?? null,
+      section,
+      proposedSha256: sha256Hex(proposed),
+      title: draft.title,
+      reason: draft.reason,
+      sources: sources.map((s) => ({ path: s.path, sha256: s.sha256 })),
+    });
+    return { section, base, proposed, sources, digest };
+  }
+
+  async selfCheck(user: User, id: string) {
+    const draft = await this.own(user, id);
+    const { section, base, proposed, sources, digest } = await this.selfCheckInput(draft);
+    const snapshots = await this.db.snapshot.findMany({
+      where: { id: { in: sources.map((s) => s.snapshotId) } },
+    });
+    const byId = new Map(snapshots.map((row) => [row.id, row]));
+    return this.quality.selfCheck({
+      draftId: draft.id,
+      authorId: user.id,
+      digest,
+      targetPath: draft.targetPath,
+      section,
+      sources: {
+        targetPath: draft.targetPath,
+        title: draft.title,
+        reason: draft.reason,
+        proposed,
+        base: base ? { versionLabel: base.row.label, content: base.row.content } : null,
+        sources: sources.flatMap((s) => {
+          const row = byId.get(s.snapshotId);
+          return row ? [{ path: s.path, versionLabel: s.versionLabel, content: row.content }] : [];
+        }),
+      },
+    });
+  }
+
+  async selfCheckReport(user: User, id: string) {
+    const draft = await this.own(user, id);
+    let digest: string;
+    try {
+      digest = (await this.selfCheckInput(draft)).digest;
+    } catch {
+      // The section left the base: no run can be current.
+      digest = '';
+    }
+    return this.quality.draftReport({ id: draft.id, authorId: user.id }, digest);
   }
 
   /** `.contribution.md` v3 for a draft (§7.2.7). */

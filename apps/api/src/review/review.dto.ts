@@ -13,6 +13,7 @@ import {
 } from 'class-validator';
 import { ProposalDto } from '../contributions/contributions.dto.js';
 import { EVENT_TYPES, type EventType } from '../events/events.service.js';
+import { QualitySummaryDto } from '../quality/quality-summary.dto.js';
 
 const timestamp = { type: String, format: 'date-time' } as const;
 const nullableTimestamp = { type: String, format: 'date-time', nullable: true } as const;
@@ -196,6 +197,7 @@ export class ProposalListItemDto {
   @ApiProperty({ type: ListDecisionDto, nullable: true }) decision!: ListDecisionDto | null;
   @ApiProperty(nullableString) publishedVersion!: string | null;
   @ApiProperty({ type: Boolean, nullable: true }) autoPublished!: boolean | null;
+  @ApiProperty({ type: QualitySummaryDto }) quality!: QualitySummaryDto;
   @ApiProperty(timestamp) createdAt!: string;
   @ApiProperty(timestamp) updatedAt!: string;
 }
@@ -296,6 +298,8 @@ class CanDto {
   @ApiProperty({ type: Boolean }) withdraw!: boolean;
   @ApiProperty({ type: Boolean }) resolveConflict!: boolean;
   @ApiProperty({ type: Boolean }) resolveBlocked!: boolean;
+  @ApiProperty({ type: Boolean, description: 'May ask for a new quality check (§7.6.5)' })
+  rerunQuality!: boolean;
 }
 export class ProposalEventDto {
   @ApiProperty({ type: String, format: 'uuid' }) id!: string;
@@ -318,6 +322,7 @@ export class ProposalDetailDto extends ProposalDto {
   @ApiProperty({ type: [RefStatusDto] }) refs!: RefStatusDto[];
   @ApiProperty({ type: ConflictDto, nullable: true }) conflict!: ConflictDto | null;
   @ApiProperty({ type: DiscussionDto }) discussion!: DiscussionDto;
+  @ApiProperty({ type: QualitySummaryDto }) quality!: QualitySummaryDto;
   @ApiProperty({ type: CanDto }) can!: CanDto;
   @ApiProperty({ type: [ProposalEventDto] }) history!: ProposalEventDto[];
 }
@@ -405,5 +410,6 @@ export class EventDto {
   @ApiPropertyOptional({ enum: PHASES, enumName: 'PublicationPhase' }) phase?: Phase;
   @ApiPropertyOptional({ type: String, format: 'uuid' }) topicId?: string;
   @ApiPropertyOptional({ type: 'integer' }) version?: number;
+  @ApiPropertyOptional({ type: String, format: 'uuid' }) draftId?: string;
   @ApiProperty(timestamp) at!: string;
 }

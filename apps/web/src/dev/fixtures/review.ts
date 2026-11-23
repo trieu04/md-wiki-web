@@ -30,6 +30,15 @@ const stateOf = {
   rejected: 'rejected',
 } as const;
 
+/** Phase 7 quality summary: no run yet (the frames predate the quality check). */
+export const noQuality: S['QualitySummaryDto'] = {
+  status: 'none',
+  findings: 0,
+  counts: { info: 0, warning: 0, blocking: 0 },
+  flags: [],
+  current: false,
+};
+
 /** F-09 rows as wire items (Phase 5 has no escalation, so escalated rows are pending). */
 export const visualProposalItems: ListItem[] = frameSamples.Proposals.all.map((row) => {
   const [targetPath = '', section = null] = row.where.replace(' (new)', '').split('#');
@@ -63,6 +72,7 @@ export const visualProposalItems: ListItem[] = frameSamples.Proposals.all.map((r
     },
     publishedVersion: tab === 'published' ? '20261123-1' : null,
     autoPublished: tab === 'published' ? row.detail.startsWith('Automatically') : null,
+    quality: noQuality,
     createdAt: ago(ageMinutes(row.age)),
     updatedAt: tab === 'blocked' ? '2026-11-23T09:31:00.000Z' : ago(ageMinutes(row.age)),
   };
@@ -92,6 +102,7 @@ const can = {
   withdraw: false,
   resolveConflict: false,
   resolveBlocked: false,
+  rerunQuality: false,
 };
 const binding = {
   bundleHash: hex('a1f3c9e2'),
@@ -166,6 +177,7 @@ function detail(slug: string, overrides: Partial<Detail>): Detail {
       held: false,
       topicId: null,
     },
+    quality: noQuality,
     can,
     history: historyActions.map(([time, action, actor], index) => ({
       id: uuid(900 + index),

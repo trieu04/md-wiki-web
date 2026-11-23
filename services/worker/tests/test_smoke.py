@@ -21,7 +21,11 @@ def test_module_entry_point_calls_run(monkeypatch: pytest.MonkeyPatch) -> None:
         called = True
 
     monkeypatch.setattr(worker_main, "run", fake_run)
-    runpy.run_module("mdwiki_worker.__main__", run_name="__main__")
+    monkeypatch.setattr("sys.argv", ["mdwiki-worker"])
+    with pytest.raises(SystemExit) as exited:
+        runpy.run_module("mdwiki_worker.__main__", run_name="__main__")
+
+    assert exited.value.code == 0
 
     assert called
 

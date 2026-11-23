@@ -5,6 +5,7 @@ import { parseEnv } from 'node:util';
 import { z } from 'zod';
 
 const root = fileURLToPath(new URL('../../../../', import.meta.url));
+export const REPO_ROOT = root;
 const port = z.string().regex(/^\d+$/).transform(Number).pipe(z.int().min(0).max(65535));
 const schema = z.object({
   DATABASE_URL: z.url({ protocol: /^postgres(ql)?$/ }),
@@ -23,6 +24,24 @@ const schema = z.object({
   WIKI_NAME: z.string().default('Wiki'),
   WIKI_DESCRIPTION: z.string().default(''),
   AUTO_PUBLISH: z.enum(['true', 'false']).transform((value) => value === 'true'),
+  // Quality check (system-logic §7.6): the rules file the API sends with every run.
+  QUALITY_RULES_PATH: z
+    .string()
+    .min(1)
+    .default('rules/quality.md')
+    .transform((path) => resolve(root, path)),
+  // Model settings shared with the worker (§7.3), shown read-only by GET /admin/models.
+  AI_DEFAULT__PROVIDER: z.string().optional(),
+  AI_DEFAULT__MODEL: z.string().optional(),
+  AI_DEFAULT__MAX_TOKENS: z.string().optional(),
+  AI_DEFAULT__TIMEOUT_S: z.string().optional(),
+  AI_DEFAULT__MAX_ATTEMPTS: z.string().optional(),
+  AI_JOBS__QUALITY_CHECK__PROVIDER: z.string().optional(),
+  AI_JOBS__QUALITY_CHECK__MODEL: z.string().optional(),
+  AI_JOBS__QUALITY_CHECK__MAX_TOKENS: z.string().optional(),
+  AI_JOBS__QUALITY_CHECK__TIMEOUT_S: z.string().optional(),
+  AI_JOBS__QUALITY_CHECK__MAX_ATTEMPTS: z.string().optional(),
+  OPENAI_COMPAT_BASE_URL: z.string().optional(),
 });
 
 export type ApiConfig = z.infer<typeof schema>;

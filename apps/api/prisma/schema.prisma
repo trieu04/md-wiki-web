@@ -77,6 +77,7 @@ model User {
   closedTopics Topic[]              @relation("closedBy")
   entries      DiscussionEvent[]
   disputes     DisputeEvent[]
+  aiJobs       AiJob[]
 }
 
 model Session {
@@ -165,6 +166,7 @@ model AuditEvent {
 
 enum AiJobKind {
   ping
+  quality_check
 }
 
 enum AiJobStatus {
@@ -174,16 +176,78 @@ enum AiJobStatus {
   failed
 }
 
+// Phase 7 — quality check (system-logic §7.6.1)
+enum AiJobTrigger {
+  dev
+  submit
+  rerun
+  self_check
+}
+
+enum FindingSeverity {
+  info
+  warning
+  blocking
+}
+
+enum FindingOrigin {
+  model
+  rule
+}
+
 model AiJob {
-  id         String      @id @default(uuid(7)) @db.Uuid
-  kind       AiJobKind
-  status     AiJobStatus @default(queued)
-  input      Json
-  output     Json?
-  error      Json?
-  createdAt  DateTime    @default(now()) @db.Timestamptz(3)
-  startedAt  DateTime?   @db.Timestamptz(3)
-  finishedAt DateTime?   @db.Timestamptz(3)
+  id            String       @id @default(uuid(7)) @db.Uuid
+  kind          AiJobKind
+  status        AiJobStatus  @default(queued)
+  input         Json
+  output        Json?
+  error         Json?
+  createdAt     DateTime     @default(now()) @db.Timestamptz(3)
+  startedAt     DateTime?    @db.Timestamptz(3)
+  finishedAt    DateTime?    @db.Timestamptz(3)
+  trigger       AiJobTrigger @default(dev)
+  proposalId    String?      @db.Uuid
+  proposal      Proposal?    @relation(fields: [proposalId], references: [id], onDelete: Restrict)
+  draftId       String?      @db.Uuid
+  requestedById String?      @db.Uuid
+  requestedBy   User?        @relation(fields: [requestedById], references: [id], onDelete: Restrict)
+  bundleHash    String?
+  rulesSha256   String?
+  provider      String?
+  model         String?
+  promptVersion String?
+  tokensIn      Int?
+  tokensOut     Int?
+  dropped       Json?
+  findings      Finding[]
+
+  @@index([proposalId, createdAt])
+  @@index([draftId, createdAt])
+  @@index([kind, createdAt])
+  @@index([status, createdAt])
+}
+
+model Finding {
+  id         String          @id @default(uuid(7)) @db.Uuid
+  jobId      String          @db.Uuid
+  job        AiJob           @relation(fields: [jobId], references: [id], onDelete: Restrict)
+  proposalId String?         @db.Uuid
+  proposal   Proposal?       @relation(fields: [proposalId], references: [id], onDelete: Restrict)
+  draftId    String?         @db.Uuid
+  ord        Int
+  rule       String
+  severity   FindingSeverity
+  message    String
+  block      String
+  quote      String
+  lineStart  Int?
+  lineEnd    Int?
+  origin     FindingOrigin
+  original   Json?
+  createdAt  DateTime        @default(now()) @db.Timestamptz(3)
+
+  @@unique([jobId, ord])
+  @@index([proposalId])
 }
 
 // Phase 4 — Contribute (system-logic §7.2.1)
@@ -259,6 +323,8 @@ model Proposal {
   outbox         PublishOutbox[]
   topic          Topic?
   disputes       DisputeEvent[]
+  aiJobs         AiJob[]
+  findings       Finding[]
 
   @@index([submitterId, createdAt])
   @@index([targetPath, state])

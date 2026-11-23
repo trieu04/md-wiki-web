@@ -13,6 +13,9 @@ from pydantic import SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from .ping import QUEUE_NAME, process_ping
+from .providers import AiSettings, ModelConfig, Provider, make_provider
+from .quality.job import KIND as QUALITY_CHECK
+from .quality.job import process_quality_check
 
 
 class Settings(BaseSettings):
@@ -40,6 +43,19 @@ def _redact_url(url: str) -> str:
         return "<invalid-url>"
 
 
+def quality_provider() -> tuple[Provider, ModelConfig]:
+    """The provider for ``quality_check`` from the shared ``AI_*`` env (D-70)."""
+    return make_provider(QUALITY_CHECK, AiSettings())
+
+
+async def dispatch(api: httpx.AsyncClient, name: str, job_id: str | None, data: object) -> None:
+    """Route a job by its BullMQ name (= envelope kind) to its handler."""
+    if name == QUALITY_CHECK:
+        await process_quality_check(api, name, job_id, data, quality_provider)
+    else:
+        await process_ping(api, name, job_id, data)
+
+
 async def serve(settings: Settings) -> None:
     """Run the BullMQ consumer until the process is asked to stop."""
     loop = asyncio.get_running_loop()
@@ -55,7 +71,7 @@ async def serve(settings: Settings) -> None:
         ) as api:
 
             async def process(job: Job, _token: str) -> None:
-                await process_ping(api, job.name, job.id, job.data)
+                await dispatch(api, job.name, job.id, job.data)
 
             worker = Worker(
                 QUEUE_NAME, process, {"connection": settings.redis_url, "autorun": False}

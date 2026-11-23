@@ -22,6 +22,18 @@ const queued: AiJob = {
   createdAt: new Date(),
   startedAt: null,
   finishedAt: null,
+  trigger: 'dev',
+  proposalId: null,
+  draftId: null,
+  requestedById: null,
+  bundleHash: null,
+  rulesSha256: null,
+  provider: null,
+  model: null,
+  promptVersion: null,
+  tokensIn: null,
+  tokensOut: null,
+  dropped: null,
 };
 const running: AiJob = { ...queued, status: 'running', startedAt: new Date() };
 const ok = { status: 'ok', output: { echo: 'ping', workerVersion: 'test' } };

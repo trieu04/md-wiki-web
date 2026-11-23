@@ -20,7 +20,12 @@
       "required": ["status", "output"],
       "properties": {
         "status": { "const": "ok" },
-        "output": { "$ref": "ping.output.schema.json" }
+        "output": {
+          "oneOf": [
+            { "$ref": "ping.output.schema.json" },
+            { "$ref": "quality_check.output.schema.json" }
+          ]
+        }
       }
     },
     {

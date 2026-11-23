@@ -15,6 +15,7 @@ import { audit } from '../auth/credentials.js';
 import { AppError, type FieldProblem } from '../common/app-error.js';
 import { EventsService } from '../events/events.service.js';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { QualityJobs } from '../quality/quality-jobs.service.js';
 import { openAssignment } from '../review/assignments.js';
 import { WikiIndexer } from '../wiki/indexer/wiki-indexer.js';
 import { WIKI_STORAGE } from '../wiki/wiki.module.js';
@@ -63,6 +64,7 @@ export class ProposalFreezer {
     @Inject(WikiIndexer) private readonly indexer: WikiIndexer,
     @Inject(WIKI_STORAGE) private readonly storage: WikiStorage,
     @Inject(EventsService) private readonly events: EventsService,
+    @Inject(QualityJobs) private readonly quality: QualityJobs,
   ) {}
 
   /** Resolve a public (path, versionLabel) pair to its registered snapshot (md-wiki `reference`). */
@@ -169,7 +171,7 @@ export class ProposalFreezer {
         const slug = slugs();
         const { manifest, bundleHash } = build(slug);
         try {
-          const id = await this.db.$transaction(async (tx) => {
+          const { id, job } = await this.db.$transaction(async (tx) => {
             const refs = [
               ...(input.base
                 ? [{ pin: input.base, role: 'target' as const, impact: null, ord: 0 }]
@@ -226,9 +228,12 @@ export class ProposalFreezer {
               { id: created.id, submitterId: input.submitter.id },
               input.submitter,
             );
-            return created.id;
+            // The quality check run is an outbox row of the submission (§7.6.5).
+            const job = await this.quality.createForProposal(tx, created.id, 'submit', null);
+            return { id: created.id, job };
           });
           this.events.proposal(slug, input.submitter.id, 'pending');
+          this.quality.submitted(job, { slug, submitterId: input.submitter.id });
           return { proposalId: id, replay: false };
         } catch (error) {
           if (isUniqueViolation(error) && input.slug === undefined && attempt < MAX_ATTEMPTS)
