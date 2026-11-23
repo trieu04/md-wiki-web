@@ -73,6 +73,11 @@ interface WikiStorage {
 - Parent folders are created as needed (each segment validated).
 - Never follows symlinks outside the root (realpath check) → `TRAVERSAL`.
 - `FixtureStorage` implements the same port in memory with injectable faults at each step (`beforeRename`, `afterRename`, `beforeVerify`, `receipt`), used by publish-flow tests.
+- **Fault semantics [D-36]** (each fault fires once, then the adapter behaves normally):
+  - `beforeRename` → throws `STORAGE_ERROR`; the temp file is removed, the target is unchanged.
+  - `afterRename` → the rename **has happened** (target holds the new bytes), then throws `STORAGE_ERROR` — simulates a crash after the write; callers recover by reading back.
+  - `beforeVerify` → the read-back returns different bytes than written → `VERIFY_FAILED` (target is left as written).
+  - `receipt` → write and verify succeeded, then producing the receipt throws `STORAGE_ERROR`.
 
 ### 3.3 Sections (`domain/sections.ts`) [D-1, D-2, D-3]
 
@@ -115,6 +120,7 @@ decided_at: 2026-11-23T10:42:00Z
 - On boot, on `POST /api/v1/admin/reindex` (owner), and after every publish: list storage → for each changed sha: capture snapshot, split sections, upsert `Page` and `PageSection` rows for the current version, refresh the search vector.
 - **Topic [D-7]**: the first path segment. Display name from `wiki-meta/topics.md` (table `folder | name`) when present, else the folder title-cased. Files at the root have topic `general`.
 - Out-of-band detection: if a file's sha differs from the last `Publication.afterSha256` for that path, `Page.changedOutsideReview = true` (shown as "Changed outside review"; next publish goes `stale`).
+  The indexer reads the last published hash through a port `PublicationLookup.lastPublishedSha256(path) → Promise<string | null>` [D-36]. Until the `Publication` model exists (Phase 3/5) the production implementation returns `null`, and `null` means "never published through review" → `changedOutsideReview = false`. Tests inject a lookup that returns a hash.
 
 ## 4. Data model (Phase 1–5 precise, later outline)
 
