@@ -6,13 +6,13 @@ Live tracker for [implementation-plan.md](implementation-plan.md). Updated by th
 | --- | --- | --- | --- | --- | --- |
 | P0-01 | luna → sol | sol → astra | **done** | 3 | astra PASS on attempt 4; 2 minors carried into P0-05 brief |
 | P0-02 | luna | sol | **done** | 1 | attempt 2 fixed secret leaks; review-2 'major' (uv-managed Python) overruled by orchestrator: spec intent is 3.12, met; 2 minors (pydantic <3, caplog INFO) fixed by OPUS |
-| P0-03 | luna → sol → **astra** | astra → sol | running (attempt 6) | 5 | sol a4/a5 rejected by astra (env precedence, WIKI_ROOT, tunnel spec; then worker PID reuse after clean exit, tunnel host for non-default engine) |
+| P0-03 | luna → sol → astra | sol | **done** | 5 | a6 (astra) gate PASS, sol PASS no issues under D-28 rubric |
 | P0-04 | luna | sol | **done** | 0 | sol PASS, no issues |
-| P0-05 | astra | sol | todo | 0 | |
-| P0-06 | sol | astra | todo | 0 | |
+| P0-05 | astra | sol | running | 0 | |
+| P0-06 | sol | astra | running | 0 | |
 | P0-07 | sol | astra | todo | 0 | |
 | P0-08 | sol | astra | **done** | 1 | a1 review: runtime not in clean clone (D-24), non-atomic publish, tests not in pnpm test; a2 PASS, 504/504 deterministic. Minor carried to P0-09: assert state-only variants independent of variants.json |
-| P0-09 | sol | terra | todo | 0 | |
+| P0-09 | sol | astra | running | 0 | |
 | P0-10 | sol | astra | todo | 0 | |
 | H-1 | orchestrator (delegated) | — | done | — | decided D-14..D-21, see plan §6.1 |
 
@@ -42,3 +42,10 @@ Live tracker for [implementation-plan.md](implementation-plan.md). Updated by th
 ## Phase reports
 
 none yet
+
+## Follow-ups (minor review findings, not blocking — D-28)
+
+| Task | Finding | Planned in |
+| --- | --- | --- |
+| P0-01 | API test teardown signals pnpm wrapper; test script rebuilds deps | P0-05 brief |
+| P0-08 | coverage test should assert state-only variants independently of variants.json | P0-09 brief |

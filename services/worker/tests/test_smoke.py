@@ -8,6 +8,24 @@ from pydantic import ValidationError
 from mdwiki_worker.main import Settings
 
 
+def test_module_entry_point_calls_run(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Running the package as a module delegates to the worker run function."""
+    import runpy
+
+    import mdwiki_worker.main as worker_main
+
+    called = False
+
+    def fake_run() -> None:
+        nonlocal called
+        called = True
+
+    monkeypatch.setattr(worker_main, "run", fake_run)
+    runpy.run_module("mdwiki_worker.__main__", run_name="__main__")
+
+    assert called
+
+
 def test_settings_reject_missing_service_token(monkeypatch: pytest.MonkeyPatch) -> None:
     """The service token must be configured before the worker starts."""
     monkeypatch.setenv("REDIS_URL", "redis://localhost:6379")
