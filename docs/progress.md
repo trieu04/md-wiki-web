@@ -15,12 +15,12 @@ Live tracker for [implementation-plan.md](implementation-plan.md). Updated by th
 | P0-G | OPUS | — | **done** | 0 | merges P0-10 (CI). Clean clone: make up, install, build, make check, contracts:check, design:shots all PASS; references byte-identical across clones; ping round trip succeeded at /__dev/ping (69 ms); launcher SIGTERM leaves no processes. Found + fixed: tunnel socket path too long |
 | P1-A | astra | sol | **done** | 1 | a1 BLOCKED (status-block warning, line base, boundary tests) → D-33; a2 PASS, 74 tests |
 | P1-B | astra | sol | **done** | 1 | a1 BLOCKED (label metadata, empty page) → D-34; a2 review: ordering test gap → OPUS added test; PASS |
-| P1-C | astra | sol | **done** | 2 | a1 BLOCKED → D-36; a2: raw-byte precondition (real), gate tunnel/env (tooling); a3 PASS. Deviation: `prisma migrate reset` not run — Prisma requires user consent; fresh-schema deploy test is the evidence (P1-G asks user) |
+| P1-C | astra | sol | **done** | 2 | a1 BLOCKED → D-36; a2: raw-byte precondition (real), gate tunnel/env (tooling); a3 PASS. `prisma migrate reset` verified at P1-G on a throwaway schema with user consent |
 | P1-D | astra | sol | **done** | 3 | a1 BLOCKED → D-38; a2 BLOCKED → D-40; a3 review: last-owner lockout, rate-limit tests, user.created, calendar dates; a4 PASS. Fixed P0-G follow-up (API binds 127.0.0.1) |
-| P1-E | sol | astra | running (attempt 1) | 0 | merges P1-11,P1-12,P1-15 |
+| P1-E | sol | astra | **done** | 1 | D-41 pre-empted DTO gaps; a1 review: CI env, recheck predicate → domain; a2 PASS |
 | P2-A | sol | astra | **done** | 1 | a1 BLOCKED → D-32; a2 no-run (worktree .orchestrate missing); a3 PASS, 152 crops 0 mismatch; terra pass; OPUS unified `Label` type with P1-B on landing |
-| P2-B | sol | terra | running (attempt 3) | 2 | a1 BLOCKED → D-37; a2 BLOCKED → D-39; merges P2-04,P2-05 |
-| P2-C | sol | terra | pending | 0 | merges P2-06,P2-07,P2-08 |
+| P2-B | sol | astra | **done** | 3 | a1 BLOCKED → D-37; a2 BLOCKED → D-39; a3 review: placeholder contrast → D-42; a4 PASS; 267/272 exact, axe 0; terra pass |
+| P2-C | sol | terra | running (attempt 1) | 0 | merges P2-06,P2-07,P2-08 |
 | P3-A | sol | astra | pending | 0 | merges P1-14,P3-01,P3-05 |
 | P3-B | sol | terra+astra | pending | 0 | merges P3-02,P3-03 |
 | P3-C | sol | terra+astra | pending | 0 | merges P3-04,P3-06 |
@@ -75,7 +75,7 @@ none yet
 | P0-G | public API listens on all interfaces (`*:3000`) in dev; bind to 127.0.0.1 unless configured | P1-D |
 | P0-G | Vite dev server listens on IPv6 `localhost` only; `127.0.0.1:5173` is refused | P2-C |
 | P0-08 | coverage test should assert state-only variants independently of variants.json | P0-09 brief |
-| P2-A | gallery pill labels use the option index, not the current selection (astra) | P2-B |
+| P2-A | gallery pill labels use the option index, not the current selection (astra) | P2-B — **fixed** |
 | P2-A | terra: Mono/Chip crop surroundings white vs light-gray in frame (crop background only; 0% pixel diff) | P2-G |
 
 ## Phase report — Phase 0 (Foundations), 2026-11-23
@@ -104,3 +104,10 @@ none yet
 **Gate finding fixed:** SSH control socket path exceeded the Unix limit in long checkout paths (commit bc57a91).
 
 **Open follow-ups:** see the Follow-ups table (all minor, each assigned to a later task).
+
+## Phase 1 report (P1-G, 2026-11-23)
+
+Clean clone of main (a9c3e12): `pnpm install --frozen-lockfile`, `uv sync --frozen`, `pnpm build`, `prisma migrate deploy`, `make check` (web 55, API 102, domain, worker, tooling 23), `contracts:check` — all PASS.
+Live smoke: built API on a disposable schema against `wiki-sample`, listening on 127.0.0.1 only. Flow verified with real HTTP: anonymous session nulls; unauthenticated → 401 UNAUTHENTICATED; wrong password → 401 INVALID_CREDENTIALS; login → MeDto + csrfToken; tree; page (status block stripped, section labels `not_reviewed`, spread); traversal path → 400 INVALID_PATH; missing → 404; search (snippets split before/hit/after, facets, label filter); missing q → 400 VALIDATION_FAILED; admin POST without CSRF → 403 CSRF_INVALID; token created once; /context and /auth/session with bearer; bad bearer → 401; demoting last owner → 409 LAST_OWNER; logout → 401 afterwards. Schema dropped afterwards.
+`prisma migrate reset` (P1-C acceptance) run with user consent on throwaway schema `mw_reset_check`: all 3 migrations applied; schema dropped.
+Decisions this phase: D-33 … D-41 (contract gaps found by BLOCKED reports) — all recorded in system-logic.md / implementation-plan.md.
