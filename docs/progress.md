@@ -18,7 +18,7 @@ Live tracker for [implementation-plan.md](implementation-plan.md). Updated by th
 | P1-C | astra | sol | running (attempt 1) | 0 | merges P1-07,P1-08,P1-10; worktree |
 | P1-D | astra | sol | pending | 0 | merges P1-09,P1-13 |
 | P1-E | sol | astra | pending | 0 | merges P1-11,P1-12,P1-15 |
-| P2-A | sol | terra | running (attempt 1) | 0 | merges P2-01,P2-02,P2-03; worktree; D-32 gallery shell + reference crops |
+| P2-A | sol | astra | **done** | 1 | a1 BLOCKED → D-32; a2 no-run (worktree .orchestrate missing); a3 PASS, 152 crops 0 mismatch; terra pass; OPUS unified `Label` type with P1-B on landing |
 | P2-B | sol | terra | pending | 0 | merges P2-04,P2-05 |
 | P2-C | sol | terra | pending | 0 | merges P2-06,P2-07,P2-08 |
 | P3-A | sol | astra | pending | 0 | merges P1-14,P3-01,P3-05 |
