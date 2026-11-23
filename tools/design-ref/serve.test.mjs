@@ -37,6 +37,36 @@ test('wrappers preserve booleans and escape strings that would end the logic scr
   assert.deepEqual(JSON.parse(json), props);
 });
 
+// Required interactive states from design-system.md §1 and their reference names.
+// This must not be derived from variants.json, or missing states pass silently.
+const stateOnlyVariants = {
+  Main: 'mine all',
+  Search:
+    'relevance trust recent without-checked without-reviewed without-not-reviewed without-error all-filters-off',
+  Page: 'principle overview resolution detectors history not-following helped-yes helped-partly helped-no revealed',
+  Trust:
+    'check-partly check-contradicts check-cant check-done check-contradicts-done use-changes use-no use-done report-outdated report-unclear report-source report-other report-done',
+  You: 'following trust suggestions pref-recheck-off pref-changed-off pref-report-off pref-digest-on',
+  Editor: 'write preview diff base-changed-preview base-changed-diff',
+  Conflict: 'merge mine drop',
+  Inbox:
+    'all decide check spot mentions done selected-discussion selected-retraction selected-report selected-spot-check',
+  Proposals: 'open stale blocked published rejected all',
+  Review: 'final base discussion history request-changes hold disputed-request-changes',
+  Discussions: 'open mine closed all selected-dispute selected-report',
+  Credibility:
+    'queue coverage sources retraction-error retraction-recheck selected-report report-confirm-and-fix report-dismiss selected-copy copy-independent copy-ask selected-contradiction contradiction-no contradiction-discussion selected-confirmed confirmed-close confirmed-error',
+  Settings: 'trust review people agents models storage',
+};
+
+test('covers the required state-only reference variant names', () => {
+  for (const [frame, names] of Object.entries(stateOnlyVariants)) {
+    for (const name of names.split(' ')) {
+      assert.ok(Object.hasOwn(frames[frame] ?? {}, name), `missing ${frame}/${name}`);
+    }
+  }
+});
+
 test('covers every canvas frame and every enum prop value in the source', async () => {
   assert.deepEqual(
     Object.keys(frames)
