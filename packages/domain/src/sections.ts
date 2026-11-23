@@ -71,7 +71,10 @@ export function splitSections(markdown: string): Section[] {
   return sections;
 }
 
-export function pageTitle(path: string, sections: readonly Section[]): string {
+export function pageTitle(
+  path: string,
+  sections: readonly { level: number; title: string }[],
+): string {
   const h1 = sections.find((section) => section.level === 1);
   if (h1) return h1.title;
   const name = path.slice(path.lastIndexOf('/') + 1, -3).replace(/[-_]/g, ' ');

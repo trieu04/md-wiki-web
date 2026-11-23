@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
   computeSectionLabel,
+  LABEL_ORDER,
+  matchesLabelSelection,
   pageLabel,
   type Label,
   type LabelDto,
@@ -210,6 +212,31 @@ it('adding a recheck never improves trust, for every absent/current/stale combin
               expect(trust[after.label]).toBeLessThanOrEqual(trust[before.label]);
             }
           }
+});
+
+describe('search label selection', () => {
+  it('passes every label when the selection is empty', () => {
+    const selected = new Set<Label>();
+    expect(LABEL_ORDER.filter((label) => matchesLabelSelection(label, selected))).toEqual(
+      LABEL_ORDER,
+    );
+  });
+
+  it('passes only selected labels and recheck, even when recheck is not selected', () => {
+    const selected = new Set<Label>(['checked', 'reviewed']);
+    expect(LABEL_ORDER.filter((label) => matchesLabelSelection(label, selected))).toEqual([
+      'checked',
+      'reviewed',
+      'recheck',
+    ]);
+  });
+
+  it('passes every label when all labels are selected', () => {
+    const selected = new Set(LABEL_ORDER);
+    expect(LABEL_ORDER.filter((label) => matchesLabelSelection(label, selected))).toEqual(
+      LABEL_ORDER,
+    );
+  });
 });
 
 it('page label counts each section and takes the worst present, including the empty-page case', () => {

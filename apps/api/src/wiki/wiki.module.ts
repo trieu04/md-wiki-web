@@ -8,13 +8,21 @@ import {
   NoPublications,
 } from './indexer/publication-lookup.js';
 import { WikiIndexer } from './indexer/wiki-indexer.js';
+import { WikiReadController } from './read.controller.js';
+import { SearchService } from './search.service.js';
+import { SectionLabels } from './section-labels.js';
 import { LocalFolderStorage } from './storage/local-folder-storage.js';
 import type { WikiStorage } from './storage/wiki-storage.js';
+import { WikiReadService } from './wiki-read.service.js';
 
 export const WIKI_STORAGE = Symbol('WIKI_STORAGE');
 @Module({
   imports: [PrismaModule],
+  controllers: [WikiReadController],
   providers: [
+    WikiReadService,
+    SearchService,
+    SectionLabels,
     {
       provide: WIKI_STORAGE,
       inject: [API_CONFIG],

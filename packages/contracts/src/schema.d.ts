@@ -148,6 +148,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/context": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["WikiReadController_context"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/dev/ping": {
         parameters: {
             query?: never;
@@ -188,6 +204,102 @@ export interface paths {
             cookie?: never;
         };
         get: operations["HealthController_report"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["WikiReadController_search"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/wiki/pages/{path}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["WikiReadController_page"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/wiki/pages/{path}/history": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["WikiReadController_history"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/wiki/pages/{path}/versions/{label}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["WikiReadController_version"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/wiki/recent": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["WikiReadController_recent"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/wiki/tree": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["WikiReadController_tree"];
         put?: never;
         post?: never;
         delete?: never;
@@ -249,6 +361,13 @@ export interface components {
             /** Format: uuid */
             userId: string;
         };
+        ContextDto: {
+            content: string;
+            path: string;
+            sections: components["schemas"]["SectionDto"][];
+            sha256: string;
+            versionLabel: string;
+        };
         CreatedTokenDto: {
             /** Format: date-time */
             createdAt: string;
@@ -294,6 +413,19 @@ export interface components {
             storage: "ok" | "down";
             version: string;
         };
+        HistoryDto: {
+            items: components["schemas"]["VersionDto"][];
+            nextCursor: string | null;
+        };
+        LabelDto: {
+            /** @enum {string} */
+            label: "checked" | "reviewed" | "not_reviewed" | "recheck" | "error";
+            reason: string | null;
+            /** @enum {string|null} */
+            reviewerKind: "agent" | "person" | null;
+            /** Format: date-time */
+            since: string | null;
+        };
         LoginDto: {
             csrfToken: string;
             user: components["schemas"]["MeDto"];
@@ -302,6 +434,9 @@ export interface components {
             /** Format: email */
             email: string;
             password: string;
+        };
+        MaintainerDto: {
+            name: string;
         };
         MeDto: {
             email: string;
@@ -314,6 +449,39 @@ export interface components {
             /** Format: uuid */
             teamId: string | null;
         };
+        PageDto: {
+            changedOutsideReview: boolean;
+            maintainers: components["schemas"]["MaintainerDto"][];
+            markdown: string;
+            pageLabel: components["schemas"]["PageLabelDto"];
+            path: string;
+            sections: components["schemas"]["SectionDto"][];
+            sha256: string;
+            title: string;
+            topic: components["schemas"]["TopicDto"];
+            /** Format: date-time */
+            updatedAt: string;
+            usedByTeams: number | null;
+            versionLabel: string;
+        };
+        PageLabelDto: {
+            /** @enum {string} */
+            label: "checked" | "reviewed" | "not_reviewed" | "recheck" | "error";
+            spread: {
+                checked: number;
+                error: number;
+                not_reviewed: number;
+                recheck: number;
+                reviewed: number;
+            };
+        };
+        PageSummaryDto: {
+            pageLabel: components["schemas"]["PageLabelDto"];
+            path: string;
+            title: string;
+            /** Format: date-time */
+            updatedAt: string;
+        };
         ProblemDto: {
             code: components["schemas"]["ErrorCode"];
             detail?: string;
@@ -323,14 +491,76 @@ export interface components {
             title: string;
             type: string;
         };
+        RecentChangeDto: {
+            /** Format: date-time */
+            at: string;
+            changedOutsideReview: boolean;
+            pageTitle: string;
+            path: string;
+            versionLabel: string;
+        };
+        RecentDto: {
+            items: components["schemas"]["RecentChangeDto"][];
+            nextCursor: string | null;
+        };
         ReindexDto: {
             changed: number;
             durationMs: number;
             scanned: number;
         };
+        SearchDto: {
+            facets: components["schemas"]["SearchFacetsDto"];
+            items: components["schemas"]["SearchHitDto"][];
+            nextCursor: string | null;
+            pageCount: number;
+            total: number;
+        };
+        SearchFacetsDto: {
+            labels: {
+                checked: number;
+                error: number;
+                not_reviewed: number;
+                recheck: number;
+                reviewed: number;
+            };
+            topics: components["schemas"]["TopicFacetDto"][];
+        };
+        SearchHitDto: {
+            anchor: string;
+            label: components["schemas"]["LabelDto"];
+            meta: components["schemas"]["SearchMetaDto"];
+            pageTitle: string;
+            path: string;
+            sectionTitle: string;
+            snippet: components["schemas"]["SnippetDto"][];
+        };
+        SearchMetaDto: {
+            checkedBy: number | null;
+            sourceName: string | null;
+            /** Format: date-time */
+            updatedAt: string;
+            usedByTeams: number | null;
+        };
+        SectionDto: {
+            anchor: string;
+            hash: string;
+            label: components["schemas"]["LabelDto"];
+            level: number;
+            title: string;
+            warn: components["schemas"]["SectionWarningDto"] | null;
+        };
+        SectionWarningDto: {
+            fixProposalSlug: string | null;
+            reason: string;
+        };
         SessionDto: {
             csrfToken: string | null;
             user: components["schemas"]["MeDto"] | null;
+        };
+        SnippetDto: {
+            after: string;
+            before: string;
+            hit: string;
         };
         TeamDto: {
             /** Format: uuid */
@@ -358,6 +588,24 @@ export interface components {
             items: components["schemas"]["ApiTokenDto"][];
             /** Format: uuid */
             nextCursor: string | null;
+        };
+        TopicDto: {
+            id: string;
+            name: string;
+        };
+        TopicFacetDto: {
+            id: string;
+            n: number;
+            name: string;
+        };
+        TreeDto: {
+            topics: components["schemas"]["TreeTopicDto"][];
+        };
+        TreeTopicDto: {
+            id: string;
+            name: string;
+            pageCount: number;
+            pages: components["schemas"]["PageSummaryDto"][];
         };
         UpdateUserInput: {
             disabled?: boolean;
@@ -387,6 +635,12 @@ export interface components {
             items: components["schemas"]["UserDto"][];
             /** Format: uuid */
             nextCursor: string | null;
+        };
+        VersionDto: {
+            /** Format: date-time */
+            capturedAt: string;
+            sha256: string;
+            versionLabel: string;
         };
     };
     responses: never;
@@ -1023,6 +1277,63 @@ export interface operations {
             };
         };
     };
+    WikiReadController_context: {
+        parameters: {
+            query: {
+                path: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ContextDto"];
+                };
+            };
+            /** @description INVALID_PATH | VALIDATION_FAILED */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description UNAUTHENTICATED */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description FORBIDDEN | ACCOUNT_DISABLED */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description NOT_FOUND */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+        };
+    };
     DevPingController_create: {
         parameters: {
             query?: never;
@@ -1134,6 +1445,336 @@ export interface operations {
             };
             /** @description INTERNAL */
             500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+        };
+    };
+    WikiReadController_search: {
+        parameters: {
+            query: {
+                cursor?: string;
+                "labels[]"?: ("checked" | "reviewed" | "not_reviewed" | "recheck" | "error")[];
+                limit?: number;
+                q: string;
+                sort?: "relevance" | "trust" | "recent";
+                "topics[]"?: string[];
+                updated?: "any" | "30d" | "1y";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SearchDto"];
+                };
+            };
+            /** @description VALIDATION_FAILED */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description UNAUTHENTICATED */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description FORBIDDEN | ACCOUNT_DISABLED */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+        };
+    };
+    WikiReadController_page: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description URL-encoded wiki path */
+                path: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PageDto"];
+                };
+            };
+            /** @description INVALID_PATH */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description UNAUTHENTICATED */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description FORBIDDEN | ACCOUNT_DISABLED */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description NOT_FOUND */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+        };
+    };
+    WikiReadController_history: {
+        parameters: {
+            query?: {
+                cursor?: string;
+                limit?: number;
+            };
+            header?: never;
+            path: {
+                /** @description URL-encoded wiki path */
+                path: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HistoryDto"];
+                };
+            };
+            /** @description INVALID_PATH | VALIDATION_FAILED */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description UNAUTHENTICATED */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description FORBIDDEN | ACCOUNT_DISABLED */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description NOT_FOUND */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+        };
+    };
+    WikiReadController_version: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                label: string;
+                /** @description URL-encoded wiki path */
+                path: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PageDto"];
+                };
+            };
+            /** @description INVALID_PATH */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description UNAUTHENTICATED */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description FORBIDDEN | ACCOUNT_DISABLED */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description NOT_FOUND */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+        };
+    };
+    WikiReadController_recent: {
+        parameters: {
+            query?: {
+                cursor?: string;
+                limit?: number;
+                scope?: "all" | "mine";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecentDto"];
+                };
+            };
+            /** @description VALIDATION_FAILED */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description UNAUTHENTICATED */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description FORBIDDEN | ACCOUNT_DISABLED */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+        };
+    };
+    WikiReadController_tree: {
+        parameters: {
+            query?: {
+                topic?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TreeDto"];
+                };
+            };
+            /** @description VALIDATION_FAILED */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description UNAUTHENTICATED */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description FORBIDDEN | ACCOUNT_DISABLED */
+            403: {
                 headers: {
                     [name: string]: unknown;
                 };

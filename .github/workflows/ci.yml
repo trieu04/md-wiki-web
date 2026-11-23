@@ -54,6 +54,40 @@ jobs:
       - run: pnpm check
       - run: pnpm contracts:check
 
+  api-integration:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_DB: mdwiki
+          POSTGRES_USER: mdwiki
+          POSTGRES_PASSWORD: mdwiki-local
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -h 127.0.0.1 -U mdwiki -d mdwiki"
+          --health-interval 5s --health-timeout 5s --health-retries 20
+      redis:
+        image: redis:7
+        ports: ['6379:6379']
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s --health-timeout 5s --health-retries 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: cp .env.example .env
+      - run: pnpm install --frozen-lockfile
+      - run: |
+          set -a; . ./.env; set +a
+          pnpm --filter @md-wiki/api exec prisma migrate deploy
+          pnpm --filter @md-wiki/api test -- wiki-read.integration.test.ts
+
   worker:
     runs-on: ubuntu-latest
     timeout-minutes: 15

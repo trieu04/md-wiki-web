@@ -773,6 +773,604 @@
         ]
       }
     },
+    "/api/v1/wiki/tree": {
+      "get": {
+        "operationId": "WikiReadController_tree",
+        "parameters": [
+          {
+            "name": "topic",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TreeDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_FAILED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN | ACCOUNT_DISABLED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "WikiRead"
+        ]
+      }
+    },
+    "/api/v1/wiki/pages/{path}": {
+      "get": {
+        "operationId": "WikiReadController_page",
+        "parameters": [
+          {
+            "name": "path",
+            "required": true,
+            "in": "path",
+            "description": "URL-encoded wiki path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "INVALID_PATH",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN | ACCOUNT_DISABLED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "WikiRead"
+        ]
+      }
+    },
+    "/api/v1/wiki/pages/{path}/history": {
+      "get": {
+        "operationId": "WikiReadController_history",
+        "parameters": [
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 25
+            }
+          },
+          {
+            "name": "path",
+            "required": true,
+            "in": "path",
+            "description": "URL-encoded wiki path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HistoryDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "INVALID_PATH | VALIDATION_FAILED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN | ACCOUNT_DISABLED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "WikiRead"
+        ]
+      }
+    },
+    "/api/v1/wiki/pages/{path}/versions/{label}": {
+      "get": {
+        "operationId": "WikiReadController_version",
+        "parameters": [
+          {
+            "name": "label",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "path",
+            "required": true,
+            "in": "path",
+            "description": "URL-encoded wiki path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "INVALID_PATH",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN | ACCOUNT_DISABLED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "WikiRead"
+        ]
+      }
+    },
+    "/api/v1/wiki/recent": {
+      "get": {
+        "operationId": "WikiReadController_recent",
+        "parameters": [
+          {
+            "name": "scope",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": "all",
+              "enum": [
+                "all",
+                "mine"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 25
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecentDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_FAILED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN | ACCOUNT_DISABLED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "WikiRead"
+        ]
+      }
+    },
+    "/api/v1/context": {
+      "get": {
+        "operationId": "WikiReadController_context",
+        "parameters": [
+          {
+            "name": "path",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContextDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "INVALID_PATH | VALIDATION_FAILED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN | ACCOUNT_DISABLED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "WikiRead"
+        ]
+      }
+    },
+    "/api/v1/search": {
+      "get": {
+        "operationId": "WikiReadController_search",
+        "parameters": [
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 25
+            }
+          },
+          {
+            "name": "q",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 200
+            }
+          },
+          {
+            "name": "sort",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": "relevance",
+              "enum": [
+                "relevance",
+                "trust",
+                "recent"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "updated",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": "any",
+              "enum": [
+                "any",
+                "30d",
+                "1y"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "labels[]",
+            "required": false,
+            "in": "query",
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "checked",
+                  "reviewed",
+                  "not_reviewed",
+                  "recheck",
+                  "error"
+                ]
+              }
+            }
+          },
+          {
+            "name": "topics[]",
+            "required": false,
+            "in": "query",
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SearchDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_FAILED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN | ACCOUNT_DISABLED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "WikiRead"
+        ]
+      }
+    },
     "/api/v1/health": {
       "get": {
         "operationId": "HealthController_report",
@@ -1725,6 +2323,593 @@
           "lastUsedAt",
           "revokedAt",
           "token"
+        ]
+      },
+      "PageLabelDto": {
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string",
+            "enum": [
+              "checked",
+              "reviewed",
+              "not_reviewed",
+              "recheck",
+              "error"
+            ]
+          },
+          "spread": {
+            "type": "object",
+            "properties": {
+              "checked": {
+                "type": "integer"
+              },
+              "reviewed": {
+                "type": "integer"
+              },
+              "not_reviewed": {
+                "type": "integer"
+              },
+              "recheck": {
+                "type": "integer"
+              },
+              "error": {
+                "type": "integer"
+              }
+            },
+            "required": [
+              "checked",
+              "reviewed",
+              "not_reviewed",
+              "recheck",
+              "error"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "label",
+          "spread"
+        ]
+      },
+      "PageSummaryDto": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "pageLabel": {
+            "$ref": "#/components/schemas/PageLabelDto"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "path",
+          "title",
+          "pageLabel",
+          "updatedAt"
+        ]
+      },
+      "TreeTopicDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "pageCount": {
+            "type": "integer"
+          },
+          "pages": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PageSummaryDto"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "pageCount",
+          "pages"
+        ]
+      },
+      "TreeDto": {
+        "type": "object",
+        "properties": {
+          "topics": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TreeTopicDto"
+            }
+          }
+        },
+        "required": [
+          "topics"
+        ]
+      },
+      "TopicDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name"
+        ]
+      },
+      "LabelDto": {
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string",
+            "enum": [
+              "checked",
+              "reviewed",
+              "not_reviewed",
+              "recheck",
+              "error"
+            ]
+          },
+          "since": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "reviewerKind": {
+            "type": "string",
+            "enum": [
+              "agent",
+              "person"
+            ],
+            "nullable": true
+          },
+          "reason": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "label",
+          "since",
+          "reviewerKind",
+          "reason"
+        ]
+      },
+      "SectionWarningDto": {
+        "type": "object",
+        "properties": {
+          "reason": {
+            "type": "string"
+          },
+          "fixProposalSlug": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "reason",
+          "fixProposalSlug"
+        ]
+      },
+      "SectionDto": {
+        "type": "object",
+        "properties": {
+          "anchor": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "level": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 6
+          },
+          "hash": {
+            "type": "string"
+          },
+          "label": {
+            "$ref": "#/components/schemas/LabelDto"
+          },
+          "warn": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SectionWarningDto"
+              }
+            ]
+          }
+        },
+        "required": [
+          "anchor",
+          "title",
+          "level",
+          "hash",
+          "label",
+          "warn"
+        ]
+      },
+      "MaintainerDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "name"
+        ]
+      },
+      "PageDto": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "pageLabel": {
+            "$ref": "#/components/schemas/PageLabelDto"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "topic": {
+            "$ref": "#/components/schemas/TopicDto"
+          },
+          "versionLabel": {
+            "type": "string"
+          },
+          "sha256": {
+            "type": "string"
+          },
+          "changedOutsideReview": {
+            "type": "boolean"
+          },
+          "markdown": {
+            "type": "string"
+          },
+          "sections": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SectionDto"
+            }
+          },
+          "maintainers": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MaintainerDto"
+            }
+          },
+          "usedByTeams": {
+            "type": "integer",
+            "nullable": true
+          }
+        },
+        "required": [
+          "path",
+          "title",
+          "pageLabel",
+          "updatedAt",
+          "topic",
+          "versionLabel",
+          "sha256",
+          "changedOutsideReview",
+          "markdown",
+          "sections",
+          "maintainers",
+          "usedByTeams"
+        ]
+      },
+      "VersionDto": {
+        "type": "object",
+        "properties": {
+          "versionLabel": {
+            "type": "string"
+          },
+          "sha256": {
+            "type": "string"
+          },
+          "capturedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "versionLabel",
+          "sha256",
+          "capturedAt"
+        ]
+      },
+      "HistoryDto": {
+        "type": "object",
+        "properties": {
+          "nextCursor": {
+            "type": "string",
+            "nullable": true
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/VersionDto"
+            }
+          }
+        },
+        "required": [
+          "nextCursor",
+          "items"
+        ]
+      },
+      "RecentChangeDto": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string"
+          },
+          "pageTitle": {
+            "type": "string"
+          },
+          "versionLabel": {
+            "type": "string"
+          },
+          "at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "changedOutsideReview": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "path",
+          "pageTitle",
+          "versionLabel",
+          "at",
+          "changedOutsideReview"
+        ]
+      },
+      "RecentDto": {
+        "type": "object",
+        "properties": {
+          "nextCursor": {
+            "type": "string",
+            "nullable": true
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RecentChangeDto"
+            }
+          }
+        },
+        "required": [
+          "nextCursor",
+          "items"
+        ]
+      },
+      "ContextDto": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string"
+          },
+          "versionLabel": {
+            "type": "string"
+          },
+          "sha256": {
+            "type": "string"
+          },
+          "content": {
+            "type": "string"
+          },
+          "sections": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SectionDto"
+            }
+          }
+        },
+        "required": [
+          "path",
+          "versionLabel",
+          "sha256",
+          "content",
+          "sections"
+        ]
+      },
+      "TopicFacetDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "n": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "n"
+        ]
+      },
+      "SearchFacetsDto": {
+        "type": "object",
+        "properties": {
+          "labels": {
+            "type": "object",
+            "properties": {
+              "checked": {
+                "type": "integer"
+              },
+              "reviewed": {
+                "type": "integer"
+              },
+              "not_reviewed": {
+                "type": "integer"
+              },
+              "recheck": {
+                "type": "integer"
+              },
+              "error": {
+                "type": "integer"
+              }
+            },
+            "required": [
+              "checked",
+              "reviewed",
+              "not_reviewed",
+              "recheck",
+              "error"
+            ],
+            "additionalProperties": false
+          },
+          "topics": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TopicFacetDto"
+            }
+          }
+        },
+        "required": [
+          "labels",
+          "topics"
+        ]
+      },
+      "SnippetDto": {
+        "type": "object",
+        "properties": {
+          "before": {
+            "type": "string"
+          },
+          "hit": {
+            "type": "string"
+          },
+          "after": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "before",
+          "hit",
+          "after"
+        ]
+      },
+      "SearchMetaDto": {
+        "type": "object",
+        "properties": {
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "checkedBy": {
+            "type": "integer",
+            "nullable": true
+          },
+          "sourceName": {
+            "type": "string",
+            "nullable": true
+          },
+          "usedByTeams": {
+            "type": "integer",
+            "nullable": true
+          }
+        },
+        "required": [
+          "updatedAt",
+          "checkedBy",
+          "sourceName",
+          "usedByTeams"
+        ]
+      },
+      "SearchHitDto": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string"
+          },
+          "pageTitle": {
+            "type": "string"
+          },
+          "anchor": {
+            "type": "string"
+          },
+          "sectionTitle": {
+            "type": "string"
+          },
+          "label": {
+            "$ref": "#/components/schemas/LabelDto"
+          },
+          "snippet": {
+            "maxItems": 2,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SnippetDto"
+            }
+          },
+          "meta": {
+            "$ref": "#/components/schemas/SearchMetaDto"
+          }
+        },
+        "required": [
+          "path",
+          "pageTitle",
+          "anchor",
+          "sectionTitle",
+          "label",
+          "snippet",
+          "meta"
+        ]
+      },
+      "SearchDto": {
+        "type": "object",
+        "properties": {
+          "nextCursor": {
+            "type": "string",
+            "nullable": true
+          },
+          "total": {
+            "type": "integer"
+          },
+          "pageCount": {
+            "type": "integer"
+          },
+          "facets": {
+            "$ref": "#/components/schemas/SearchFacetsDto"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SearchHitDto"
+            }
+          }
+        },
+        "required": [
+          "nextCursor",
+          "total",
+          "pageCount",
+          "facets",
+          "items"
         ]
       },
       "HealthDto": {

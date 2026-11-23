@@ -1,6 +1,12 @@
 // Best to worst (also the page aggregation order).
-const labels = ['checked', 'reviewed', 'not_reviewed', 'recheck', 'error'] as const;
-export type Label = (typeof labels)[number];
+export const LABEL_ORDER = ['checked', 'reviewed', 'not_reviewed', 'recheck', 'error'] as const;
+export type Label = (typeof LABEL_ORDER)[number];
+
+/** An empty search selection is unrestricted; recheck results always remain visible. */
+export function matchesLabelSelection(label: Label, selected: ReadonlySet<Label>): boolean {
+  return selected.size === 0 || selected.has(label) || label === 'recheck';
+}
+
 export type ReviewerKind = 'person' | 'agent';
 export interface LabelDto {
   label: Label;
@@ -109,7 +115,7 @@ export function pageLabel(sections: readonly LabelDto[]): {
   let worst: Label = sections.length ? 'checked' : 'not_reviewed';
   for (const { label } of sections) {
     spread[label]++;
-    if (labels.indexOf(label) > labels.indexOf(worst)) worst = label;
+    if (LABEL_ORDER.indexOf(label) > LABEL_ORDER.indexOf(worst)) worst = label;
   }
   return { label: worst, spread };
 }
