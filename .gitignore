@@ -1,0 +1,15 @@
+node_modules/
+dist/
+.turbo/
+coverage/
+build/
+
+.env
+design/runtime/
+design/reference/
+visual/report/
+.orchestrate/
+.pi-sessions/
+.venv/
+__pycache__/
+.docker-local/
