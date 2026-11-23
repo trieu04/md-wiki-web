@@ -13,8 +13,11 @@ if ! git rebase -q main >/dev/null 2>&1; then
   while :; do
     C=$(git diff --name-only --diff-filter=U)
     [ -z "$C" ] && break
-    if [ "$C" != "pnpm-lock.yaml" ]; then echo "CONFLICT needs a human/OPUS merge in $WT:"; echo "$C"; exit 1; fi
-    git show main:pnpm-lock.yaml > pnpm-lock.yaml && pnpm install --prefer-offline >/dev/null 2>&1 && git add pnpm-lock.yaml
+    for f in $C; do
+      if [ "$f" = pnpm-lock.yaml ]; then git show main:pnpm-lock.yaml > pnpm-lock.yaml && pnpm install --prefer-offline >/dev/null 2>&1 && git add pnpm-lock.yaml
+      elif python3 -I tools/orchestrate/union-exports.py "$f"; then git add "$f"
+      else echo "CONFLICT needs an OPUS merge in $WT: $f"; exit 1; fi
+    done
     GIT_EDITOR=true git rebase --continue >/dev/null 2>&1 && break
   done
 fi
