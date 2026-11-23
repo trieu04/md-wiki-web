@@ -81,6 +81,8 @@ interface WikiStorage {
 - Parse with `remark-parse` + `remark-gfm` (mdast). Only ATX/setext headings at the document root count (headings inside lists, blockquotes or fenced code do not).
 - **Flat partition [D-1]**: every heading starts a section that ends right before the next root heading of any level. Text before the first heading is the `lead` section (anchor `lead`, level 0), omitted when empty after trimming.
 - The status block (§3.4) is removed before splitting; its lines never belong to a section.
+- **Line numbers [D-33]**: `startLine`/`endLine` are 1-based, inclusive, and counted in the **original file** (status block included), because diffs, findings and conflicts address the stored file. `splitSections` therefore takes the original markdown and strips the block itself via `parseStatusBlock`.
+- Boundary cases [D-33]: invalid UTF-8 is rejected where bytes are decoded (storage adapter → `STORAGE_ERROR`), symlink escape is tested in `LocalFolderStorage`; the pure functions receive strings only.
 - **Anchor [D-2]**: `github-slugger` slug of the heading's plain text; duplicates get `-1`, `-2` … in document order; the slug `lead` from a real heading becomes `lead-1`.
 - **Hash [D-3]**: SHA-256 of the section's source text from its heading line up to (not including) the next heading, after: CRLF/CR → LF, trailing whitespace removed from each line, trailing blank lines removed, a single final LF added. The heading line is included, so a rename changes the hash (evidence follows via `AnchorLink` in Phase 9).
 - Title for the page: first H1's plain text, else the file name without `.md`, `-`/`_` → space, first letter upper-cased **[D-8]**.
@@ -97,7 +99,7 @@ decided_at: 2026-11-23T10:42:00Z
 ```
 
 - Must be the first bytes of a published artifact, followed by one blank line.
-- `parseStatusBlock(md) → { block: StatusBlock | null; body: string }`; malformed block → treated as content and reported as `MALFORMED_STATUS_BLOCK` warning (never throws).
+- `parseStatusBlock(md) → { block: StatusBlock | null; body: string; warning?: 'MALFORMED_STATUS_BLOCK' }` [D-33]; malformed block → `block: null`, `body` = the input unchanged (treated as content), `warning` set; absent block → `block: null`, no `warning`. Never throws.
 - `renderStatusBlock(block) + body` must round-trip byte-exactly with `parseStatusBlock`.
 - Proposed content containing the string `<!-- md-wiki:status` anywhere → bundle validation error `RESERVED_MARKER`.
 
@@ -203,6 +205,8 @@ interface SearchHitDto { path: string; pageTitle: string; anchor: string; sectio
 ```
 
 **Labels before Phase 9**: the API returns `not_reviewed` for every section whose published versions include no review, and `reviewed` (with `reviewerKind`) once Phase 3 publishes reviewed content. The label is always computed by `domain/labels.ts#computeSectionLabel` (precedence table in architecture.md › Label precedence), which ships in Phase 1 with only rules 3 and 5 reachable and the other rules' inputs empty.
+
+**Label metadata when several records satisfy the winning rule [D-34]**: rules 1–2 (*Confirmed error*, *Under re-check*) take the **earliest** still-open record — `since` = its time, `reason` = its reason (the section has been in that state since then); rules 4–5 (*Checked*, *Reviewed*) take the **most recent** valid record — `since` = its time, `reviewerKind` = its kind. Ties on time: `person` before `agent`, then the lower record id (UUIDv7 = creation order). Rule 3 has `since = null`, `reviewerKind = null`. **`pageLabel([])`** (no sections, e.g. an empty file) = `not_reviewed` with all five spread counts 0.
 
 **Search rules**: section-level `tsvector` (`english` config, title weight A, text weight B); relevance = `ts_rank_cd`. `sort=trust` orders by label rank (`checked, reviewed, not_reviewed, recheck, error`) then relevance; `sort=recent` by `updatedAt desc`. The label filter excludes labels not selected **except `recheck` hits, which are always returned** (ux.md › Search). Label never enters `relevance`. Snippet: `ts_headline` with `StartSel/StopSel` sentinels split into `before/hit/after` server-side (no HTML from the server).
 

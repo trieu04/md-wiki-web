@@ -6,5 +6,6 @@ ID=$1
 parts=$(awk -F'\t' -v id="$ID" '$1==id {print $2}' docs/tasks/merges.tsv | tr ',' ' ')
 [ -z "$parts" ] && { [ -f docs/tasks/$ID.verify.sh ] && echo docs/tasks/$ID.verify.sh; exit 0; }
 mkdir -p .orchestrate; OUT=.orchestrate/$ID.verify.sh; echo 'set -e' > "$OUT"
-for p in $parts; do [ -f docs/tasks/$p.verify.sh ] && { echo "# --- part $p"; echo "("; cat docs/tasks/$p.verify.sh; echo ")"; } >> "$OUT"; done
+[ -f docs/tasks/$ID.verify.sh ] && { echo "# --- task $ID"; echo "("; cat docs/tasks/$ID.verify.sh; echo ")"; } >> "$OUT"
+for p in $parts; do [ "$p" = "$ID" ] && continue; [ -f docs/tasks/$p.verify.sh ] && { echo "# --- part $p"; echo "("; cat docs/tasks/$p.verify.sh; echo ")"; } >> "$OUT"; done
 grep -q . "$OUT" && echo "$OUT" || true
