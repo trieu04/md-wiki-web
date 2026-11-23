@@ -76,7 +76,7 @@ none yet
 | P0-G | Vite dev server listens on IPv6 `localhost` only; `127.0.0.1:5173` is refused | P2-C |
 | P0-08 | coverage test should assert state-only variants independently of variants.json | P0-09 brief |
 | P2-A | gallery pill labels use the option index, not the current selection (astra) | P2-B — **fixed** |
-| P2-A | terra: Mono/Chip crop surroundings white vs light-gray in frame (crop background only; 0% pixel diff) | P2-G |
+| P2-A | terra: Mono/Chip crop surroundings white vs light-gray in frame (crop background only; 0% pixel diff) | P2-G — closed (rows pixel-identical; terra P2-G found nothing) |
 | P2-C | wiki name was a build-time define missing from turbo inputs (astra) | P3-A (replaced by `/meta`, D-44) |
 | P2-C | Table/scroll crop at 390/768 clipped by the gallery's layout padding (harness, not component) | recheck on the Main/mine screen (P8) |
 
@@ -113,3 +113,11 @@ Clean clone of main (a9c3e12): `pnpm install --frozen-lockfile`, `uv sync --froz
 Live smoke: built API on a disposable schema against `wiki-sample`, listening on 127.0.0.1 only. Flow verified with real HTTP: anonymous session nulls; unauthenticated → 401 UNAUTHENTICATED; wrong password → 401 INVALID_CREDENTIALS; login → MeDto + csrfToken; tree; page (status block stripped, section labels `not_reviewed`, spread); traversal path → 400 INVALID_PATH; missing → 404; search (snippets split before/hit/after, facets, label filter); missing q → 400 VALIDATION_FAILED; admin POST without CSRF → 403 CSRF_INVALID; token created once; /context and /auth/session with bearer; bad bearer → 401; demoting last owner → 409 LAST_OWNER; logout → 401 afterwards. Schema dropped afterwards.
 `prisma migrate reset` (P1-C acceptance) run with user consent on throwaway schema `mw_reset_check`: all 3 migrations applied; schema dropped.
 Decisions this phase: D-33 … D-41 (contract gaps found by BLOCKED reports) — all recorded in system-logic.md / implementation-plan.md.
+
+## Phase 2 report (P2-G, 2026-11-23)
+
+Clean clone of main (f05c3de): install, build, `make check` (domain 126, web 107, API 102, contracts 2, worker, tooling 23), `contracts:check`, `design:shots` — all PASS.
+Component crops vs design frames: 340 comparisons at 390/768/1024/1440, **304 pixel-identical**; the 36 others are explained: D-42 top-bar placeholder colour (TopBar ×28, SearchInput/topbar ×4), sub-pixel antialiasing (TrustIcon/13-not_reviewed@1440, Callout/info@1440), Table/scroll@390/768 clipped by the gallery's layout padding (follow-up on the real Main/mine screen).
+axe with color-contrast on the full gallery: 0 violations at all four widths.
+terra, gallery tiles per width (states not in frames, wrapping, nothing invented): PASS at 390, 768, 1024, 1440. Minor: top-bar placeholder truncated at 768/1024 — identical truncation in the C-TopBar frame (as drawn).
+Orchestrator fixes this phase: D-46 (WorkNav idle weight renders 500), notification dot box-content. Decisions D-32, D-35, D-37, D-39, D-42, D-43, D-46.
