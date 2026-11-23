@@ -181,6 +181,7 @@ Roles are cumulative: `reader < contributor < reviewer < publisher < owner`. Age
 | Method | Path | Auth | Request | Response | Errors |
 | --- | --- | --- | --- | --- | --- |
 | GET | `/health` | none | | `{ status: 'ok', db: 'ok'\|'down', redis, storage, version }` | |
+| GET | `/meta` | none | | `{ wikiName: string, wikiDescription: string }` from env `WIKI_NAME` (default `"Wiki"`), `WIKI_DESCRIPTION` (default `""`) **[D-44]** | |
 | GET | `/auth/session` | any | | `{ user: MeDto \| null, csrfToken \| null }` | |
 | POST | `/auth/login` | none | `{ email, password }` | `{ user: MeDto, csrfToken }` + cookie | `INVALID_CREDENTIALS` (401, same for unknown email), `RATE_LIMITED`, `ACCOUNT_DISABLED` |
 | POST | `/auth/logout` | session | | `204` | |

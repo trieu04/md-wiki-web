@@ -230,10 +230,10 @@ Common: bind through generated hooks; view models in `features/<x>/model.ts` wit
 | P3-02 | Home | F-01 | `/wiki/tree`, `/wiki/recent`, `/search` (box), label spread from tree | *On pages you use* (P9-12), *Start here* (Q-D-2), *Often searched* (Q-D-3), scope toggle "Pages you use" (P9-08) |
 | P3-03 | Search: filters, sorts, recheck always shown, highlight, *Ask a question* link target (P6-05) | F-02 | `/search` | Ask a question action (P6-05), "used by N teams" meta (P9) |
 | P3-04 | Page: topic tree with page labels, *On this page* with section labels, header (breadcrumb, title, maintainers, updated, page label + SpreadBar), Follow/Suggest/Ask/History actions as links to their future routes (disabled with tooltip? **no** — not designed: hidden until owner phase), section headings with TrustBadge, "Use with care" callout, Sources list, *Changed outside review* | F-03 | `/wiki/pages/{path}` | right rail Why/People (P9-10), action row (P9-10), page feedback (P9-10), Follow (P9-08), Suggest (P4-05), Ask (P6-05), History (P3-06) |
-| P3-05 | Login — derived screen (D-16): ReadingLayout without nav, Card with TextInput ×2 + primary Button, error Callout | — | `/auth/*` | |
+| P3-05 | Login — derived screen (D-16): ReadingLayout without nav, Card with TextInput ×2 + primary Button, error Callout. Also adds the API endpoint `GET /meta` (D-44) and its env keys | — | `/auth/*`, `/meta` | |
 | P3-06 | History — derived screen (D-16): F-03 structure, Table of versions (Mono labels) | — | `/wiki/pages/{path}/history` | |
 | P3-07 | Settings tabs People and teams, Agents and tokens | F-14 | `/admin/*` | other tabs (P7-06, P8-08, P9-14) |
-| P3-08 | Playwright: home → search "pinhole" → open result → section anchor; reader without Workspace link | — | live API | |
+| P3-08 | Playwright: home → search "objective" (D-45: present in `wiki-sample`; "pinhole" stays in the MSW fixtures for visual checks) → open result → section anchor; reader without Workspace link | — | live API | |
 
 ### Phases 4–10
 
@@ -296,6 +296,8 @@ Reversible; each is used as written until a human changes it.
 | D-41 | Read DTO gaps pre-empted before P1-E: PageSummaryDto, VersionDto, RecentChangeDto, tree/topic filter, search total/pageCount/facet scope/snippets/meta nulls/validation, /context content (system-logic §6) | orchestrator (OPUS) |
 | D-42 | Top-bar search placeholder (P2-B review): frames leave placeholders unstyled (browser #757575, 4.3:1 on canvas — fails AA); top-bar placeholder uses `text.muted` #545B68, accepted pixel deviation on that crop; axe runs on the full /__gallery with color-contrast enabled | orchestrator (OPUS) |
 | D-43 | Phone top bar (pre-empted for P2-C): no menu is drawn, so the TopBar wraps intrinsically as the frame does at 390/768; ux.md's collapsed menu stays undesigned (design-system §6 item 5) | orchestrator (OPUS) |
+| D-44 | Wiki name/description (pre-empted for Phase 3): D-21 put them in env but no endpoint exposed them; new unauthenticated `GET /api/v1/meta` → `{ wikiName, wikiDescription }` (defaults "Wiki", ""), built in P3-A | orchestrator (OPUS) |
+| D-45 | P3-08 live flow searches "objective" — `wiki-sample` has no "pinhole"; frame sample data (pinhole) stays in MSW fixtures for visual checks | orchestrator (OPUS) |
 | D-13 | Before Phase 9, Home/Page regions whose data does not exist are not rendered (no placeholders) | §4 Phase 3 |
 
 ### 6.1 Decisions on former open questions (2026-11-23, by the orchestrator under the user's delegation)
