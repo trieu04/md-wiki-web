@@ -20,8 +20,8 @@ Live tracker for [implementation-plan.md](implementation-plan.md). Updated by th
 | P1-E | sol | astra | **done** | 1 | D-41 pre-empted DTO gaps; a1 review: CI env, recheck predicate → domain; a2 PASS |
 | P2-A | sol | astra | **done** | 1 | a1 BLOCKED → D-32; a2 no-run (worktree .orchestrate missing); a3 PASS, 152 crops 0 mismatch; terra pass; OPUS unified `Label` type with P1-B on landing |
 | P2-B | sol | astra | **done** | 3 | a1 BLOCKED → D-37; a2 BLOCKED → D-39; a3 review: placeholder contrast → D-42; a4 PASS; 267/272 exact, axe 0; terra pass |
-| P2-C | sol | terra | running (attempt 1) | 0 | merges P2-06,P2-07,P2-08 |
-| P3-A | sol | astra | pending | 0 | merges P1-14,P3-01,P3-05 |
+| P2-C | sol | astra | **done** | 0 | a1 PASS (2 minors); OPUS fixes on landing: WorkNav idle weight 500 (D-46, 36 → 0 WorkNav diffs), notification dot box-content. 304/340 exact. Fixed P0-G follow-up (Vite binds 127.0.0.1) |
+| P3-A | sol | astra | running (attempt 1) | 0 | merges P1-14,P3-01,P3-05 |
 | P3-B | sol | terra+astra | pending | 0 | merges P3-02,P3-03 |
 | P3-C | sol | terra+astra | pending | 0 | merges P3-04,P3-06 |
 | P3-D | sol | terra+astra | pending | 0 | merges P3-07,P3-08 |
@@ -77,6 +77,8 @@ none yet
 | P0-08 | coverage test should assert state-only variants independently of variants.json | P0-09 brief |
 | P2-A | gallery pill labels use the option index, not the current selection (astra) | P2-B — **fixed** |
 | P2-A | terra: Mono/Chip crop surroundings white vs light-gray in frame (crop background only; 0% pixel diff) | P2-G |
+| P2-C | wiki name was a build-time define missing from turbo inputs (astra) | P3-A (replaced by `/meta`, D-44) |
+| P2-C | Table/scroll crop at 390/768 clipped by the gallery's layout padding (harness, not component) | recheck on the Main/mine screen (P8) |
 
 ## Phase report — Phase 0 (Foundations), 2026-11-23
 
