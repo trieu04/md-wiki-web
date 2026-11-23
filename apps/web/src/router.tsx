@@ -12,9 +12,12 @@ import {
   useRouter,
 } from '@tanstack/react-router';
 import type { RouterHistory } from '@tanstack/react-router';
+import { HomeScreen } from './features/home/HomeScreen';
 import { LoginScreen } from './features/login/LoginScreen';
 import { pageQueryOptions } from './features/markdown/page-query';
 import { PageScreen } from './features/page/PageScreen';
+import { userInitials } from './features/navigation/model';
+import { SearchScreen } from './features/search/SearchScreen';
 import { ApiContext, createWebData, safeNext, useWikiMeta } from './lib/api';
 import { useSession } from './lib/session';
 import { ReadingLayout } from './ui/ReadingLayout';
@@ -44,6 +47,7 @@ function useTopBar(active: TopBarActive, query = '') {
     query,
     wikiName: meta.data?.wikiName ?? 'Wiki',
     ...(import.meta.env.MODE === 'visual' && { browseHref: '/wiki/confocal-microscopy.md' }),
+    initials: userInitials(data?.user?.name),
     role: data?.user?.roles.some(
       (role) => role === 'owner' || role === 'reviewer' || role === 'publisher',
     )
@@ -68,11 +72,7 @@ const home = createRoute({
   path: '/',
   component: function Home() {
     const recent = useLocation({ select: ({ hash }) => hash === 'recent' });
-    return (
-      <ReadingLayout topBar={useTopBar(recent ? 'recent' : 'home')}>
-        <div id="recent" />
-      </ReadingLayout>
-    );
+    return <HomeScreen topBar={useTopBar(recent ? 'recent' : 'home')} />;
   },
 });
 const search = createRoute({
@@ -81,7 +81,7 @@ const search = createRoute({
   validateSearch: ({ q }) => ({ q: typeof q === 'string' ? q : '' }),
   component: function Search() {
     const { q } = search.useSearch();
-    return <ReadingLayout topBar={useTopBar('search', q)} />;
+    return <SearchScreen key={q.trim()} q={q} topBar={useTopBar('search', q)} />;
   },
 });
 // The Trust drawer is an overlay on this route, not a separate URL (F-04).

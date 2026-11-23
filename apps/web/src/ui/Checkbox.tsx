@@ -3,7 +3,7 @@ import type { ComponentProps, ReactNode } from 'react';
 type CheckboxProps = Omit<ComponentProps<'input'>, 'type' | 'className' | 'size'> & {
   label: string;
   icon?: ReactNode;
-  count?: number;
+  count?: number | undefined;
 };
 
 export function Checkbox({ label, icon, count, disabled, ...props }: CheckboxProps) {

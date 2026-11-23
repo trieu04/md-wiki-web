@@ -14,6 +14,7 @@ import canvas from '../../design/v4/canvas.json' with { type: 'json' };
 import variants from './variants.json' with { type: 'json' };
 import { clearLayoutColumns, cropPlan, layoutProbeStyle, markLayoutColumns } from './crops.mjs';
 import { serve } from './serve.mjs';
+import { phase3Projections, projectFrame } from './screen-comparisons.mjs';
 
 const widths = [390, 768, 1024, 1440];
 const timeout = 15_000;
@@ -270,7 +271,19 @@ async function shoot(context, server, stage, { frame, variant, width, height, co
       projection = { frame, variant: projectedVariant, width, topBar, sha256: hash(phase3) };
     }
     network.check();
-    return { frame: { frame, variant, width, sha256: hash(png) }, projection, elements };
+    const screenProjection = phase3Projections[frame];
+    let phase3;
+    if (screenProjection && !(frame === 'Main' && variant === 'mine')) {
+      const maskRects = await projectFrame(page, screenProjection);
+      const projected = await page.screenshot({
+        fullPage: true,
+        animations: 'disabled',
+        caret: 'hide',
+      });
+      await writeFile(join(stage, frame, `${variant}@${width}.phase3.png`), projected);
+      phase3 = { maskRects, sha256: hash(projected) };
+    }
+    return { frame: { frame, variant, width, sha256: hash(png), phase3 }, projection, elements };
   } catch (error) {
     const label = `${frame}/${variant}@${width}`;
     try {

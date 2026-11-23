@@ -5,6 +5,7 @@ import { userEvent } from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
 import { setupServer } from 'msw/node';
 import { afterAll, afterEach, beforeAll, beforeEach, expect, it, vi } from 'vitest';
+import { visualRecent, visualSearch, visualTree } from '../src/dev/fixtures/home-search';
 import {
   visualHistory,
   visualPage,
@@ -20,7 +21,17 @@ const server = setupServer(
   http.get('*/api/v1/auth/session', () => HttpResponse.json(visualSession)),
   http.get('*/api/v1/wiki/pages/:path', () => HttpResponse.json(visualPage)),
   http.get('*/api/v1/wiki/pages/:path/history', () => HttpResponse.json(visualHistory)),
-  http.get('*/api/v1/wiki/tree', () => HttpResponse.json({ topics: [visualPageTopic] })),
+  http.get('*/api/v1/wiki/tree', ({ request }) => {
+    const topic = new URL(request.url).searchParams.get('topic');
+    if (topic === visualPageTopic.id) return HttpResponse.json({ topics: [visualPageTopic] });
+    return HttpResponse.json(
+      topic ? { topics: visualTree.topics.filter(({ id }) => id === topic) } : visualTree,
+    );
+  }),
+  http.get('*/api/v1/wiki/recent', () => HttpResponse.json(visualRecent)),
+  http.get('*/api/v1/search', ({ request }) =>
+    HttpResponse.json(visualSearch(new URL(request.url).searchParams)),
+  ),
 );
 beforeAll(() => {
   server.listen({ onUnhandledRequest: 'error' });
@@ -52,9 +63,6 @@ function open(path: string) {
 }
 
 it.each([
-  ['/', '/', 'Home'],
-  ['/#recent', '/', 'Recent changes'],
-  ['/search?q=pinhole+size', '/search', null],
   ['/wiki/microscopy/%E6%96%87%20%E5%AD%97.md/edit?section=overview', '/wiki/{$}/edit', null],
   ['/me', '/me', 'MN — You: followed pages and your activity'],
   ['/me/suggestions/example-id/resolve', '/me/suggestions/$id/resolve', null],
@@ -69,6 +77,85 @@ it.each([
   if (active)
     expect(within(banner).getByRole('link', { name: active, current: 'page' })).toBeVisible();
   else expect(within(banner).queryByRole('link', { current: 'page' })).not.toBeInTheDocument();
+});
+
+it.each([
+  ['/', 'Home'],
+  ['/#recent', 'Recent changes'],
+])('renders Home and its active link at %s', async (path, active) => {
+  const router = open(path);
+  expect(await screen.findByRole('heading', { name: 'A runtime wiki' })).toBeVisible();
+  expect(router.state.matches.at(-1)?.routeId).toBe('/');
+  expect(screen.getByRole('link', { name: active, current: 'page' })).toBeVisible();
+  const search = screen.getByRole('search', { name: 'Search from home' });
+  expect(search).toHaveAttribute('action', '/search');
+  expect(
+    await within(screen.getByRole('table')).findByRole('link', { name: 'Confocal microscopy' }),
+  ).toHaveAttribute('href', '/wiki/confocal-microscopy.md');
+  expect(screen.getByRole('img', { name: /^41% checked against source/u })).toBeVisible();
+  expect(screen.queryByText('What changed')).not.toBeInTheDocument();
+  expect(screen.queryByText('On pages you use')).not.toBeInTheDocument();
+});
+
+it('sends search controls through the generated binding, keeps recheck, and links to the section', async () => {
+  const requests: URLSearchParams[] = [];
+  server.use(
+    http.get('*/api/v1/search', ({ request }) => {
+      const params = new URL(request.url).searchParams;
+      requests.push(params);
+      return HttpResponse.json(visualSearch(params));
+    }),
+  );
+  open('/search?q=pinhole+size');
+  const user = userEvent.setup();
+  expect(await screen.findByRole('heading', { name: 'Results for “pinhole size”' })).toBeVisible();
+  const results = screen.getByRole('region', { name: 'Results' });
+  const principle = await within(results).findByRole('link', {
+    name: 'Confocal microscopy › Principle',
+  });
+  expect(principle).toHaveAttribute('href', '/wiki/confocal-microscopy.md#principle');
+  expect(results.querySelector('mark')).toHaveTextContent('pinhole');
+  expect(
+    within(results).queryByRole('link', { name: /Why this label|Ask a question/u }),
+  ).not.toBeInTheDocument();
+  await user.click(screen.getByRole('button', { name: 'Most checked first' }));
+  expect((await within(results).findAllByRole('article'))[0]).toHaveTextContent(
+    'Pinhole alignment',
+  );
+  expect(requests.at(-1)?.get('sort')).toBe('trust');
+  for (const label of [
+    /^Checked against source/u,
+    /^Reviewed/u,
+    /^Not reviewed/u,
+    /^Confirmed error/u,
+  ]) {
+    await user.click(screen.getByRole('checkbox', { name: label }));
+    await within(results).findByRole('note');
+  }
+  expect(requests.at(-1)?.getAll('labels[]')).toEqual(['recheck']);
+  expect(within(results).getAllByRole('article')).toHaveLength(1);
+  expect(within(results).getByRole('note')).toHaveTextContent('Under re-check since 22 Nov');
+  await user.click(screen.getByRole('checkbox', { name: /^Microscopy techniques/u }));
+  await within(results).findByRole('note');
+  expect(requests.at(-1)?.getAll('topics[]')).toEqual(['microscopy-techniques']);
+  await user.click(screen.getByRole('radio', { name: 'Last 30 days' }));
+  await within(results).findByRole('note');
+  expect(requests.at(-1)?.get('updated')).toBe('30d');
+});
+
+it('renders Home for a signed-in reader with session initials and no Workspace link', async () => {
+  server.use(
+    http.get('*/api/v1/auth/session', () =>
+      HttpResponse.json({
+        ...visualSession,
+        user: { ...visualSession.user, name: 'Ana Pérez', roles: ['reader'] },
+      }),
+    ),
+  );
+  open('/');
+  const banner = await screen.findByRole('banner');
+  expect(await within(banner).findByRole('link', { name: /^AP — You/u })).toBeVisible();
+  expect(within(banner).queryByRole('link', { name: /Workspace/u })).not.toBeInTheDocument();
 });
 
 it.each([
@@ -120,6 +207,48 @@ const problem = (code: string, status: number, headers: Record<string, string> =
     { code },
     { status, headers: { ...headers, 'Content-Type': 'application/problem+json' } },
   );
+
+it.each([
+  ['/', 'Recently updated', 'No recent changes yet.'],
+  ['/search?q=objective', 'Results', 'Didn’t find what you need?'],
+])('renders loading, retry and empty states at %s', async (path, region, empty) => {
+  let finish = () => {};
+  const pending = new Promise<void>((resolve) => {
+    finish = resolve;
+  });
+  if (path === '/') {
+    server.use(
+      http.get(
+        '*/api/v1/wiki/recent',
+        async () => {
+          await pending;
+          return problem('STORAGE_ERROR', 500);
+        },
+        { once: true },
+      ),
+      http.get('*/api/v1/wiki/recent', () => HttpResponse.json({ items: [], nextCursor: null })),
+    );
+  } else {
+    server.use(
+      http.get(
+        '*/api/v1/search',
+        async () => {
+          await pending;
+          return problem('STORAGE_ERROR', 500);
+        },
+        { once: true },
+      ),
+    );
+  }
+  open(path);
+  const list = await screen.findByRole('region', { name: region, busy: true });
+  finish();
+  expect(await within(list).findByRole('alert')).toHaveTextContent(
+    'The wiki storage is unavailable.',
+  );
+  await userEvent.click(within(list).getByRole('button', { name: 'Try again' }));
+  expect(await within(list).findByText(empty, { exact: false })).toBeVisible();
+});
 
 it('loads a nested wiki path as one API parameter and renders the requested section anchor', async () => {
   const expectedPath = 'microscopy/basics.md';

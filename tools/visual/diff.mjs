@@ -38,7 +38,7 @@ export function alignBelowTopBars(
   });
 }
 
-export function diffPng(referenceBytes, actualBytes, { maskRows = 0 } = {}) {
+export function diffPng(referenceBytes, actualBytes, { maskRows = 0, maskRects = [] } = {}) {
   const reference = PNG.sync.read(referenceBytes);
   const actual = PNG.sync.read(actualBytes);
   const width = Math.max(reference.width, actual.width);
@@ -46,13 +46,35 @@ export function diffPng(referenceBytes, actualBytes, { maskRows = 0 } = {}) {
   const diff = new PNG({ width, height });
   const sharedWidth = Math.min(reference.width, actual.width);
   const sharedHeight = Math.max(0, Math.min(reference.height, actual.height) - maskRows);
+  const masked = new Uint8Array(width * height);
+  for (const { left, right, top, bottom } of maskRects) {
+    for (
+      let y = Math.max(maskRows, Math.floor(top));
+      y < Math.min(height, Math.ceil(bottom));
+      y++
+    ) {
+      masked.fill(
+        1,
+        y * width + Math.max(0, Math.floor(left)),
+        y * width + Math.min(width, Math.ceil(right)),
+      );
+    }
+  }
   let mismatchPixels = 0;
+  let comparedPixels = 0;
   if (sharedHeight > 0) {
     // Crop before pixelmatch so neither its denominator nor AA detection sees the mask.
     const overlap = () => new PNG({ width: sharedWidth, height: sharedHeight });
     const [left, right, output] = [overlap(), overlap(), overlap()];
     copyRows(reference, left, sharedWidth, sharedHeight, maskRows, 0);
     copyRows(actual, right, sharedWidth, sharedHeight, maskRows, 0);
+    for (let y = 0; y < sharedHeight; y++) {
+      for (let x = 0; x < sharedWidth; x++) {
+        if (!masked[(y + maskRows) * width + x]) continue;
+        const offset = (y * sharedWidth + x) * 4;
+        left.data.copy(right.data, offset, offset, offset + 4);
+      }
+    }
     mismatchPixels = pixelmatch(left.data, right.data, output.data, sharedWidth, sharedHeight, {
       threshold: PIXELMATCH_THRESHOLD,
     });
@@ -64,15 +86,19 @@ export function diffPng(referenceBytes, actualBytes, { maskRows = 0 } = {}) {
   for (let y = maskRows; y < height; y++) {
     const leftWidth = y < reference.height ? reference.width : 0;
     const rightWidth = y < actual.height ? actual.width : 0;
-    for (let x = Math.min(leftWidth, rightWidth); x < Math.max(leftWidth, rightWidth); x++) {
-      diff.data.writeUInt32BE(0xff0000ff, (y * width + x) * 4);
-      mismatchPixels++;
+    for (let x = 0; x < Math.max(leftWidth, rightWidth); x++) {
+      const offset = y * width + x;
+      if (masked[offset]) {
+        diff.data.writeUInt32BE(0, offset * 4);
+        continue;
+      }
+      comparedPixels++;
+      if (x >= Math.min(leftWidth, rightWidth)) {
+        diff.data.writeUInt32BE(0xff0000ff, offset * 4);
+        mismatchPixels++;
+      }
     }
   }
-  const comparedPixels =
-    reference.width * Math.max(0, reference.height - maskRows) +
-    actual.width * Math.max(0, actual.height - maskRows) -
-    sharedWidth * sharedHeight;
   return {
     png: PNG.sync.write(diff),
     mismatchPixels,

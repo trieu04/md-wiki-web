@@ -1,5 +1,6 @@
 import { http, HttpResponse } from 'msw';
 import { setupWorker } from 'msw/browser';
+import { homeDescription, visualRecent, visualSearch, visualTree } from './home-search';
 import { frameSamples } from './samples';
 import { visualHistory, visualMeta, visualPage, visualPageTopic, visualSession } from './reading';
 
@@ -12,14 +13,26 @@ const notFound = () =>
 // Private visual-mode transport. Add typed /api/v1 handlers here as the
 // corresponding screens and API bindings are implemented.
 const worker = setupWorker(
-  http.get('/api/v1/meta', () => HttpResponse.json(visualMeta)),
-  http.get('/api/v1/auth/session', () => HttpResponse.json(visualSession)),
+  http.get('/api/v1/meta', () =>
+    HttpResponse.json({
+      ...visualMeta,
+      wikiName: 'Bioimaging core wiki',
+      wikiDescription: homeDescription,
+    }),
+  ),
   http.get('/api/v1/wiki/tree', ({ request }) => {
+    // Page (F-03) asks for its own topic; Home (F-01) asks for the whole tree.
     const topic = new URL(request.url).searchParams.get('topic');
-    return HttpResponse.json({
-      topics: !topic || topic === visualPageTopic.id ? [visualPageTopic] : [],
-    });
+    if (topic === visualPageTopic.id) return HttpResponse.json({ topics: [visualPageTopic] });
+    return HttpResponse.json(
+      topic ? { topics: visualTree.topics.filter(({ id }) => id === topic) } : visualTree,
+    );
   }),
+  http.get('/api/v1/wiki/recent', () => HttpResponse.json(visualRecent)),
+  http.get('/api/v1/search', ({ request }) =>
+    HttpResponse.json(visualSearch(new URL(request.url).searchParams)),
+  ),
+  http.get('/api/v1/auth/session', () => HttpResponse.json(visualSession)),
   http.get('/api/v1/wiki/pages/:path', ({ params }) =>
     params.path === visualPage.path ? HttpResponse.json(visualPage) : notFound(),
   ),

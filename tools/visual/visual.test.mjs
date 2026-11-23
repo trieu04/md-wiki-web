@@ -48,6 +48,23 @@ test('excludes exactly rows 0–55 for full frames, but never masks shared compo
   }
 });
 
+test('excludes only the union of deferred rectangles and the TopBar band', () => {
+  const a = solid(10, 70);
+  const b = solid(10, 70, 0);
+  const { png, comparedPixels, mismatchPixels } = diffPng(a, b, {
+    maskRows: 56,
+    maskRects: [
+      { left: 2, right: 4, top: 55, bottom: 60 },
+      { left: 3, right: 6, top: 57, bottom: 60 },
+    ],
+  });
+  assert.equal(comparedPixels, 140 - (8 + 9 - 3));
+  assert.equal(mismatchPixels, comparedPixels);
+  const diff = PNG.sync.read(png);
+  assert.equal(diff.data.readUInt32BE((58 * 10 + 5) * 4), 0);
+  assert.equal(diff.data.readUInt32BE((58 * 10 + 6) * 4), 0xff0000ff);
+});
+
 test('size mismatch counts only pixels present in either unmasked image', () => {
   const diff = diffPng(solid(10, 66), solid(15, 61), { maskRows: 56 });
   assert.equal(diff.comparedPixels, 125);

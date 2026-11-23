@@ -4,6 +4,7 @@ import { TrustIcon } from './TrustIcon';
 
 type TrustBadgeProps = { label: Label } & (
   | { variant: 'inline' }
+  | { variant: 'bordered' }
   | { variant: 'link'; href: string; context: string }
   | { variant: 'section'; onClick: () => void; context: string }
 );
@@ -20,6 +21,9 @@ export function TrustBadge(props: TrustBadgeProps) {
     </>
   );
   if (variant === 'inline') return <span className={base}>{contents}</span>;
+  if (variant === 'bordered') {
+    return <span className={`${base} ${border} px-8px py-3px text-13`}>{contents}</span>;
+  }
   const name = `${props.context}: ${words}. Why this label`;
   return variant === 'link' ? (
     <a

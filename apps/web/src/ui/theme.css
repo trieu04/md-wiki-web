@@ -92,6 +92,7 @@
   --leading-base: 1.5;
   --leading-control: normal;
   --leading-brand: 1.15;
+  --leading-home-title: 1.2;
 
   --radius-*: initial;
   --radius-mark: 2px;
@@ -159,6 +160,9 @@
   --flex-reading-content: 999 1 var(--spacing-reading-content);
   --flex-workspace-content: 999 1 var(--spacing-workspace-content);
   --spacing-home-search-max: 720px;
+  --spacing-home-description-max: 680px;
+  --spacing-search-filter-basis: 240px;
+  --spacing-search-filter-max: 280px;
   --spacing-drawer-basis: 440px;
   --spacing-drawer-max: 520px;
   --spacing-table-home: 640px;

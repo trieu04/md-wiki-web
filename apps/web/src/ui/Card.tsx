@@ -8,7 +8,7 @@ type CardProps = {
   actions?: ReactNode;
   children?: ReactNode;
   className?: string;
-  state?: { type: 'loading' } | { type: 'empty'; message: string };
+  state?: { type: 'loading' } | { type: 'empty'; message: string } | undefined;
 };
 
 export function Card({

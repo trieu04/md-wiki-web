@@ -1,6 +1,11 @@
+import type { SearchRequest } from '../features/search/model';
+
 export const queryKeys = {
   session: ['session', {}],
   meta: ['meta', {}],
+  tree: ['wiki.tree', {}],
+  recent: ['wiki.recent', { scope: 'all' }],
+  search: (request: SearchRequest) => ['search', request] as const,
   page: (path: string) => ['wiki.page', { path }] as const,
   topic: (topic: string) => ['wiki.tree', { topic }] as const,
   history: (path: string) => ['wiki.history', { path }] as const,

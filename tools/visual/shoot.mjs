@@ -16,6 +16,7 @@ import canvas from '../../design/v4/canvas.json' with { type: 'json' };
 import { diffPng, maskRowsFor } from './diff.mjs';
 import { pageHistoryCapture, pageReadingCases } from './page-reading.mjs';
 import { writeReport } from './report.mjs';
+import p3bCases from './p3-b.mjs';
 
 const root = fileURLToPath(new URL('../..', import.meta.url));
 const web = join(root, 'apps/web');
@@ -31,14 +32,16 @@ const captureStyle = `
   }
 `;
 
-async function readReference(manifest, frame, variant, width) {
+async function readReference(manifest, frame, variant, width, projected = false) {
   const entry = manifest.find(
     (m) => m.frame === frame && m.variant === variant && m.width === width,
   );
   const name = `${frame}/${variant}@${width}`;
   if (!entry) throw new Error(`No reference for ${name}; run pnpm design:shots`);
-  const png = await readFile(join(references, `${name}.png`));
-  if (createHash('sha256').update(png).digest('hex') !== entry.sha256) {
+  const info = projected ? entry.phase3 : entry;
+  if (!info) throw new Error(`No Phase 3 projection for ${name}; run pnpm design:shots`);
+  const png = await readFile(join(references, `${name}${projected ? '.phase3' : ''}.png`));
+  if (createHash('sha256').update(png).digest('hex') !== info.sha256) {
     throw new Error(`Reference checksum mismatch for ${name}; run pnpm design:shots`);
   }
   return { png, topBar: entry.topBar };
@@ -47,40 +50,44 @@ async function readReference(manifest, frame, variant, width) {
 export function capturePlan(cases) {
   if (!Array.isArray(cases) || !cases.length) throw new Error('Expected a nonempty case array');
   const seen = new Set();
-  return cases.flatMap(({ frame, variant, path, ready, prepare, topBarSelector }) => {
-    const board = canvas.boards[`${frame}.dc.html`];
-    if (!board || typeof variant !== 'string' || !/^[a-z0-9-]+$/.test(variant)) {
-      throw new Error(`Invalid frame/variant: ${frame}/${variant}`);
-    }
-    const name = `${frame}/${variant}`;
-    if (seen.has(name)) throw new Error(`Duplicate case: ${name}`);
-    seen.add(name);
-    if (
-      typeof path !== 'string' ||
-      !path.startsWith('/') ||
-      path.startsWith('//') ||
-      path.includes('\\')
-    ) {
-      throw new Error(`${name}: path must be a local app path`);
-    }
-    if (
-      typeof ready !== 'string' ||
-      !ready.trim() ||
-      (prepare != null && typeof prepare !== 'function')
-    ) {
-      throw new Error(`${name}: expected a ready selector and optional prepare callback`);
-    }
-    return widths.map((width) => ({
-      frame,
-      variant,
-      path,
-      ready,
-      prepare,
-      width,
-      height: board.h,
-      topBarSelector,
-    }));
-  });
+  return cases.flatMap(
+    ({ frame, variant, path, ready, prepare, topBarSelector, phase3, fixedTime }) => {
+      const board = canvas.boards[`${frame}.dc.html`];
+      if (!board || typeof variant !== 'string' || !/^[a-z0-9-]+$/.test(variant)) {
+        throw new Error(`Invalid frame/variant: ${frame}/${variant}`);
+      }
+      const name = `${frame}/${variant}`;
+      if (seen.has(name)) throw new Error(`Duplicate case: ${name}`);
+      seen.add(name);
+      if (
+        typeof path !== 'string' ||
+        !path.startsWith('/') ||
+        path.startsWith('//') ||
+        path.includes('\\')
+      ) {
+        throw new Error(`${name}: path must be a local app path`);
+      }
+      if (
+        typeof ready !== 'string' ||
+        !ready.trim() ||
+        (prepare != null && typeof prepare !== 'function')
+      ) {
+        throw new Error(`${name}: expected a ready selector and optional prepare callback`);
+      }
+      return widths.map((width) => ({
+        frame,
+        variant,
+        path,
+        ready,
+        prepare,
+        phase3,
+        fixedTime,
+        width,
+        height: board.h,
+        topBarSelector,
+      }));
+    },
+  );
 }
 
 async function withApp(run) {
@@ -118,7 +125,12 @@ async function withApp(run) {
   }
 }
 
-async function capture(browser, origin, { path, ready, prepare, width, height, crop }, measure) {
+async function capture(
+  browser,
+  origin,
+  { path, ready, prepare, width, height, crop, fixedTime },
+  measure,
+) {
   const context = await browser.newContext({
     baseURL: origin,
     viewport: { width, height },
@@ -134,6 +146,7 @@ async function capture(browser, origin, { path, ready, prepare, width, height, c
       if (message.type() === 'error') failures.push(message.text());
     });
     try {
+      if (fixedTime) await page.clock.setFixedTime(new Date(fixedTime));
       const response = await page.goto(path, { waitUntil: 'load' });
       if (!response?.ok() || new URL(page.url()).origin !== origin) {
         throw new Error(`Failed to load local preview path ${path} (HTTP ${response?.status()})`);
@@ -209,6 +222,7 @@ async function runCases(cases, manifest, derived = []) {
         entry.frame,
         entry.variant,
         entry.width,
+        entry.phase3,
       );
       if (entry.topBarSelector && !topBar) {
         throw new Error(
@@ -220,6 +234,12 @@ async function runCases(cases, manifest, derived = []) {
         label: `${entry.frame}/${entry.variant}@${entry.width}`,
         reference: png,
         referenceTopBar: topBar,
+        maskRects: entry.phase3
+          ? manifest.find(
+              (m) =>
+                m.frame === entry.frame && m.variant === entry.variant && m.width === entry.width,
+            ).phase3.maskRects
+          : undefined,
       };
     }),
   );
@@ -475,14 +495,12 @@ async function main() {
   if (!/^[a-z0-9][a-z0-9_-]*$/i.test(task)) throw new Error(`Invalid task ID: ${task}`);
   let images;
   if (values.gallery) {
-    const screens =
-      task === 'P3-C'
-        ? await runCases(
-            pageReadingCases,
-            JSON.parse(await readFile(join(references, 'manifest.json'), 'utf8')),
-            [pageHistoryCapture],
-          )
-        : [];
+    const manifest = JSON.parse(await readFile(join(references, 'manifest.json'), 'utf8'));
+    const screens = [];
+    const pageScreens =
+      task === 'P3-C' ? await runCases(pageReadingCases, manifest, [pageHistoryCapture]) : [];
+    screens.push(...pageScreens);
+    if (task === 'P3-B') screens.push(...(await runCases(p3bCases, manifest)));
     images = [...screens, ...(await runGallery())];
   } else {
     const manifest = JSON.parse(await readFile(join(references, 'manifest.json'), 'utf8'));

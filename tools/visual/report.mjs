@@ -21,6 +21,7 @@ export async function writeReport(reportRoot, task, images) {
       reference,
       actual,
       maskRows,
+      maskRects,
       referenceTopBar,
       actualTopBar,
       height,
@@ -61,7 +62,7 @@ export async function writeReport(reportRoot, task, images) {
         ]);
         details += ` <a href="${folder}/reference-full.png">Full reference</a> · <a href="${folder}/actual-full.png">Full actual</a>`;
       }
-      const diff = diffPng(...comparison, { maskRows: mask });
+      const diff = diffPng(...comparison, { maskRows: mask, maskRects });
       const { mismatchPixels, comparedPixels, percent } = diff;
       results.push({
         label,
@@ -78,7 +79,7 @@ export async function writeReport(reportRoot, task, images) {
       const mismatch = percent > 0 && percent < 0.0001 ? '&lt;0.0001' : percent.toFixed(4);
       sections.push(`<section>
 <h2>${escapeHtml(label)}</h2>
-<p><strong>${mismatch}% mismatch</strong> (${mismatchPixels} / ${comparedPixels} pixels)${details}</p>
+<p><strong>${mismatch}% mismatch</strong> (${mismatchPixels} / ${comparedPixels} pixels)${details}${maskRects?.length ? ` · ${maskRects.length} deferred regions masked` : ''}</p>
 <div class="comparison">${['Reference', 'Actual', 'Diff']
         .map((name) => {
           const src = `${folder}/${name.toLowerCase()}.png`;
