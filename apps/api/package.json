@@ -7,10 +7,10 @@
     "postinstall": "prisma generate",
     "build": "prisma generate && tsc -p tsconfig.build.json",
     "start": "node dist/main.js",
-    "dev": "tsx watch src/main.ts",
-    "lint": "eslint src test vitest.config.ts",
+    "dev": "prisma migrate deploy && tsx watch src/main.ts",
+    "lint": "eslint src test scripts vitest.config.ts",
     "typecheck": "tsc -p tsconfig.json && tsc -p tsconfig.tooling.json",
-    "test": "vitest run && node --input-type=module -e \"const d = await import('@md-wiki/domain'); const c = await import('@md-wiki/contracts'); if (d.domainPlaceholder !== 'md-wiki-domain' || c.contractsPlaceholder !== 'md-wiki-contracts') throw new Error('Workspace package imports failed')\""
+    "test": "node scripts/test.mjs"
   },
   "dependencies": {
     "@md-wiki/contracts": "workspace:*",
@@ -20,6 +20,8 @@
     "@nestjs/platform-express": "^11.1.6",
     "@nestjs/swagger": "^11.4.8",
     "@prisma/client": "6.19.3",
+    "ajv": "^8.20.0",
+    "bullmq": "^6.7.8",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.15.1",
     "ioredis": "^6.0.0",
@@ -29,6 +31,7 @@
     "zod": "^4.6.7"
   },
   "devDependencies": {
+    "@nestjs/testing": "^11.2.11",
     "@swc/core": "^1.13.5",
     "@types/express": "^5.0.6",
     "@types/node": "^22.18.12",

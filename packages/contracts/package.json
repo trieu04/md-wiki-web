@@ -9,13 +9,21 @@
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
-    }
+    },
+    "./jobs/*.schema.json": "./jobs/*.schema.json"
   },
   "scripts": {
-    "build": "tsc -p tsconfig.build.json",
+    "build": "tsc -p tsconfig.build.json && node -e \"require('node:fs').copyFileSync('src/schema.d.ts', 'dist/schema.d.ts')\"",
     "lint": "eslint src test",
     "typecheck": "tsc -p tsconfig.json",
     "test": "vitest run"
   },
-  "devDependencies": { "vitest": "^3.2.4" }
+  "devDependencies": {
+    "json-schema-to-typescript": "^16.0.0",
+    "openapi-typescript": "^7.13.0",
+    "vitest": "^3.2.4"
+  },
+  "dependencies": {
+    "openapi-fetch": "^0.17.0"
+  }
 }

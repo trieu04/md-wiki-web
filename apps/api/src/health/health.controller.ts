@@ -1,5 +1,6 @@
 import { Controller, Get, Inject } from '@nestjs/common';
 import { ApiOkResponse } from '@nestjs/swagger';
+import { ApiProblemResponse } from '../common/problem.dto.js';
 import { HealthDto } from './health.dto.js';
 import { HealthService } from './health.service.js';
 
@@ -9,6 +10,7 @@ export class HealthController {
 
   @Get()
   @ApiOkResponse({ type: HealthDto })
+  @ApiProblemResponse('INTERNAL')
   report(): Promise<HealthDto> {
     return this.health.report();
   }

@@ -1,0 +1,494 @@
+{
+  "openapi": "3.0.0",
+  "paths": {
+    "/api/v1/health": {
+      "get": {
+        "operationId": "HealthController_report",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthDto"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "INTERNAL",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Health"
+        ]
+      }
+    },
+    "/api/v1/dev/ping": {
+      "post": {
+        "operationId": "DevPingController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "title": "PingInput",
+                "type": "object",
+                "properties": {
+                  "message": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 200
+                  }
+                },
+                "required": [
+                  "message"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "id",
+                    "status"
+                  ],
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "queued"
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_FAILED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "DevPing"
+        ]
+      }
+    },
+    "/api/v1/dev/ping/{id}": {
+      "get": {
+        "operationId": "DevPingController_get",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "id",
+                    "status",
+                    "input",
+                    "createdAt"
+                  ],
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "queued",
+                        "running",
+                        "succeeded",
+                        "failed"
+                      ]
+                    },
+                    "input": {
+                      "title": "PingInput",
+                      "type": "object",
+                      "properties": {
+                        "message": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 200
+                        }
+                      },
+                      "required": [
+                        "message"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "output": {
+                      "title": "PingOutput",
+                      "type": "object",
+                      "properties": {
+                        "echo": {
+                          "type": "string",
+                          "description": "Must equal the original input.message."
+                        },
+                        "workerVersion": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 40
+                        }
+                      },
+                      "required": [
+                        "echo",
+                        "workerVersion"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "error": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "code",
+                        "message"
+                      ],
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 64,
+                          "pattern": "^[a-z0-9_]+$"
+                        },
+                        "message": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 500
+                        }
+                      }
+                    },
+                    "createdAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "finishedAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "DevPing"
+        ]
+      }
+    },
+    "/internal/v1/jobs/{id}/input": {
+      "get": {
+        "operationId": "JobsController_input",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "PRECONDITION_FAILED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Jobs"
+        ]
+      }
+    },
+    "/internal/v1/jobs/{id}/result": {
+      "post": {
+        "operationId": "JobsController_result",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          },
+          "400": {
+            "description": "VALIDATION_FAILED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "PRECONDITION_FAILED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Jobs"
+        ]
+      }
+    }
+  },
+  "info": {
+    "title": "md-wiki API",
+    "description": "",
+    "version": "1",
+    "contact": {}
+  },
+  "tags": [],
+  "servers": [],
+  "components": {
+    "schemas": {
+      "ErrorCode": {
+        "type": "string",
+        "enum": [
+          "VALIDATION_FAILED",
+          "INVALID_PATH",
+          "UNAUTHENTICATED",
+          "INVALID_CREDENTIALS",
+          "CSRF_INVALID",
+          "FORBIDDEN",
+          "ACCOUNT_DISABLED",
+          "NOT_FOUND",
+          "ALREADY_EXISTS",
+          "PRECONDITION_FAILED",
+          "SELF_REVIEW",
+          "NOT_ASSIGNED",
+          "DISPUTED",
+          "DECISION_BINDING_MISMATCH",
+          "DISCUSSION_CHANGED",
+          "SOURCE_CHANGED",
+          "TARGET_BLOCKED",
+          "ESCALATION_REQUIRED",
+          "SECTION_CHANGED",
+          "STALE_BASE",
+          "EMAIL_TAKEN",
+          "LAST_OWNER",
+          "PAYLOAD_TOO_LARGE",
+          "RATE_LIMITED",
+          "STORAGE_ERROR",
+          "VERIFY_FAILED",
+          "INTERNAL"
+        ]
+      },
+      "FieldProblemDto": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "path",
+          "code",
+          "message"
+        ]
+      },
+      "ProblemDto": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "status": {
+            "type": "integer"
+          },
+          "code": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ErrorCode"
+              }
+            ]
+          },
+          "detail": {
+            "type": "string"
+          },
+          "requestId": {
+            "type": "string"
+          },
+          "fields": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FieldProblemDto"
+            }
+          }
+        },
+        "required": [
+          "type",
+          "title",
+          "status",
+          "code",
+          "requestId"
+        ]
+      },
+      "HealthDto": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "ok"
+            ]
+          },
+          "db": {
+            "type": "string",
+            "enum": [
+              "ok",
+              "down"
+            ]
+          },
+          "redis": {
+            "type": "string",
+            "enum": [
+              "ok",
+              "down"
+            ]
+          },
+          "storage": {
+            "type": "string",
+            "enum": [
+              "ok",
+              "down"
+            ]
+          },
+          "version": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "status",
+          "db",
+          "redis",
+          "storage",
+          "version"
+        ]
+      }
+    }
+  }
+}

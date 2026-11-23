@@ -1,0 +1,12 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "JobEnvelope",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["v", "jobId", "kind"],
+  "properties": {
+    "v": { "type": "integer", "const": 1 },
+    "jobId": { "type": "string", "format": "uuid" },
+    "kind": { "title": "JobKind", "type": "string", "enum": ["ping"] }
+  }
+}

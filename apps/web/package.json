@@ -13,6 +13,7 @@
   "dependencies": {
     "@md-wiki/contracts": "workspace:*",
     "@md-wiki/domain": "workspace:*",
+    "@tanstack/react-query": "^5.108.2",
     "react": "^19.2.0",
     "react-dom": "^19.2.0"
   },

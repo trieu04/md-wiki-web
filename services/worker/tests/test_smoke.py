@@ -58,14 +58,18 @@ def test_startup_logs_redact_url_credentials(
     monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
 ) -> None:
     """Startup logs must not include URL credentials or paths."""
-    from mdwiki_worker.main import run
+    from mdwiki_worker import main
 
+    async def fake_serve(_settings: Settings) -> None:
+        pass
+
+    monkeypatch.setattr(main, "serve", fake_serve)
     monkeypatch.setenv("REDIS_URL", "redis://user:password@localhost:6379/0")
     monkeypatch.setenv("INTERNAL_API_URL", "https://token:secret@example.com/api")
     monkeypatch.setenv("SERVICE_TOKEN", "test-secret-token")
 
     with caplog.at_level(logging.INFO):
-        run()
+        main.run()
 
     messages = [r.getMessage() for r in caplog.records]
     assert any("localhost:6379" in m for m in messages), "startup record not captured"

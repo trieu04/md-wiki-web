@@ -8,7 +8,7 @@ export class HealthDto {
   @ApiProperty(dependency) readonly db: DependencyStatus;
   @ApiProperty(dependency) readonly redis: DependencyStatus;
   @ApiProperty(dependency) readonly storage: DependencyStatus;
-  @ApiProperty() readonly version: string;
+  @ApiProperty({ type: String }) readonly version: string;
 
   constructor(
     db: DependencyStatus,

@@ -9,7 +9,7 @@ Live tracker for [implementation-plan.md](implementation-plan.md). Updated by th
 | P0-03 | luna → sol → astra | sol | **done** | 5 | a6 (astra) gate PASS, sol PASS no issues under D-28 rubric |
 | P0-04 | luna | sol | **done** | 0 | sol PASS, no issues |
 | P0-05 | astra | sol | **done** | 1 | a1 review: body-parser 413 → 500, internal bind hardcoded; a2 PASS (12 tests) |
-| P0-06 | sol | astra | running | 0 | merged with P0-07 (D-30); a1 BLOCKED (job contract undefined) → D-31 §7.1 |
+| P0-06 | sol | astra | **done** | 2 | merged with P0-07 (D-30). a1 BLOCKED → D-31; a2: verify filter + problem bodies; a3 gate PASS; astra's internal-API OpenAPI body finding overruled as minor (worker types come from job JSON schemas, §7.1) → follow-up |
 | P0-08 | sol | astra | **done** | 1 | a1 review: runtime not in clean clone (D-24), non-atomic publish, tests not in pnpm test; a2 PASS, 504/504 deterministic. Minor carried to P0-09: assert state-only variants independent of variants.json |
 | P0-09 | sol | astra | retry (attempt 2, worktree) | 1 | a1 review: Search fixture missing total/pageCount |
 | P0-G | OPUS | — | pending | 0 | merges P0-10 (CI) + gate |
@@ -69,4 +69,5 @@ none yet
 | --- | --- | --- |
 | P0-01 | API test teardown signals pnpm wrapper; test script rebuilds deps | P0-05 brief |
 | P0-05 | internal route auth test used an unregistered path (fixed in a2) | — |
+| P0-06 | internal job endpoints (GET input, POST result) have no OpenAPI bodies; document with the job schemas when a TS caller needs them (P7-00) | P7-00 |
 | P0-08 | coverage test should assert state-only variants independently of variants.json | P0-09 brief |

@@ -14,6 +14,8 @@
     "test": "turbo run test && node --test tools/design-ref/*.test.mjs",
     "format": "prettier --write .",
     "check": "pnpm lint && pnpm typecheck && pnpm test",
+    "contracts:gen": "node packages/contracts/scripts/contracts.mjs gen",
+    "contracts:check": "node packages/contracts/scripts/contracts.mjs check",
     "design:shots": "playwright install chromium --only-shell && node tools/design-ref/render.mjs"
   },
   "devDependencies": {

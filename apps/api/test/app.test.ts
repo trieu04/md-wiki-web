@@ -1,4 +1,4 @@
-import { spawn } from 'node:child_process';
+import { spawn, spawnSync } from 'node:child_process';
 import { once } from 'node:events';
 import { readFileSync } from 'node:fs';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -13,6 +13,22 @@ afterEach(async () => {
 describe('built API', () => {
   it('exports its package identifier', () => {
     expect(apiPlaceholder).toBe('md-wiki-api');
+  });
+
+  it('imports the built workspace packages with Node', () => {
+    const result = spawnSync(
+      process.execPath,
+      [
+        '--input-type=module',
+        '-e',
+        `const d = await import('@md-wiki/domain');
+         const c = await import('@md-wiki/contracts');
+         if (d.domainPlaceholder !== 'md-wiki-domain' || c.contractsPlaceholder !== 'md-wiki-contracts')
+           throw new Error('Workspace package imports failed');`,
+      ],
+      { encoding: 'utf8' },
+    );
+    expect(result.status, result.stderr).toBe(0);
   });
 
   it('serves real health probes and isolates the guarded internal listener', async () => {

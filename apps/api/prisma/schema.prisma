@@ -6,3 +6,26 @@ datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
+
+enum AiJobKind {
+  ping
+}
+
+enum AiJobStatus {
+  queued
+  running
+  succeeded
+  failed
+}
+
+model AiJob {
+  id         String      @id @default(uuid(7)) @db.Uuid
+  kind       AiJobKind
+  status     AiJobStatus @default(queued)
+  input      Json
+  output     Json?
+  error      Json?
+  createdAt  DateTime    @default(now()) @db.Timestamptz(3)
+  startedAt  DateTime?   @db.Timestamptz(3)
+  finishedAt DateTime?   @db.Timestamptz(3)
+}
