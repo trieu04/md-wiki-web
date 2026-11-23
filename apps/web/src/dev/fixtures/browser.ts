@@ -3,6 +3,12 @@ import { setupWorker } from 'msw/browser';
 import { homeDescription, visualRecent, visualSearch, visualTree } from './home-search';
 import { visualDraft, visualSuggestions } from './contribute';
 import {
+  visualProposalDiscussion,
+  visualTopic,
+  visualTopicList,
+  visualTopics,
+} from './discussions';
+import {
   visualAudit,
   visualBlocked,
   visualDiff,
@@ -81,6 +87,27 @@ const worker = setupWorker(
     ),
   ),
   http.get('/api/v1/proposals/:slug/diff', () => HttpResponse.json(visualDiff())),
+  // F-11 Discussions and F-10 › Discussion (P6-04…06). Writes echo the stored topic.
+  http.get('/api/v1/proposals/:slug/discussion', ({ params }) =>
+    HttpResponse.json(
+      visualProposalDiscussion(
+        String(params.slug),
+        new URLSearchParams(globalThis.location.search).get('scenario'),
+      ),
+    ),
+  ),
+  http.get('/api/v1/topics', ({ request }) =>
+    HttpResponse.json(visualTopicList(new URL(request.url).searchParams.get('filter'))),
+  ),
+  http.get('/api/v1/topics/:id', ({ params }) => {
+    const topic = visualTopic(String(params.id));
+    return topic ? HttpResponse.json(topic) : notFound();
+  }),
+  http.post('/api/v1/topics', () => HttpResponse.json(visualTopics[1], { status: 201 })),
+  http.post('/api/v1/topics/:id/:action', ({ params }) => {
+    const topic = visualTopic(String(params.id));
+    return topic ? HttpResponse.json(topic) : notFound();
+  }),
   http.get('/api/v1/ops/blocked', () => HttpResponse.json(visualBlocked)),
   http.get('/api/v1/audit', () => HttpResponse.json(visualAudit)),
   http.get('/__visual/fixtures/:frame', ({ params }) => {

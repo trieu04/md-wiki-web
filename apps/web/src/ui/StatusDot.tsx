@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 
 /** Dot colours drawn in F-09/F-10/F-07/F-13 status cells. */
-const tones = {
+export const statusTones = {
   pending: 'bg-trust-reviewed-bar',
   escalated: 'bg-trust-recheck',
   error: 'bg-trust-error',
@@ -9,7 +9,7 @@ const tones = {
   published: 'bg-trust-checked',
   closed: 'bg-placeholder',
 } as const;
-export type StatusTone = keyof typeof tones;
+export type StatusTone = keyof typeof statusTones;
 
 /** 8px status dot followed by its words (status is never colour alone). */
 export function StatusDot({
@@ -24,7 +24,7 @@ export function StatusDot({
   const font = { medium: 'font-medium', semibold: 'font-semibold', normal: '' }[weight];
   return (
     <span className={`inline-flex items-center gap-7px ${font}`}>
-      <span aria-hidden="true" className={`size-8px shrink-0 rounded-4 ${tones[tone]}`} />
+      <span aria-hidden="true" className={`size-8px shrink-0 rounded-4 ${statusTones[tone]}`} />
       {children}
     </span>
   );

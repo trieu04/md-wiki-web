@@ -218,6 +218,14 @@
   --flex-filter: 1 1 var(--spacing-filter-basis);
   --flex-conflict-editor: 2 1 var(--spacing-conflict-editor);
   --flex-review-content: 999 1 var(--spacing-editor-content);
+  /* Phase 6 frame values (F-11 Discussions; design-system §2.4) */
+  --spacing-topic-list: 340px;
+  --spacing-thread: 520px;
+  --spacing-thread-term: 120px;
+  --spacing-avatar-sm: 30px;
+  --radius-15: 15px;
+  --flex-topic-list: 1 1 var(--spacing-topic-list);
+  --flex-thread: 2 1 var(--spacing-thread);
 }
 
 @utility border-choice {
@@ -246,6 +254,18 @@
 
 @utility flex-review-content {
   flex: var(--flex-review-content);
+}
+
+@utility flex-topic-list {
+  flex: var(--flex-topic-list);
+}
+
+@utility flex-thread {
+  flex: var(--flex-thread);
+}
+
+@utility grid-cols-thread-props {
+  grid-template-columns: var(--spacing-thread-term) minmax(0, 1fr);
 }
 
 @utility grid-cols-stats {

@@ -66,6 +66,8 @@ export function proposalStatus(item: {
   updatedAt: string;
   publishedVersion?: string | null;
   autoPublished?: boolean | null;
+  /** `discussion.disputed`: a hold or an open dispute blocks approval (D-111). */
+  disputed?: boolean;
 }): Status {
   if (item.tab === 'blocked')
     return {
@@ -75,6 +77,8 @@ export function proposalStatus(item: {
     };
   switch (item.state) {
     case 'pending':
+      if (item.disputed)
+        return { tone: 'escalated', status: 'Disputed', detail: 'Approval held for discussion' };
       return {
         tone: 'pending',
         status: 'Pending',
@@ -173,12 +177,45 @@ export function reviewSubline(detail: ProposalDetailDto, now: Date) {
   };
 }
 
+export type ProposalDiscussionDto = components['schemas']['ProposalDiscussionDto'];
+export type DisputeEventDto = components['schemas']['DisputeEventDto'];
+
 export type Banner = {
   tone: 'default' | 'warn' | 'error';
   title: string;
   text: string;
-  action: { label: string; href?: string; reload?: true };
+  action: { label: string; href?: string; reload?: true; tab?: 'discussion' };
 };
+
+/** The open/reopen entry that started the current dispute. */
+function disputeStart(events: readonly DisputeEventDto[]) {
+  return [...events].reverse().find(({ action }) => action === 'open' || action === 'reopen');
+}
+
+/** F-10 *disputed* banner (D-121): a dispute or an unresolved proposal topic holds approval. */
+function heldBanner(
+  detail: ProposalDetailDto,
+  discussion: ProposalDiscussionDto | undefined,
+): Banner | null {
+  if (detail.state !== 'pending' || !detail.discussion.disputed) return null;
+  const tail = 'You can still ask for changes.';
+  if (detail.discussion.disputeOpen) {
+    const start = discussion ? disputeStart(discussion.disputes.events) : undefined;
+    return {
+      tone: 'warn',
+      title: 'Held by a dispute.',
+      text: start ? `${start.actor.name} disputed it: “${start.reason}” ${tail}` : tail,
+      action: { label: 'Go to dispute', tab: 'discussion' },
+    };
+  }
+  const topic = discussion?.topic;
+  return {
+    tone: 'warn',
+    title: 'Held by a discussion.',
+    text: topic ? `“${topic.title}” is not resolved yet. ${tail}` : tail,
+    action: { label: 'Go to discussion', tab: 'discussion' },
+  };
+}
 
 export type LockReason = Extract<ErrorCode, 'DISCUSSION_CHANGED' | 'DECISION_BINDING_MISMATCH'>;
 export const LOCK_CODES: readonly ErrorCode[] = ['DISCUSSION_CHANGED', 'DECISION_BINDING_MISMATCH'];
@@ -188,6 +225,7 @@ export function reviewBanner(
   detail: ProposalDetailDto,
   locked: LockReason | null,
   pageHref: string,
+  discussion?: ProposalDiscussionDto,
 ): Banner | null {
   if (locked)
     return {
@@ -203,6 +241,8 @@ export function reviewBanner(
       text: 'The write timed out. Nobody can publish to this page until the owner confirms what was written.',
       action: { label: 'Investigate in Operations', href: '/work/ops' },
     };
+  const held = heldBanner(detail, discussion);
+  if (held) return held;
   const phase = detail.publication?.phase ?? null;
   if (detail.state === 'approved' && detail.publication?.auto && phase && phase !== 'not_written')
     return {
@@ -323,6 +363,15 @@ const actionText: Record<string, (event: ProposalDetailDto['history'][number]) =
     `Owner recorded ${e.data['outcome'] === 'written' ? 'the new version on disk' : 'nothing written'}`,
   'proposal.conflict_resolved': (e) =>
     `Conflict resolved by ${e.actor?.name ?? 'system'}${typeof e.data['replacementSlug'] === 'string' ? `; new proposal ${e.data['replacementSlug']}` : ''}`,
+  'proposal.discussion_opened': (e) => `Discussion opened by ${e.actor?.name ?? 'system'}`,
+  'proposal.discussion_closed': (e) =>
+    `Discussion closed${typeof e.data['outcome'] === 'string' ? ` as ${e.data['outcome'].replace('_', ' ')}` : ''} by ${e.actor?.name ?? 'system'}`,
+  'proposal.discussion_reopened': (e) => `Discussion reopened by ${e.actor?.name ?? 'system'}`,
+  'dispute.open': (e) => `Dispute opened by ${e.actor?.name ?? 'system'}`,
+  'dispute.comment': (e) => `Dispute entry by ${e.actor?.name ?? 'system'}`,
+  'dispute.resolve': (e) => `Dispute resolved by ${e.actor?.name ?? 'system'}`,
+  'dispute.reopen': (e) => `Dispute reopened by ${e.actor?.name ?? 'system'}`,
+  'proposal.returned': () => 'Returned to the reviewer after the discussion',
 };
 
 /** History tab rows; actions the web does not know yet are shown by their name. */
@@ -410,5 +459,115 @@ export function detailStatusInput(detail: ProposalDetailDto) {
     updatedAt: detail.publication?.updatedAt ?? detail.createdAt,
     publishedVersion: detail.publication?.versionLabel ?? null,
     autoPublished: detail.publication?.auto ?? null,
+    disputed: detail.discussion.disputed,
   };
+}
+
+// ---------- F-10 discussion (P6-06) ----------
+
+export type DisputeAction = 'open' | 'reopen' | 'comment';
+
+/** What *Hold for discussion* writes to the dispute log (system-logic §7.5.2 `disputeStep`). */
+export function holdAction(summary: ProposalDetailDto['discussion']): DisputeAction {
+  if (summary.disputeOpen) return 'comment';
+  return summary.disputeVersion > 0 ? 'reopen' : 'open';
+}
+
+const holdSubmit: Record<DisputeAction, string> = {
+  open: 'Open dispute',
+  reopen: 'Reopen dispute',
+  comment: 'Add to dispute',
+};
+
+export type DecisionChoice = 'approve' | 'changes' | 'hold';
+
+/** F-10 *Your decision* choices; *Hold for discussion* only for the dispute writer (D-122). */
+export function decisionChoices(detail: ProposalDetailDto) {
+  return [
+    {
+      value: 'approve' as const,
+      label: 'Approve and publish',
+      description: 'published at once',
+      submit: 'Approve and publish',
+    },
+    {
+      value: 'changes' as const,
+      label: 'Request changes',
+      description: 'back to the author with your reason',
+      submit: 'Send back with reason',
+    },
+    {
+      value: 'hold' as const,
+      label: 'Hold for discussion',
+      description: 'opens a dispute on the section',
+      submit: holdSubmit[holdAction(detail.discussion)],
+    },
+  ];
+}
+
+/** Submit button of *Your decision*: locked → reread; approve while disputed → held (F-10). */
+export function submitState(
+  choice: DecisionChoice,
+  detail: ProposalDetailDto,
+  locked: LockReason | null,
+) {
+  const current = decisionChoices(detail).find(({ value }) => value === choice);
+  if (locked) return { label: 'Reread before deciding', disabled: true };
+  if (choice === 'approve' && detail.discussion.disputed)
+    return { label: 'Approval held by dispute', disabled: true };
+  return { label: current?.submit ?? 'Approve and publish', disabled: !detail.preview };
+}
+
+export type SeenVersions = { discussionVersion: number; disputeVersion: number };
+
+export function seenVersions(detail: ProposalDetailDto): SeenVersions {
+  const { discussionVersion, disputeVersion } = detail.discussion;
+  return { discussionVersion, disputeVersion };
+}
+
+/**
+ * A new discussion or dispute entry arrived (SSE refetch) since the reviewer last read: lock the
+ * decision until *Reload* (ux.md §10 "decision locked until reread"); own writes move `seen`.
+ */
+export function versionsChanged(seen: SeenVersions, detail: ProposalDetailDto) {
+  if (detail.state !== 'pending' || !detail.can.decide) return false;
+  return (
+    seen.discussionVersion !== detail.discussion.discussionVersion ||
+    seen.disputeVersion !== detail.discussion.disputeVersion
+  );
+}
+
+/** *Discussion (n)*: the proposal topic and the dispute log count as one entry each. */
+export function discussionCount(discussion: ProposalDiscussionDto | undefined) {
+  if (!discussion) return undefined;
+  return (discussion.topic ? 1 : 0) + (discussion.disputes.events.length ? 1 : 0);
+}
+
+export const RESOLUTION_KINDS = [
+  ['supported', 'Supported by the sources'],
+  ['scoped', 'Scoped to where it holds'],
+  ['attributed', 'Attributed to its source'],
+  ['not_a_conflict', 'Not a conflict'],
+] as const;
+
+const disputeVerb: Record<DisputeEventDto['action'], string> = {
+  open: 'opened the dispute',
+  comment: 'added',
+  resolve: 'resolved the dispute',
+  reopen: 'reopened the dispute',
+};
+
+/** Dispute log rows (append-only, `seq` order). */
+export function disputeRows(events: readonly DisputeEventDto[]) {
+  return events.map((event) => {
+    const kind = RESOLUTION_KINDS.find(([id]) => id === event.resolutionKind)?.[1];
+    const related = event.relatedSlugs.length ? ` Related: ${event.relatedSlugs.join(', ')}.` : '';
+    return {
+      key: String(event.seq),
+      time: formatTime(new Date(event.createdAt)),
+      at: event.createdAt,
+      who: event.actor.name,
+      text: `${disputeVerb[event.action]}${kind ? ` (${kind.toLowerCase()})` : ''}: ${event.reason}${related}`,
+    };
+  });
 }

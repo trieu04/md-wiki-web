@@ -1,5 +1,6 @@
 import { labelMeta } from '@md-wiki/domain';
 import { Fragment, useState } from 'react';
+import { useSession } from '../../lib/session';
 import { Checkbox } from '../../ui/Checkbox';
 import { Mark } from '../../ui/Mark';
 import { PillToggle } from '../../ui/PillToggle';
@@ -20,12 +21,15 @@ import {
   trustOptions,
   updatedWindows,
 } from './model';
+import { searchAskHref } from '../discussions/model';
 import { useSearchResults } from './queries';
 
 const filterBox = 'flex min-w-0 flex-col rounded-12 border border-edge bg-surface px-16px py-14px';
 const legend = 'px-4px font-semibold';
 const resultCard = 'flex flex-col gap-6px rounded-12 border border-edge bg-surface px-18px py-16px';
 const emptyCopy = 'Didn’t find what you need?';
+const askClass =
+  'rounded-8 border border-control bg-surface px-12px py-7px font-medium text-primary no-underline hover:bg-nav-current hover:text-primary';
 
 function Result({ hit }: { hit: ReturnType<typeof searchModel>['hits'][number] }) {
   return (
@@ -66,6 +70,9 @@ export function SearchScreen({ q, topBar }: { q: string; topBar: TopBarProps }) 
   const topicFilters = topicOptions(results.data?.facets.topics, filters.topics);
   const model = results.data && !results.isPlaceholderData ? searchModel(results.data) : undefined;
   const loading = Boolean(request.q) && (results.isPending || results.isPlaceholderData);
+  // F-02 *Ask a question* opens a topic on the best hit's section (D-119); signed-in only.
+  const signedIn = !!useSession().data?.user;
+  const ask = searchAskHref(request.q, model ? results.data?.items : undefined);
   return (
     <>
       <TopBar {...topBar} />
@@ -174,16 +181,30 @@ export function SearchScreen({ q, topBar }: { q: string; topBar: TopBarProps }) 
                 {model.hits.map((hit) => (
                   <Result key={hit.href} hit={hit} />
                 ))}
-                <div className="rounded-12 border border-dashed border-input-strong px-18px py-14px text-secondary">
-                  Didn’t find what you need? Ask the people who maintain these pages.
+                <div className="flex flex-wrap items-center justify-between gap-x-16px gap-y-8px rounded-12 border border-dashed border-input-strong px-18px py-14px">
+                  <span className="text-secondary">
+                    Didn’t find what you need? Ask the people who maintain these pages.
+                  </span>
+                  {signedIn && (
+                    <a href={ask} className={askClass}>
+                      Ask a question
+                    </a>
+                  )}
                 </div>
               </>
             ) : (
-              <p className={`${resultCard} text-13 text-muted`}>
-                {request.q
-                  ? `${emptyCopy} Try a different search term or change the filters.`
-                  : 'Enter a search term.'}
-              </p>
+              <div className={`${resultCard} items-start`}>
+                <p className="text-13 text-muted">
+                  {request.q
+                    ? `${emptyCopy} Try a different search term or change the filters.`
+                    : 'Enter a search term.'}
+                </p>
+                {request.q && signedIn && (
+                  <a href={ask} className={askClass}>
+                    Ask a question
+                  </a>
+                )}
+              </div>
             )}
           </section>
         </div>

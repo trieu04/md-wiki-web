@@ -128,6 +128,9 @@ Exact values that appear in a frame but were missing from §2.1–2.3 are added 
 | `size.you-table` | 680px (table min width) | F-05 activity table |
 | `size.table-proposals` / `size.table-refs` | 980px / 520px | F-09 proposals table / F-10 *Read by the author* table |
 | `size.table-audit` | 760px | derived Audit log table (D-101) |
+| `size.topic-list` / `size.thread` (`flex 1 1 340px` / `flex 2 1 520px`) | 340px / 520px | F-11 Topics and Thread sections |
+| `size.thread-term` (`grid-cols-thread-props`: `120px minmax(0, 1fr)`) | 120px | F-11 thread properties `dl` |
+| `size.avatar-sm` / `radius.15` | 30px / 15px | F-11 entry avatar |
 | `size.stat-min` | 170px (`grid-cols-stats`: `repeat(auto-fill, minmax(170px, 1fr))`; the frames use `auto-fit` with 4–5 cards, `auto-fill` keeps the card width when fewer cards have data) | F-09 stats, F-13 health cards |
 | `size.filter-basis` / `size.filter-max` | 240px / 320px | F-09 filter input |
 | `size.review-aside` / `size.review-aside-max` | 380px / 480px | F-10 review panel |

@@ -8,11 +8,12 @@ export const EVENT_TYPES = [
   'proposal.changed',
   'publication.changed',
   'page.changed',
+  'discussion.changed',
   'ping',
 ] as const satisfies readonly EventDto['type'][];
 
 /**
- * Query-key prefixes an SSE event invalidates (system-logic §7.4.11, D-96). The contract names the
+ * Query-key prefixes an SSE event invalidates (system-logic §7.4.11, §7.5.7, D-96). The contract names the
  * resources; these are the web's keys for them (`['page', path]` is `['wiki.page', { path }]`).
  */
 export function invalidationsFor(event: Partial<EventDto> | null | undefined): QueryKey[] {
@@ -35,6 +36,12 @@ export function invalidationsFor(event: Partial<EventDto> | null | undefined): Q
         ['wiki.tree'],
         ['wiki.recent'],
         ['search'],
+      ];
+    case 'discussion.changed':
+      return [
+        ['topics'],
+        ...(event.topicId ? [queryKeys.discussionTopic(event.topicId)] : []),
+        ...(event.slug ? [queryKeys.proposalDiscussion(event.slug)] : []),
       ];
     default:
       return [];

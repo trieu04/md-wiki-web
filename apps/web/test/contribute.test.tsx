@@ -22,6 +22,13 @@ let stored: DraftDto = visualDraft(false);
 const patches: { body: unknown; ifMatch: string | null }[] = [];
 const server = setupServer(
   http.get('*/api/v1/meta', () => HttpResponse.json({ wikiName: 'Wiki', wikiDescription: '' })),
+  http.get('*/api/v1/topics', () =>
+    HttpResponse.json({
+      items: [],
+      nextCursor: null,
+      counts: { open: 0, mine: 0, closed: 0, all: 0 },
+    }),
+  ),
   http.get('*/api/v1/auth/session', () => HttpResponse.json(visualSession)),
   http.get('*/api/v1/wiki/pages/:path', () => HttpResponse.json(visualPage)),
   http.post('*/api/v1/drafts', () => HttpResponse.json(stored)),

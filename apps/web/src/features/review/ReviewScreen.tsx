@@ -2,6 +2,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useMemo, useState, type ReactNode } from 'react';
 import { ApiError, useApi } from '../../lib/api';
 import { messageForError } from '../../lib/error-copy';
+import { readStored, writeStored } from '../../lib/form-storage';
 import { queryKeys } from '../../lib/query-keys';
 import { useSession } from '../../lib/session';
 import { Button } from '../../ui/Button';
@@ -16,14 +17,20 @@ import { Tabs } from '../../ui/Tabs';
 import type { TopBarProps } from '../../ui/TopBar';
 import { WorkspaceLayout } from '../../ui/WorkspaceLayout';
 import type { WorkNavProps } from '../../ui/WorkNav';
+import { discussionsHref } from '../discussions/model';
+import { proposalDiscussionQueryOptions, useDispute } from '../discussions/queries';
 import { MarkdownArticle } from '../markdown/MarkdownArticle';
 import { pageHref } from '../page/model';
+import { DiscussionPanel, type DiscussionQuery } from './DiscussionPanel';
 import {
   LOCK_CODES,
   bindingText,
+  decisionChoices,
   decisionPanel,
   detailStatusInput,
+  discussionCount,
   historyRows,
+  holdAction,
   proposalStatus,
   readerBody,
   reasonStorageKey,
@@ -31,11 +38,19 @@ import {
   reviewBanner,
   reviewDiff,
   reviewSubline,
+  seenVersions,
+  submitState,
+  versionsChanged,
   type Banner,
+  type DecisionChoice,
   type LockReason,
   type ProposalDetailDto,
+  type SeenVersions,
 } from './model';
 import { proposalDiffQueryOptions, proposalQueryOptions, useDecide, usePublish } from './queries';
+
+const headerAction =
+  'rounded-8 border border-control bg-surface px-12px py-7px font-medium text-primary no-underline hover:bg-nav-current hover:text-primary';
 
 const bannerBorder = {
   default: 'border-edge',
@@ -43,7 +58,16 @@ const bannerBorder = {
   error: 'border-trust-error-border',
 } as const;
 
-function StatusBanner({ banner, onReload }: { banner: Banner; onReload: () => void }) {
+function StatusBanner({
+  banner,
+  onReload,
+  onTab,
+}: {
+  banner: Banner;
+  onReload: () => void;
+  onTab: (tab: string) => void;
+}) {
+  const { action } = banner;
   return (
     <div
       role="status"
@@ -52,71 +76,60 @@ function StatusBanner({ banner, onReload }: { banner: Banner; onReload: () => vo
       <span>
         <strong>{banner.title}</strong> {banner.text}
       </span>
-      {banner.action.reload ? (
-        <button type="button" className="font-semibold text-accent underline" onClick={onReload}>
-          {banner.action.label}
+      {action.reload || action.tab ? (
+        <button
+          type="button"
+          className="font-semibold text-accent underline"
+          onClick={() => {
+            if (action.tab) onTab(action.tab);
+            else onReload();
+          }}
+        >
+          {action.label}
         </button>
       ) : (
-        <a href={banner.action.href} className="font-semibold">
-          {banner.action.label}
+        <a href={action.href} className="font-semibold">
+          {action.label}
         </a>
       )}
     </div>
   );
 }
 
-function readStored(key: string) {
-  try {
-    return globalThis.sessionStorage.getItem(key) ?? '';
-  } catch {
-    return '';
-  }
-}
-function writeStored(key: string, value: string | null) {
-  try {
-    if (value === null) globalThis.sessionStorage.removeItem(key);
-    else globalThis.sessionStorage.setItem(key, value);
-  } catch {
-    // Storage may be unavailable (private mode); the reason stays in component state.
-  }
-}
-
-const choices = [
-  {
-    value: 'approve',
-    label: 'Approve and publish',
-    description: 'published at once',
-    submit: 'Approve and publish',
-  },
-  {
-    value: 'changes',
-    label: 'Request changes',
-    description: 'back to the author with your reason',
-    submit: 'Send back with reason',
-  },
-] as const;
-
 function DecisionForm({
   detail,
   locked,
   onLocked,
+  onSeen,
 }: {
   detail: ProposalDetailDto;
   locked: LockReason | null;
   onLocked: (code: LockReason) => void;
+  onSeen: (seen: Partial<SeenVersions>) => void;
 }) {
   const storageKey = reasonStorageKey(detail.slug);
-  const [choice, setChoice] = useState<'approve' | 'changes'>('approve');
+  const [choice, setChoice] = useState<DecisionChoice>('approve');
   const [reason, setReason] = useState(() => readStored(storageKey));
   const [missing, setMissing] = useState(false);
   const decide = useDecide(detail.slug);
+  const dispute = useDispute(detail.slug);
   const preview = detail.preview;
-  const current = choices.find(({ value }) => value === choice) ?? choices[0];
-  const error = decide.error;
+  const choices = decisionChoices(detail);
+  const submit = submitState(choice, detail, locked);
+  const error = choice === 'hold' ? dispute.error : decide.error;
   const showError =
     error && !(error instanceof ApiError && LOCK_CODES.includes(error.code)) ? error : null;
 
-  function submit() {
+  function done() {
+    writeStored(storageKey, null);
+    setReason('');
+  }
+  function failed(failure: Error) {
+    if (failure instanceof ApiError && LOCK_CODES.includes(failure.code))
+      onLocked(failure.code as LockReason);
+  }
+
+  function send() {
     if (!preview) return;
     const trimmed = reason.trim();
     if (!trimmed) {
@@ -124,18 +137,27 @@ function DecisionForm({
       return;
     }
     setMissing(false);
+    if (choice === 'hold') {
+      dispute.mutate(
+        {
+          bundleHash: detail.bundleHash,
+          disputeVersion: preview.binding.disputeVersion,
+          action: holdAction(detail.discussion),
+          reason: trimmed,
+        },
+        {
+          onSuccess(log) {
+            done();
+            onSeen({ disputeVersion: log.disputeVersion });
+          },
+          onError: failed,
+        },
+      );
+      return;
+    }
     decide.mutate(
       { approve: choice === 'approve', reason: trimmed, ...preview.binding },
-      {
-        onSuccess() {
-          writeStored(storageKey, null);
-          setReason('');
-        },
-        onError(failure) {
-          if (failure instanceof ApiError && LOCK_CODES.includes(failure.code))
-            onLocked(failure.code as LockReason);
-        },
-      },
+      { onSuccess: done, onError: failed },
     );
   }
 
@@ -147,7 +169,7 @@ function DecisionForm({
         options={choices.map(({ value, label, description }) => ({ value, label, description }))}
         value={choice}
         onChange={(value) => {
-          setChoice(value as 'approve' | 'changes');
+          setChoice(value as DecisionChoice);
         }}
       />
       <label htmlFor="decision-reason" className="text-13 font-semibold">
@@ -176,8 +198,12 @@ function DecisionForm({
           {messageForError(showError)}
         </p>
       )}
-      <Button disabled={locked !== null || !preview} loading={decide.isPending} onClick={submit}>
-        {locked ? 'Reread before deciding' : current.submit}
+      <Button
+        disabled={submit.disabled}
+        loading={decide.isPending || dispute.isPending}
+        onClick={send}
+      >
+        {submit.label}
       </Button>
     </div>
   );
@@ -188,11 +214,13 @@ function DecisionSection({
   viewerId,
   locked,
   onLocked,
+  onSeen,
 }: {
   detail: ProposalDetailDto;
   viewerId: string | null;
   locked: LockReason | null;
   onLocked: (code: LockReason) => void;
+  onSeen: (seen: Partial<SeenVersions>) => void;
 }) {
   const panel = decisionPanel(detail, viewerId);
   const publish = usePublish(detail.slug);
@@ -204,7 +232,7 @@ function DecisionSection({
     >
       <h2 className="text-14 font-bold">Your decision</h2>
       {panel.kind === 'decide' && (
-        <DecisionForm detail={detail} locked={locked} onLocked={onLocked} />
+        <DecisionForm detail={detail} locked={locked} onLocked={onLocked} onSeen={onSeen} />
       )}
       {panel.kind === 'publishing' && (
         <div className="flex flex-col gap-8px">
@@ -238,15 +266,27 @@ function DecisionSection({
   );
 }
 
-function ContentSection({ detail }: { detail: ProposalDetailDto }) {
+function ContentSection({
+  detail,
+  tab,
+  onTab,
+  discussion,
+  onSeen,
+}: {
+  detail: ProposalDetailDto;
+  tab: string;
+  onTab: (tab: string) => void;
+  discussion: DiscussionQuery;
+  onSeen: (seen: Partial<SeenVersions>) => void;
+}) {
   const api = useApi();
-  const [tab, setTab] = useState('changes');
   const diff = useQuery(proposalDiffQueryOptions(api, detail.slug));
   const changes = useMemo(
     () => (diff.data ? reviewDiff(diff.data, detail.sectionTitle) : null),
     [diff.data, detail.sectionTitle],
   );
   const history = historyRows(detail.history);
+  const count = discussionCount(discussion.data);
   const wait = (render: (data: NonNullable<typeof diff.data>) => ReactNode) =>
     diff.data ? (
       render(diff.data)
@@ -277,7 +317,7 @@ function ContentSection({ detail }: { detail: ProposalDetailDto }) {
       <Tabs
         label="View"
         selected={tab}
-        onChange={setTab}
+        onChange={onTab}
         tabs={[
           {
             id: 'changes',
@@ -304,6 +344,11 @@ function ContentSection({ detail }: { detail: ProposalDetailDto }) {
                   : 'This is a new page; there is no current page.',
               ),
             ),
+          },
+          {
+            id: 'discussion',
+            label: count === undefined ? 'Discussion' : `Discussion (${String(count)})`,
+            panel: <DiscussionPanel detail={detail} query={discussion} onSeen={onSeen} />,
           },
           {
             id: 'history',
@@ -378,14 +423,29 @@ function ReasonSection({ detail }: { detail: ProposalDetailDto }) {
 
 function Review({ detail, viewerId }: { detail: ProposalDetailDto; viewerId: string | null }) {
   const queryClient = useQueryClient();
-  const [locked, setLocked] = useState<LockReason | null>(null);
+  const [errorLock, setErrorLock] = useState<LockReason | null>(null);
+  // Versions the reviewer has read; an SSE refetch with newer ones locks the decision (D-123).
+  const [seen, setSeen] = useState<SeenVersions>(() => seenVersions(detail));
+  const [tab, setTab] = useState('changes');
+  const discussion = useQuery(proposalDiscussionQueryOptions(useApi(), detail.slug));
+  const locked = errorLock ?? (versionsChanged(seen, detail) ? 'DISCUSSION_CHANGED' : null);
   const status = proposalStatus(detailStatusInput(detail));
   const subline = reviewSubline(detail, new Date());
   const page = pageHref(detail.targetPath);
-  const banner = reviewBanner(detail, locked, page);
+  const banner = reviewBanner(detail, locked, page, discussion.data);
+  const topicId = detail.discussion.topicId;
+  function onSeen(next: Partial<SeenVersions>) {
+    setSeen((old) => ({ ...old, ...next }));
+  }
   function reload() {
-    void queryClient.invalidateQueries({ queryKey: queryKeys.proposal(detail.slug) }).then(() => {
-      setLocked(null);
+    const key = queryKeys.proposal(detail.slug);
+    void Promise.all([
+      queryClient.invalidateQueries({ queryKey: key, exact: true }),
+      queryClient.invalidateQueries({ queryKey: queryKeys.proposalDiscussion(detail.slug) }),
+    ]).then(() => {
+      const fresh = queryClient.getQueryData<ProposalDetailDto>(key);
+      if (fresh) setSeen(seenVersions(fresh));
+      setErrorLock(null);
     });
   }
   return (
@@ -413,22 +473,42 @@ function Review({ detail, viewerId }: { detail: ProposalDetailDto; viewerId: str
               </span>
             </span>
           </div>
-          {detail.conflict && (
-            <div className="flex flex-wrap gap-8px">
+          <div className="flex flex-wrap gap-8px">
+            {detail.conflict && (
               <a
                 href={`/me/suggestions/${encodeURIComponent(detail.slug)}/resolve`}
-                className="rounded-8 border border-control bg-surface px-12px py-7px font-medium text-primary no-underline hover:bg-nav-current"
+                className={headerAction}
               >
                 Compare with current
               </a>
-            </div>
-          )}
+            )}
+            {topicId ? (
+              <a href={discussionsHref({ filter: 'all', topic: topicId })} className={headerAction}>
+                Discuss
+              </a>
+            ) : (
+              <Button
+                variant="secondary"
+                onClick={() => {
+                  setTab('discussion');
+                }}
+              >
+                Discuss
+              </Button>
+            )}
+          </div>
         </div>
       </div>
-      {banner && <StatusBanner banner={banner} onReload={reload} />}
+      {banner && <StatusBanner banner={banner} onReload={reload} onTab={setTab} />}
       <div className="flex flex-wrap items-start gap-16px">
         <div className="flex min-w-0 flex-review-content flex-col gap-16px">
-          <ContentSection detail={detail} />
+          <ContentSection
+            detail={detail}
+            tab={tab}
+            onTab={setTab}
+            discussion={discussion}
+            onSeen={onSeen}
+          />
           <ReasonSection detail={detail} />
         </div>
         <aside
@@ -439,7 +519,8 @@ function Review({ detail, viewerId }: { detail: ProposalDetailDto; viewerId: str
             detail={detail}
             viewerId={viewerId}
             locked={locked}
-            onLocked={setLocked}
+            onLocked={setErrorLock}
+            onSeen={onSeen}
           />
         </aside>
       </div>
@@ -447,7 +528,7 @@ function Review({ detail, viewerId }: { detail: ProposalDetailDto; viewerId: str
   );
 }
 
-/** F-10 Review (D-98). Escalation, agent review, quality check and evidence are later phases. */
+/** F-10 Review (D-98, D-121). Escalation, agent review, quality check and evidence are later phases. */
 export function ReviewScreen({
   slug,
   topBar,

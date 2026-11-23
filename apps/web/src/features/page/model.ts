@@ -38,6 +38,7 @@ export function pageHeaderModel(page: PageDto) {
         ? `${sectionCount(spread.error)} with confirmed ${spread.error === 1 ? 'error' : 'errors'}`
         : labelMeta[label];
   return {
+    path: page.path,
     title: page.title,
     topic: page.topic.name,
     pageHref: pageHref(page.path),

@@ -22,4 +22,8 @@ export const queryKeys = {
     ['proposal', slug, 'diff', against] as const,
   opsBlocked: ['ops', 'blocked'],
   audit: ['ops', 'audit'],
+  // Phase 6 (system-logic §7.5.7): prefixes `['topics']`, `['topic', id]`, `['proposal-discussion', slug]`.
+  topics: (params: { filter: string; limit: number }) => ['topics', params] as const,
+  discussionTopic: (id: string) => ['topic', id] as const,
+  proposalDiscussion: (slug: string) => ['proposal-discussion', slug] as const,
 } as const;

@@ -12,6 +12,7 @@ import { SpreadBar } from '../../ui/SpreadBar';
 import { Table } from '../../ui/Table';
 import { TopBar, type TopBarProps } from '../../ui/TopBar';
 import { TrustIcon } from '../../ui/TrustIcon';
+import { askHref } from '../discussions/model';
 import { MarkdownPageContent } from '../markdown/MarkdownPageContent';
 import type { PageDto } from '../markdown/model';
 import { pageQueryOptions } from '../markdown/page-query';
@@ -186,6 +187,12 @@ function ReadingHeader({ model, selected }: { model: PageHeaderModel; selected: 
           >
             Suggest an edit
           </Link>
+        )}
+        {/* Any signed-in role may open a topic (`topic.open`, D-119); the selected section rides along. */}
+        {session.data?.user && (
+          <a className={actionLinkClass} href={askHref({ path: model.path, section: selected })}>
+            Ask a question
+          </a>
         )}
         <Link className={actionLinkClass} to={model.historyHref}>
           History

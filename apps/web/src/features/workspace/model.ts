@@ -2,6 +2,7 @@ import type { components } from '@md-wiki/contracts';
 
 type Role = components['schemas']['MeDto']['roles'][number];
 type TabCounts = components['schemas']['TabCountsDto'];
+type TopicCounts = components['schemas']['TopicCountsDto'];
 
 const WORK_ROLES = new Set<Role>(['reviewer', 'publisher', 'owner']);
 
@@ -13,11 +14,19 @@ export function hasWorkspace(roles: readonly Role[] | undefined) {
   return !!roles?.some((role) => WORK_ROLES.has(role));
 }
 
-/** WorkNav counts where data exists (D-95): Proposals = open, Operations = blocked (owner). */
-export function workNavCounts(counts: TabCounts | undefined, roles: readonly Role[] | undefined) {
-  if (!counts) return undefined;
+/**
+ * WorkNav counts where data exists (D-95, D-118): Proposals = open, Discussions = open topics the
+ * caller can see, Operations = blocked (owner).
+ */
+export function workNavCounts(
+  counts: TabCounts | undefined,
+  roles: readonly Role[] | undefined,
+  topics?: TopicCounts,
+) {
+  if (!counts && !topics) return undefined;
   return {
-    proposals: counts.open,
-    ...(roles?.includes('owner') && { ops: counts.blocked }),
+    ...(counts && { proposals: counts.open }),
+    ...(topics && { discussions: topics.open }),
+    ...(counts && roles?.includes('owner') && { ops: counts.blocked }),
   };
 }

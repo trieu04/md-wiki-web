@@ -875,6 +875,17 @@ All under `/api/v1`. Cursor envelope as §2; topics ordered `updatedAt desc, id 
 - **Results**: success → `structuredContent` = the REST response body (wrapped as noted) and the same JSON as one text block. **Errors** [D-114]: an `AppError` becomes a tool result with `isError: true` and `structuredContent.error = { code, status, detail, fields }` — the same `code`/`status`/`fields` REST returns; anything else is logged and returned as `INTERNAL` (never a stack). Unknown argument keys are refused by the DTO (`VALIDATION_FAILED`); arguments of the wrong JSON type are refused by the SDK's schema check before the tool runs (JSON-RPC/tool error without a code).
 - The server is a protocol adapter only: no tool writes storage or the database except through the services above (md-wiki `mcp.py` "delegates every state transition").
 
+#### 7.5.10 Web (F-11, *Ask a question*, Review › Discussion; P6-04 … P6-06) [D-118 … D-123]
+
+| Route | Screen | Data | Writes |
+| --- | --- | --- | --- |
+| `/work/discussions?filter=&topic=` | F-11 Discussions | `GET /topics?filter&limit=50`, `GET /topics/{id}` | `POST /topics/{id}/comments` (`kind: comment`), `/close`, `/reopen` — each with `version` |
+| `/ask?path=&section=&q=` | *Ask a question* (derived) | `GET /wiki/tree`, `GET /wiki/pages/{path}` | `POST /topics` |
+| `/work/proposals/:slug` › Discussion | Review tab (derived) | `GET /proposals/{slug}/discussion` | `POST …/discussion`, `POST …/disputes` (*Hold for discussion*, *Resolve*), topic writes as F-11 |
+
+- Query keys: `['topics', {filter, limit}]`, `['topic', id]`, `['proposal-discussion', slug]`. A topic write caches the returned detail and invalidates `['topics']`; on a proposal topic also `['proposal-discussion', slug]`, `['proposal', slug]`, `['proposals']`. Dispute writes invalidate the same proposal keys.
+- Controls follow `TopicDetailDto.can` and `ProposalDetailDto.can.decide` (D-120, D-122). `DISCUSSION_CHANGED` on a topic write locks the thread until *Reload*; on the review screen a version change seen through SSE locks the decision until *Reload* (D-123).
+
 #### 7.5.9 Agent skill (P6-03)
 
 `skills/wiki-knowledge-workflow/` ports md-wiki's skill to this API: `SKILL.md` (roles, scopes ↔ tools, connection, invariant rules), `references/contribution.md`, `reviewer.md`, `discussions.md` (topics, holds, dispute log; replaces `semantic-conflicts.md`), `merge-conflicts.md`, `quality.md` (unchanged), `agents/openai.yaml`. A test (`apps/api/test/skill.test.ts`) fails when the skill names an MCP tool or REST endpoint that does not exist, or omits a tool [D-116].

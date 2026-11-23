@@ -237,6 +237,8 @@ export function visualProposal(slug: string, scenario: string | null): Detail {
       publications: [publication('writing')],
       final: { artifact: visualArtifact, artifactHash: binding.artifactHash },
     });
+  // F-10 *disputed*: h.pham's dispute is open (dispute v1), approval is held (Phase 6).
+  const disputed = scenario === 'disputed';
   return detail(slug, {
     preview: {
       artifact: visualArtifact,
@@ -244,8 +246,18 @@ export function visualProposal(slug: string, scenario: string | null): Detail {
       previewAt: binding.previewAt,
       decisionId: uuid(700),
       reviewerKind: 'person',
-      binding,
+      binding: disputed ? { ...binding, disputeVersion: 1 } : binding,
     },
+    ...(disputed && {
+      discussion: {
+        discussionVersion: 1,
+        disputeVersion: 1,
+        disputed: true,
+        disputeOpen: true,
+        held: false,
+        topicId: null,
+      },
+    }),
     assignment: {
       id: uuid(600),
       assignee: ref('m.nguyen'),

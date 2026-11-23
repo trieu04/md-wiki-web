@@ -13,6 +13,10 @@ import {
 } from '@tanstack/react-router';
 import type { RouterHistory } from '@tanstack/react-router';
 import { ConflictScreen } from './features/conflict/ConflictScreen';
+import { AskScreen } from './features/discussions/AskScreen';
+import { DiscussionsScreen } from './features/discussions/DiscussionsScreen';
+import { discussionsHref, topicFilter } from './features/discussions/model';
+import { topicCountsQueryOptions } from './features/discussions/queries';
 import { EditorScreen } from './features/editor/EditorScreen';
 import { HomeScreen } from './features/home/HomeScreen';
 import { LoginScreen } from './features/login/LoginScreen';
@@ -71,15 +75,17 @@ function useTopBar(active: TopBarActive, query = '') {
   };
 }
 
-/** WorkNav with counts where data exists (D-95). */
+/** WorkNav with counts where data exists (D-95, D-118). */
 function useWorkNav(active: WorkNavActive): WorkNavProps {
   const { data } = useSession();
+  const api = useApi();
   const roles = data?.user?.roles;
   const counts = useQuery({
-    ...proposalCountsQueryOptions(useApi()),
+    ...proposalCountsQueryOptions(api),
     enabled: hasWorkspace(roles),
   });
-  const navCounts = workNavCounts(counts.data, roles);
+  const topics = useQuery({ ...topicCountsQueryOptions(api), enabled: !!data?.user });
+  const navCounts = workNavCounts(counts.data, roles, topics.data);
   return { active, ...(navCounts && { counts: navCounts }) };
 }
 
@@ -218,7 +224,50 @@ const review = createRoute({
 const discussions = createRoute({
   getParentRoute: () => root,
   path: '/work/discussions',
-  component: workspaceScreen('discussions'),
+  validateSearch: ({ filter, topic }) => ({
+    filter: topicFilter(filter),
+    topic: typeof topic === 'string' && topic ? topic : undefined,
+  }),
+  component: function Discussions() {
+    const { filter, topic } = discussions.useSearch();
+    const navigate = discussions.useNavigate();
+    return (
+      <DiscussionsScreen
+        filter={filter}
+        topic={topic}
+        onFilter={(next) => void navigate({ search: { filter: next, topic: undefined } })}
+        onTopic={(id) => void navigate({ search: { filter, topic: id }, replace: true })}
+        topBar={useTopBar('workspace')}
+        workNav={useWorkNav('discussions')}
+      />
+    );
+  },
+});
+// *Ask a question* compose form (D-119): from the Page, Search and F-11 *New topic*.
+const ask = createRoute({
+  getParentRoute: () => root,
+  path: '/ask',
+  validateSearch: ({ path, section, q }) => ({
+    path: typeof path === 'string' && path ? path : undefined,
+    section: typeof section === 'string' && section ? section : undefined,
+    q: typeof q === 'string' && q ? q : undefined,
+  }),
+  component: function Ask() {
+    const { path, section, q } = ask.useSearch();
+    const router = useRouter();
+    return (
+      <AskScreen
+        key={`${path ?? ''}#${section ?? ''}`}
+        path={path ?? null}
+        section={section ?? null}
+        q={q ?? null}
+        topBar={useTopBar('none')}
+        onPosted={(topic) =>
+          void router.navigate({ href: discussionsHref({ filter: 'mine', topic: topic.id }) })
+        }
+      />
+    );
+  },
 });
 const credibility = createRoute({
   getParentRoute: () => root,
@@ -300,6 +349,7 @@ const routeTree = root.addChildren([
   proposals,
   review,
   discussions,
+  ask,
   credibility,
   ops,
   audit,
@@ -322,17 +372,20 @@ export function createAppRouter(history: RouterHistory = createBrowserHistory())
       const search = defaultParseSearch(raw) as Record<string, unknown>;
       const params = new URLSearchParams(raw);
       // TanStack's JSON parsing otherwise coerces inputs such as ?q=123 or ?q=null.
-      for (const key of ['q', 'section', 'next', 'tab']) {
+      for (const key of ['q', 'section', 'next', 'tab', 'filter', 'topic', 'path']) {
         const value = params.get(key);
         if (value !== null) search[key] = value;
       }
       return search;
     },
-    stringifySearch({ q, section, next, ...rest }) {
+    stringifySearch({ q, section, next, filter, topic, path, ...rest }) {
       const params = new URLSearchParams(defaultStringifySearch(rest));
       if (typeof q === 'string') params.set('q', q);
       if (typeof section === 'string') params.set('section', section);
       if (typeof next === 'string') params.set('next', next);
+      if (typeof filter === 'string') params.set('filter', filter);
+      if (typeof topic === 'string') params.set('topic', topic);
+      if (typeof path === 'string') params.set('path', path);
       const encoded = params.toString();
       return encoded ? `?${encoded}` : '';
     },

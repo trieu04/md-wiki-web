@@ -7,6 +7,7 @@ import { setupServer } from 'msw/node';
 import { afterAll, afterEach, beforeAll, beforeEach, expect, it, vi } from 'vitest';
 import { visualDraft, visualSuggestions } from '../src/dev/fixtures/contribute';
 import { visualRecent, visualSearch, visualTree } from '../src/dev/fixtures/home-search';
+import { visualTopicList } from '../src/dev/fixtures/discussions';
 import { visualProposal, visualProposalList } from '../src/dev/fixtures/review';
 import {
   visualHistory,
@@ -42,6 +43,9 @@ const server = setupServer(
   ),
   http.get('*/api/v1/proposals/:slug', ({ params }) =>
     HttpResponse.json(visualProposal(String(params.slug), null)),
+  ),
+  http.get('*/api/v1/topics', ({ request }) =>
+    HttpResponse.json(visualTopicList(new URL(request.url).searchParams.get('filter'))),
   ),
 );
 beforeAll(() => {
@@ -125,9 +129,12 @@ it('sends search controls through the generated binding, keeps recheck, and link
   });
   expect(principle).toHaveAttribute('href', '/wiki/confocal-microscopy.md#principle');
   expect(results.querySelector('mark')).toHaveTextContent('pinhole');
-  expect(
-    within(results).queryByRole('link', { name: /Why this label|Ask a question/u }),
-  ).not.toBeInTheDocument();
+  expect(within(results).queryByRole('link', { name: /Why this label/u })).not.toBeInTheDocument();
+  // P6-05: *Ask a question* opens the compose form on the best hit's section (D-119).
+  expect(within(results).getByRole('link', { name: 'Ask a question' })).toHaveAttribute(
+    'href',
+    '/ask?path=confocal-microscopy.md&section=principle&q=pinhole+size',
+  );
   await user.click(screen.getByRole('button', { name: 'Most checked first' }));
   expect((await within(results).findAllByRole('article'))[0]).toHaveTextContent(
     'Pinhole alignment',
@@ -170,7 +177,6 @@ it('renders Home for a signed-in reader with session initials and no Workspace l
 
 it.each([
   ['/work', '/work', 'Inbox'],
-  ['/work/discussions', '/work/discussions', 'Discussions'],
   ['/work/credibility', '/work/credibility', 'Credibility'],
 ])('uses the empty workspace screen for %s', async (path, id, active) => {
   const router = open(path);
@@ -314,9 +320,14 @@ it('shows page and section labels, follows section anchors and omits deferred re
     'href',
     `/wiki/${visualPage.path}/edit?section=overview`,
   );
+  // P6-05: *Ask a question* carries the selected section (D-119).
+  expect(within(article).getByRole('link', { name: 'Ask a question' })).toHaveAttribute(
+    'href',
+    `/ask?path=${visualPage.path}&section=overview`,
+  );
   expect(
     within(article).queryByText(
-      /^(Follow|Ask a question|Sources|Changed outside review|Did this page help with your work\?|This section:)$/u,
+      /^(Follow|Sources|Changed outside review|Did this page help with your work\?|This section:)$/u,
     ),
   ).not.toBeInTheDocument();
   expect(screen.queryByRole('complementary', { name: 'About this page' })).not.toBeInTheDocument();

@@ -15,6 +15,7 @@ import {
   visualProposalList,
 } from '../src/dev/fixtures/review';
 import { visualOwnerSession } from '../src/dev/fixtures/settings';
+import { visualProposalDiscussion, visualTopicList } from '../src/dev/fixtures/discussions';
 import type { ProposalDetailDto } from '../src/features/review/model';
 import { startingText } from '../src/features/conflict/model';
 import { createAppRouter } from '../src/router';
@@ -31,7 +32,12 @@ const requests: { path: string; body: unknown; tab?: string | null }[] = [];
 let session: object = visualSession;
 let detail: ProposalDetailDto = visualProposal('fix-pinhole-units', null);
 let blocked = visualBlocked;
+let discussion = visualProposalDiscussion('fix-pinhole-units', null);
 const server = setupServer(
+  http.get('*/api/v1/topics', ({ request }) =>
+    HttpResponse.json(visualTopicList(new URL(request.url).searchParams.get('filter'))),
+  ),
+  http.get('*/api/v1/proposals/:slug/discussion', () => HttpResponse.json(discussion)),
   http.get('*/api/v1/meta', () => HttpResponse.json({ wikiName: 'Wiki', wikiDescription: '' })),
   http.get('*/api/v1/auth/session', () => HttpResponse.json(session)),
   http.get('*/api/v1/proposals', ({ request }) => {
@@ -57,6 +63,7 @@ beforeEach(() => {
   session = visualSession;
   detail = visualProposal('fix-pinhole-units', null);
   blocked = visualBlocked;
+  discussion = visualProposalDiscussion('fix-pinhole-units', null);
   sessionStorage.clear();
   vi.spyOn(window, 'scrollTo').mockImplementation(() => {});
 });
@@ -383,4 +390,144 @@ it('F-07 submits Replace with mine as use_incoming with the edited text', async 
   ]);
   expect(await screen.findByRole('alert')).toHaveTextContent('Something went wrong. Try again.');
   expect(editor).toHaveValue(`${need(visualConflictProposal.conflict).proposedText}more`);
+});
+
+it('F-10 disputed: held banner, approval held, the dispute log and its resolution (P6-06)', async () => {
+  detail = visualProposal('fix-pinhole-units', 'disputed');
+  discussion = visualProposalDiscussion('fix-pinhole-units', 'disputed');
+  const bodies: unknown[] = [];
+  server.use(
+    http.post('*/api/v1/proposals/:slug/disputes', async ({ request }) => {
+      bodies.push(await request.json());
+      return HttpResponse.json({ ...discussion.disputes, disputeOpen: false, disputeVersion: 2 });
+    }),
+  );
+  open('/work/proposals/fix-pinhole-units');
+  const user = userEvent.setup();
+  const banner = await screen.findByRole('status');
+  await waitFor(() => {
+    expect(banner).toHaveTextContent(
+      'Held by a dispute. h.pham disputed it: “Does the claim hold for other objectives? §2.4 covers 1.4 NA oil only.” You can still ask for changes.',
+    );
+  });
+  expect(screen.getByText('Disputed')).toBeVisible();
+  const panel = screen.getByRole('region', { name: 'Decision' });
+  expect(within(panel).getByRole('button', { name: 'Approval held by dispute' })).toBeDisabled();
+  expect(within(panel).getByText(/discussion v1 · dispute v1$/u)).toBeVisible();
+  await user.click(within(panel).getByRole('radio', { name: /Request changes/u }));
+  expect(within(panel).getByRole('button', { name: 'Send back with reason' })).toBeEnabled();
+  await user.click(within(panel).getByRole('radio', { name: /Hold for discussion/u }));
+  expect(within(panel).getByRole('button', { name: 'Add to dispute' })).toBeEnabled();
+
+  await user.click(within(banner).getByRole('button', { name: 'Go to dispute' }));
+  const content = screen.getByRole('region', { name: 'Content' });
+  expect(within(content).getByRole('tab', { name: 'Discussion (2)' })).toHaveAttribute(
+    'aria-selected',
+    'true',
+  );
+  const log = within(content).getByRole('region', { name: 'Dispute log' });
+  expect(log).toHaveTextContent('h.pham opened the dispute: Does the claim hold');
+  await user.click(within(log).getByRole('button', { name: 'Resolve dispute' }));
+  expect(within(log).getByText('Give a reason for the resolution.')).toBeVisible();
+  await user.selectOptions(within(log).getByLabelText('Resolve the dispute'), 'scoped');
+  await user.type(within(log).getByLabelText('Resolution reason'), 'Holds for 1.4 NA oil.');
+  await user.click(within(log).getByRole('button', { name: 'Resolve dispute' }));
+  await waitFor(() => {
+    expect(bodies).toEqual([
+      {
+        bundleHash: detail.bundleHash,
+        disputeVersion: 1,
+        action: 'resolve',
+        resolutionKind: 'scoped',
+        reason: 'Holds for 1.4 NA oil.',
+      },
+    ]);
+  });
+});
+
+it('F-10 Hold for discussion opens a dispute without locking the reviewer out', async () => {
+  const bodies: unknown[] = [];
+  server.use(
+    http.post('*/api/v1/proposals/:slug/disputes', async ({ request }) => {
+      bodies.push(await request.json());
+      // The reviewer's own entry: the next detail carries dispute v1 and the hold.
+      detail = visualProposal('fix-pinhole-units', 'disputed');
+      discussion = visualProposalDiscussion('fix-pinhole-units', 'disputed');
+      return HttpResponse.json(discussion.disputes, { status: 201 });
+    }),
+  );
+  open('/work/proposals/fix-pinhole-units');
+  const user = userEvent.setup();
+  const panel = await screen.findByRole('region', { name: 'Decision' });
+  await user.click(within(panel).getByRole('radio', { name: /Hold for discussion/u }));
+  await user.type(within(panel).getByLabelText('Reason (required)'), 'Water objectives?');
+  await user.click(within(panel).getByRole('button', { name: 'Open dispute' }));
+  await waitFor(() => {
+    expect(bodies).toEqual([
+      {
+        bundleHash: detail.bundleHash,
+        disputeVersion: 0,
+        action: 'open',
+        reason: 'Water objectives?',
+      },
+    ]);
+  });
+  expect(await screen.findByText('Held by a dispute.')).toBeVisible();
+  expect(screen.queryByText('New discussion entry.')).toBeNull();
+  expect(within(panel).getByLabelText('Reason (required)')).toHaveValue('');
+});
+
+it('F-10 locks the decision when someone else adds a discussion entry (DISCUSSION_CHANGED flow)', async () => {
+  const router = open('/work/proposals/fix-pinhole-units');
+  const panel = await screen.findByRole('region', { name: 'Decision' });
+  expect(within(panel).getByRole('button', { name: 'Approve and publish' })).toBeEnabled();
+  // An SSE `discussion.changed` refetch brings discussion v2.
+  detail = {
+    ...detail,
+    discussion: { ...detail.discussion, discussionVersion: 2 },
+    preview: detail.preview && {
+      ...detail.preview,
+      binding: { ...detail.preview.binding, discussionVersion: 2 },
+    },
+  };
+  await router.options.context.queryClient.invalidateQueries({
+    queryKey: ['proposal', 'fix-pinhole-units'],
+  });
+  const banner = await screen.findByText('New discussion entry.');
+  expect(within(panel).getByRole('button', { name: 'Reread before deciding' })).toBeDisabled();
+  await userEvent
+    .setup()
+    .click(
+      within(need(banner.parentElement?.parentElement)).getByRole('button', { name: 'Reload' }),
+    );
+  expect(await within(panel).findByRole('button', { name: 'Approve and publish' })).toBeEnabled();
+});
+
+it('F-10 Discussion tab starts a proposal discussion when there is none', async () => {
+  discussion = { ...discussion, topic: null, discussionVersion: 0 };
+  const bodies: unknown[] = [];
+  server.use(
+    http.post('*/api/v1/proposals/:slug/discussion', async ({ request }) => {
+      bodies.push(await request.json());
+      discussion = visualProposalDiscussion('fix-pinhole-units', null);
+      return HttpResponse.json(discussion, { status: 201 });
+    }),
+  );
+  open('/work/proposals/fix-pinhole-units');
+  const user = userEvent.setup();
+  await user.click(await screen.findByRole('button', { name: 'Discuss' }));
+  const content = screen.getByRole('region', { name: 'Content' });
+  const tab = await within(content).findByRole('tab', { name: 'Discussion (0)' });
+  expect(tab).toHaveAttribute('aria-selected', 'true');
+  await user.click(within(content).getByRole('button', { name: 'Open discussion' }));
+  expect(within(content).getByText('Write what is in question.')).toBeVisible();
+  await user.type(within(content).getByLabelText('Start a discussion'), 'Water objectives?');
+  await user.click(within(content).getByRole('button', { name: 'Open discussion' }));
+  await waitFor(() => {
+    expect(bodies).toEqual([{ bundleHash: detail.bundleHash, body: 'Water objectives?' }]);
+  });
+  expect(
+    await within(content).findByRole('heading', { name: 'Is the claim general?' }),
+  ).toBeVisible();
+  expect(screen.queryByText('New discussion entry.')).toBeNull();
 });
