@@ -3,7 +3,7 @@ import type { ReactNode } from 'react';
 
 type CardProps = {
   title: string;
-  heading?: 'h2' | 'h3' | 'h4';
+  heading?: 'h1' | 'h2' | 'h3' | 'h4';
   header?: boolean;
   actions?: ReactNode;
   children?: ReactNode;

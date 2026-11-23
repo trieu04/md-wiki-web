@@ -18,8 +18,15 @@
     "@md-wiki/domain": "workspace:*",
     "@tanstack/react-query": "^5.108.2",
     "@tanstack/react-router": "^1.170.46",
+    "hast-util-to-jsx-runtime": "^2.3.7",
     "react": "^19.2.0",
-    "react-dom": "^19.2.0"
+    "react-dom": "^19.2.0",
+    "rehype-sanitize": "^6.0.0",
+    "remark-gfm": "^4.0.1",
+    "remark-parse": "^11.0.0",
+    "remark-rehype": "^11.1.2",
+    "remark-wiki-link": "^2.0.1",
+    "unified": "^11.0.5"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.3.5",
@@ -27,6 +34,7 @@
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.3",
     "@testing-library/user-event": "^14.6.13",
+    "@types/hast": "^3.0.5",
     "@types/node": "^22.18.12",
     "@types/react": "^19.2.2",
     "@types/react-dom": "^19.2.2",

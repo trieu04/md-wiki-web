@@ -1,26 +1,65 @@
+import { QueryClientProvider } from '@tanstack/react-query';
 import { lazy, Suspense } from 'react';
 import {
-  createRootRoute,
+  createBrowserHistory,
+  createRootRouteWithContext,
   createRoute,
   createRouter,
   defaultParseSearch,
   defaultStringifySearch,
+  Outlet,
   useLocation,
+  useRouter,
 } from '@tanstack/react-router';
 import type { RouterHistory } from '@tanstack/react-router';
+import { LoginScreen } from './features/login/LoginScreen';
+import { MarkdownPageContent } from './features/markdown/MarkdownPageContent';
+import { pageQueryOptions } from './features/markdown/page-query';
+import { ApiContext, createWebData, safeNext, useWikiMeta } from './lib/api';
+import { useSession } from './lib/session';
 import { ReadingLayout } from './ui/ReadingLayout';
 import type { TopBarActive } from './ui/TopBar';
 import { WorkspaceLayout } from './ui/WorkspaceLayout';
 import type { WorkNavActive } from './ui/WorkNav';
 
-const wikiName = (import.meta.env.WIKI_NAME as string | undefined) || 'Bioimaging core';
-const root = createRootRoute({ notFoundComponent: () => null });
+const root = createRootRouteWithContext<ReturnType<typeof createWebData>>()({
+  notFoundComponent: () => null,
+  component: function Root() {
+    const { api, queryClient } = root.useRouteContext();
+    return (
+      <QueryClientProvider client={queryClient}>
+        <ApiContext.Provider value={api}>
+          <Outlet />
+        </ApiContext.Provider>
+      </QueryClientProvider>
+    );
+  },
+});
+
+function useTopBar(active: TopBarActive, query = '') {
+  const meta = useWikiMeta();
+  const { data } = useSession();
+  return {
+    active,
+    query,
+    wikiName: meta.data?.wikiName ?? 'Wiki',
+    role: data?.user?.roles.some(
+      (role) => role === 'owner' || role === 'reviewer' || role === 'publisher',
+    )
+      ? ('page author' as const)
+      : ('reader' as const),
+  };
+}
 
 function readingScreen(active: TopBarActive) {
-  return () => <ReadingLayout topBar={{ active, wikiName }} />;
+  return function ReadingScreen() {
+    return <ReadingLayout topBar={useTopBar(active)} />;
+  };
 }
 function workspaceScreen(active: WorkNavActive) {
-  return () => <WorkspaceLayout topBar={{ wikiName }} workNav={{ active }} />;
+  return function WorkspaceScreen() {
+    return <WorkspaceLayout topBar={useTopBar('workspace')} workNav={{ active }} />;
+  };
 }
 
 const home = createRoute({
@@ -29,7 +68,7 @@ const home = createRoute({
   component: function Home() {
     const recent = useLocation({ select: ({ hash }) => hash === 'recent' });
     return (
-      <ReadingLayout topBar={{ active: recent ? 'recent' : 'home', wikiName }}>
+      <ReadingLayout topBar={useTopBar(recent ? 'recent' : 'home')}>
         <div id="recent" />
       </ReadingLayout>
     );
@@ -41,14 +80,42 @@ const search = createRoute({
   validateSearch: ({ q }) => ({ q: typeof q === 'string' ? q : '' }),
   component: function Search() {
     const { q } = search.useSearch();
-    return <ReadingLayout topBar={{ active: 'search', wikiName, query: q }} />;
+    return <ReadingLayout topBar={useTopBar('search', q)} />;
   },
 });
 // The Trust drawer is an overlay on this route, not a separate URL (F-04).
 const page = createRoute({
   getParentRoute: () => root,
   path: '/wiki/$',
-  component: readingScreen('browse'),
+  loader: ({ context, params }) => {
+    if (params._splat) {
+      // The component observes this query and renders its loading and error states.
+      void context.queryClient
+        .query(pageQueryOptions(context.api, params._splat))
+        .catch(() => undefined);
+    }
+  },
+  component: function WikiPage() {
+    const { _splat } = page.useParams();
+    const anchor = useLocation({ select: ({ hash }) => hash });
+    return (
+      <ReadingLayout topBar={useTopBar('browse')}>
+        {_splat && <MarkdownPageContent path={_splat} anchor={anchor} />}
+      </ReadingLayout>
+    );
+  },
+});
+const login = createRoute({
+  getParentRoute: () => root,
+  path: '/login',
+  validateSearch: ({ next }) => ({ next: typeof next === 'string' ? safeNext(next) : undefined }),
+  component: function Login() {
+    const { next } = login.useSearch();
+    const router = useRouter();
+    return (
+      <LoginScreen onSignedIn={() => void router.navigate({ href: next ?? '/', replace: true })} />
+    );
+  },
 });
 const editor = createRoute({
   getParentRoute: () => root,
@@ -136,6 +203,7 @@ const routeTree = root.addChildren([
   home,
   search,
   page,
+  login,
   editor,
   you,
   conflict,
@@ -149,24 +217,32 @@ const routeTree = root.addChildren([
   ...devRoutes,
 ]);
 
-export function createAppRouter(history?: RouterHistory) {
+export function createAppRouter(history: RouterHistory = createBrowserHistory()) {
+  const context = createWebData({
+    currentHref: () => history.location.href,
+    redirectToLogin(next) {
+      history.replace(`/login?${new URLSearchParams({ next })}`);
+    },
+  });
   return createRouter({
     routeTree,
-    ...(history ? { history } : {}),
+    context,
+    history,
     parseSearch(raw) {
       const search = defaultParseSearch(raw) as Record<string, unknown>;
       const params = new URLSearchParams(raw);
       // TanStack's JSON parsing otherwise coerces inputs such as ?q=123 or ?q=null.
-      for (const key of ['q', 'section']) {
+      for (const key of ['q', 'section', 'next']) {
         const value = params.get(key);
         if (value !== null) search[key] = value;
       }
       return search;
     },
-    stringifySearch({ q, section, ...rest }) {
+    stringifySearch({ q, section, next, ...rest }) {
       const params = new URLSearchParams(defaultStringifySearch(rest));
       if (typeof q === 'string') params.set('q', q);
       if (typeof section === 'string') params.set('section', section);
+      if (typeof next === 'string') params.set('next', next);
       const encoded = params.toString();
       return encoded ? `?${encoded}` : '';
     },

@@ -20,6 +20,8 @@ const schema = z.object({
     .string()
     .min(1)
     .transform((path) => resolve(root, path)),
+  WIKI_NAME: z.string().default('Wiki'),
+  WIKI_DESCRIPTION: z.string().default(''),
   AUTO_PUBLISH: z.enum(['true', 'false']).transform((value) => value === 'true'),
 });
 

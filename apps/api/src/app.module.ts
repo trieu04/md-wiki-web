@@ -2,6 +2,7 @@ import { Controller, Get, Module } from '@nestjs/common';
 
 import { IdentityModule } from './auth/identity.module.js';
 import { ConfigModule } from './config/config.module.js';
+import { MetaController } from './config/meta.controller.js';
 import { WikiModule } from './wiki/wiki.module.js';
 import { HealthModule } from './health/health.module.js';
 import { DevPingModule, InternalJobsModule } from './jobs/jobs.module.js';
@@ -28,6 +29,7 @@ export class InternalModule {}
     WikiModule,
     ...(process.env.NODE_ENV === 'production' ? [] : [DevPingModule]),
   ],
+  controllers: [MetaController],
 })
 export class AppModule {
   readonly moduleName = 'AppModule';

@@ -10,6 +10,9 @@ export default defineConfig(({ mode }) => ({
   ...(mode === 'test' && {
     resolve: {
       alias: {
+        '@md-wiki/contracts': fileURLToPath(
+          new URL('../../packages/contracts/src/index.ts', import.meta.url),
+        ),
         '@md-wiki/domain': fileURLToPath(
           new URL('../../packages/domain/src/index.ts', import.meta.url),
         ),
@@ -30,9 +33,6 @@ export default defineConfig(({ mode }) => ({
       },
     },
   ],
-  define: {
-    'import.meta.env.WIKI_NAME': JSON.stringify(process.env.WIKI_NAME ?? 'Bioimaging core'),
-  },
   server: {
     host: process.env.WEB_HOST || '127.0.0.1',
     port: Number(process.env.WEB_PORT || 5173),

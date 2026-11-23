@@ -4,6 +4,7 @@ import type { TopBarProps } from './TopBar';
 
 export function ReadingLayout({
   topBar,
+  hideTopBar = false,
   before,
   aside,
   children,
@@ -11,6 +12,7 @@ export function ReadingLayout({
   as: Main = 'main',
 }: {
   topBar?: TopBarProps;
+  hideTopBar?: boolean;
   before?: ReactNode;
   aside?: ReactNode;
   children?: ReactNode;
@@ -19,7 +21,7 @@ export function ReadingLayout({
 }) {
   return (
     <div className="flex flex-col bg-canvas">
-      <TopBar {...topBar} />
+      {!hideTopBar && <TopBar {...topBar} />}
       <Main
         id={id}
         className="mx-auto flex w-full max-w-reading flex-col gap-28px px-24px pt-32px pb-48px"

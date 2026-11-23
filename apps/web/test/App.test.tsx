@@ -1,18 +1,39 @@
 import '@testing-library/jest-dom/vitest';
 import { createMemoryHistory, RouterProvider } from '@tanstack/react-router';
 import { cleanup, render, screen, within } from '@testing-library/react';
-import { afterEach, beforeEach, expect, it, vi } from 'vitest';
+import { userEvent } from '@testing-library/user-event';
+import { http, HttpResponse } from 'msw';
+import { setupServer } from 'msw/node';
+import { afterAll, afterEach, beforeAll, beforeEach, expect, it, vi } from 'vitest';
+import { visualPage, visualSession } from '../src/dev/fixtures/reading';
 import { createAppRouter } from '../src/router';
 
+const server = setupServer(
+  http.get('*/api/v1/meta', () =>
+    HttpResponse.json({ wikiName: 'A runtime wiki', wikiDescription: '' }),
+  ),
+  http.get('*/api/v1/auth/session', () => HttpResponse.json(visualSession)),
+  http.get('*/api/v1/wiki/pages/:path', () => HttpResponse.json(visualPage)),
+);
+beforeAll(() => {
+  server.listen({ onUnhandledRequest: 'error' });
+});
+afterAll(() => {
+  server.close();
+});
+
+const scrollIntoView = vi.fn();
 beforeEach(() => {
+  scrollIntoView.mockClear();
   vi.spyOn(window, 'scrollTo').mockImplementation(() => {});
   Object.defineProperty(HTMLElement.prototype, 'scrollIntoView', {
     configurable: true,
-    value: vi.fn(),
+    value: scrollIntoView,
   });
 });
 afterEach(() => {
   cleanup();
+  server.resetHandlers();
   Reflect.deleteProperty(HTMLElement.prototype, 'scrollIntoView');
   vi.restoreAllMocks();
 });
@@ -27,7 +48,6 @@ it.each([
   ['/', '/', 'Home'],
   ['/#recent', '/', 'Recent changes'],
   ['/search?q=pinhole+size', '/search', null],
-  ['/wiki/microscopy/%E6%96%87%20%E5%AD%97.md', '/wiki/$', 'Browse'],
   ['/wiki/microscopy/%E6%96%87%20%E5%AD%97.md/edit?section=overview', '/wiki/{$}/edit', null],
   ['/me', '/me', 'MN — You: followed pages and your activity'],
   ['/me/suggestions/example-id/resolve', '/me/suggestions/$id/resolve', null],
@@ -37,6 +57,7 @@ it.each([
   expect(main).toHaveTextContent(/^$/);
   expect(router.state.matches.at(-1)?.routeId).toBe(id);
   expect(screen.queryByRole('navigation', { name: 'Workspace' })).not.toBeInTheDocument();
+  await screen.findByText('A runtime wiki');
   const banner = screen.getByRole('banner');
   if (active)
     expect(within(banner).getByRole('link', { name: active, current: 'page' })).toBeVisible();
@@ -62,7 +83,10 @@ it.each([
     }),
   ).toBeVisible();
   expect(
-    within(screen.getByRole('banner')).getByRole('link', { name: 'Workspace', current: 'page' }),
+    await within(screen.getByRole('banner')).findByRole('link', {
+      name: 'Workspace',
+      current: 'page',
+    }),
   ).toBeVisible();
 });
 
@@ -82,4 +106,107 @@ it('captures the whole nested wiki path separately from the editor suffix and se
   const match = router.state.matches.at(-1);
   expect(match?.params).toMatchObject({ _splat: 'lab-notes/example/é.md' });
   expect(match?.search).toEqual({ section: '123' });
+});
+
+const problem = (code: string, status: number, headers: Record<string, string> = {}) =>
+  HttpResponse.json(
+    { code },
+    { status, headers: { ...headers, 'Content-Type': 'application/problem+json' } },
+  );
+
+it('loads a nested wiki path as one API parameter and renders the requested section anchor', async () => {
+  const expectedPath = 'microscopy/basics.md';
+  const read = vi.fn(({ params }: { params: Record<string, unknown> }) => {
+    expect(params.path).toBe(expectedPath);
+    return HttpResponse.json({ ...visualPage, path: expectedPath });
+  });
+  server.use(http.get('*/api/v1/wiki/pages/:path', read));
+  const router = open(`/wiki/${expectedPath}#principle`);
+  expect(await screen.findByRole('region', { name: 'Principle' })).toHaveAttribute(
+    'id',
+    'principle',
+  );
+  expect(router.state.matches.at(-1)?.params).toMatchObject({ _splat: expectedPath });
+  expect(read).toHaveBeenCalled();
+  expect(scrollIntoView).toHaveBeenCalled();
+});
+
+it('renders the approved loading, query-error and empty states', async () => {
+  let finishLoading = () => {};
+  const loading = new Promise<void>((resolve) => {
+    finishLoading = resolve;
+  });
+  server.use(
+    http.get('*/api/v1/wiki/pages/:path', async () => {
+      await loading;
+      return problem('STORAGE_ERROR', 500);
+    }),
+  );
+  open('/wiki/sample.md');
+  expect(await screen.findByRole('region', { name: 'Wiki page' })).toHaveAttribute(
+    'aria-busy',
+    'true',
+  );
+  finishLoading();
+  expect(await screen.findByRole('alert')).toHaveTextContent('The wiki storage is unavailable.');
+  server.use(
+    http.get('*/api/v1/wiki/pages/:path', () =>
+      HttpResponse.json({ ...visualPage, markdown: '', sections: [] }),
+    ),
+  );
+  await userEvent.setup().click(screen.getByRole('button', { name: 'Try again' }));
+  expect(await screen.findByText('This page is empty.')).toBeVisible();
+});
+
+it('redirects on a protected page 401 and returns to its URL after sign-in', async () => {
+  let signedIn = false;
+  server.use(
+    http.get('*/api/v1/auth/session', () =>
+      HttpResponse.json(signedIn ? visualSession : { user: null, csrfToken: null }),
+    ),
+    http.get('*/api/v1/wiki/pages/:path', () =>
+      signedIn ? HttpResponse.json(visualPage) : problem('UNAUTHENTICATED', 401),
+    ),
+    http.post('*/api/v1/auth/login', async ({ request }) => {
+      expect(await request.json()).toEqual({ email: 'mn@example.test', password: 'sample' });
+      signedIn = true;
+      return HttpResponse.json(visualSession);
+    }),
+  );
+  const target = '/wiki/confocal-microscopy.md?section=principle#principle';
+  const router = open(target);
+  const submit = await screen.findByRole('button', { name: 'Sign in' });
+  expect(screen.getByRole('heading', { level: 1, name: 'Sign in' })).toBeVisible();
+  expect(screen.queryByRole('navigation')).not.toBeInTheDocument();
+  expect(router.history.location.href).toBe(`/login?${new URLSearchParams({ next: target })}`);
+  const user = userEvent.setup();
+  await user.type(screen.getByLabelText('Email'), 'mn@example.test');
+  await user.type(screen.getByLabelText('Password'), 'sample');
+  await user.click(submit);
+  expect(await screen.findByRole('region', { name: 'Principle' })).toBeVisible();
+  expect(router.history.location.href).toBe(target);
+});
+
+it.each([
+  ['INVALID_CREDENTIALS', 401, 'The email or password is incorrect.'],
+  ['ACCOUNT_DISABLED', 403, 'This account is disabled.'],
+  ['VALIDATION_FAILED', 400, 'Check your input and try again.'],
+  ['RATE_LIMITED', 429, 'Try again in 30 seconds.'],
+])('keeps credentials only in the login form on %s', async (code, status, message) => {
+  server.use(
+    http.post('*/api/v1/auth/login', () => problem(code, status, { 'Retry-After': '30' })),
+  );
+  const path = '/login?next=%2Fsearch%3Fq%3Dobjective';
+  const router = open(path);
+  const user = userEvent.setup();
+  const email = await screen.findByLabelText('Email');
+  const password = screen.getByLabelText('Password');
+  await user.type(email, 'reader@example.test');
+  await user.type(password, 'sample');
+  await user.click(screen.getByRole('button', { name: 'Sign in' }));
+  expect(await screen.findByRole('alert')).toHaveTextContent(message);
+  expect(email).toHaveValue('reader@example.test');
+  expect(password).toHaveValue('sample');
+  expect(router.history.location.href).toBe(path);
+  expect(JSON.stringify(sessionStorage)).not.toContain('sample');
 });

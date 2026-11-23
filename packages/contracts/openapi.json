@@ -1,6 +1,27 @@
 {
   "openapi": "3.0.0",
   "paths": {
+    "/api/v1/meta": {
+      "get": {
+        "operationId": "MetaController_get",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MetaDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Meta"
+        ]
+      }
+    },
     "/api/v1/auth/session": {
       "get": {
         "operationId": "AuthController_session",
@@ -1726,6 +1747,21 @@
   "servers": [],
   "components": {
     "schemas": {
+      "MetaDto": {
+        "type": "object",
+        "properties": {
+          "wikiName": {
+            "type": "string"
+          },
+          "wikiDescription": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "wikiName",
+          "wikiDescription"
+        ]
+      },
       "ErrorCode": {
         "type": "string",
         "enum": [

@@ -7,7 +7,7 @@ const example = parseEnv(readFileSync(new URL('../../../.env.example', import.me
 
 it('reports all missing API keys in one boot error', () => {
   const required = Object.keys(parseConfig(example)).filter(
-    (key) => !['API_HOST', 'INTERNAL_HOST'].includes(key),
+    (key) => !['API_HOST', 'INTERNAL_HOST', 'WIKI_NAME', 'WIKI_DESCRIPTION'].includes(key),
   );
   for (const key of required) expect(() => parseConfig({})).toThrow(key);
 });
@@ -16,6 +16,15 @@ it('defaults the internal listener to loopback and accepts a private-network ove
   expect(parseConfig({ ...example, API_HOST: undefined }).API_HOST).toBe('127.0.0.1');
   expect(parseConfig({ ...example, INTERNAL_HOST: undefined }).INTERNAL_HOST).toBe('127.0.0.1');
   expect(parseConfig({ ...example, INTERNAL_HOST: '0.0.0.0' }).INTERNAL_HOST).toBe('0.0.0.0');
+});
+
+it('defaults public wiki metadata when neither key is set', () => {
+  expect(
+    parseConfig({ ...example, WIKI_NAME: undefined, WIKI_DESCRIPTION: undefined }),
+  ).toMatchObject({
+    WIKI_NAME: 'Wiki',
+    WIKI_DESCRIPTION: '',
+  });
 });
 
 it('validates URLs, port ranges, booleans, and credentials without echoing secrets', () => {

@@ -45,6 +45,8 @@ describe('built API', () => {
         API_PORT: '0',
         INTERNAL_PORT: '0',
         SERVICE_TOKEN: token,
+        WIKI_NAME: 'Test wiki',
+        WIKI_DESCRIPTION: 'Wiki for integration tests',
       },
       stdio: ['ignore', 'pipe', 'inherit'],
     });
@@ -83,6 +85,13 @@ describe('built API', () => {
       version,
     });
 
+    const meta = await fetch(`${urls.publicUrl}/api/v1/meta`);
+    expect(meta.status).toBe(200);
+    expect(await meta.json()).toEqual({
+      wikiName: 'Test wiki',
+      wikiDescription: 'Wiki for integration tests',
+    });
+
     for (const auth of ['', `Basic ${token}`, 'Bearer incorrect']) {
       const response = await fetch(`${urls.internalUrl}/internal/v1/test`, {
         headers: { Authorization: auth },
@@ -99,7 +108,12 @@ describe('built API', () => {
     expect(authorized.status).toBe(200);
     expect(await authorized.json()).toEqual({ ok: true });
     // No job routes yet, and the public health controller must not be mounted here.
-    for (const path of ['/internal/v1/jobs', '/api/v1/health', '/internal/v1/health']) {
+    for (const path of [
+      '/internal/v1/jobs',
+      '/api/v1/health',
+      '/internal/v1/health',
+      '/internal/v1/meta',
+    ]) {
       expect(
         (await fetch(urls.internalUrl + path, { headers: { Authorization: `Bearer ${token}` } }))
           .status,

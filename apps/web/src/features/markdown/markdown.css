@@ -1,0 +1,70 @@
+.wiki-markdown {
+  overflow-wrap: anywhere;
+  color: var(--color-wiki-body);
+  font: var(--text-17-5) / var(--leading-prose) var(--font-content);
+}
+
+.wiki-markdown > section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-10px);
+  padding-block: var(--spacing-10px);
+}
+
+.wiki-markdown :is(h1, h2, h3, h4, h5, h6) {
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
+.wiki-markdown h1 {
+  font-size: var(--text-36);
+  font-weight: 700;
+  line-height: var(--leading-brand);
+}
+
+.wiki-markdown h2 {
+  font-size: var(--text-23);
+  line-height: var(--leading-base);
+}
+
+.wiki-markdown :is(ol, ul) {
+  padding-inline-start: var(--spacing-20px);
+}
+
+.wiki-markdown ul {
+  list-style: disc;
+}
+.wiki-markdown ol {
+  list-style: decimal;
+}
+.wiki-markdown blockquote {
+  padding-inline-start: var(--spacing-20px);
+}
+.wiki-markdown :is(pre, table) {
+  overflow-x: auto;
+}
+.wiki-markdown table {
+  display: block;
+}
+.wiki-markdown :is(th, td) {
+  border-bottom: 1px solid var(--color-row);
+  padding: var(--spacing-5px) var(--spacing-10px);
+}
+
+.wiki-markdown sup {
+  font: var(--text-11) / var(--leading-base) var(--font-ui);
+}
+.wiki-markdown > .footnotes {
+  gap: var(--spacing-8px);
+  border-top: 1px solid var(--color-divider);
+  padding-block: var(--spacing-18px) 0;
+  font: var(--text-13) / var(--leading-base) var(--font-ui);
+  color: var(--color-primary);
+}
+.wiki-markdown > .footnotes h2 {
+  font-size: var(--text-15);
+  font-weight: 700;
+}
+.wiki-markdown > .footnotes li + li {
+  margin-top: var(--spacing-6px);
+}
