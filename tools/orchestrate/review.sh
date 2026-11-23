@@ -28,6 +28,9 @@ R=.orchestrate/reviews/$ID-$ATT-$MODEL-input.md
   echo '{"pass": true|false, "issues": [{"file": "...", "line": 0, "severity": "blocker|major|minor", "detail": "..."}]}'
   echo "pass=false only for blocker/major issues. Lockfiles (pnpm-lock.yaml, uv.lock) are intentionally omitted from the diff; do not report them missing."
   echo; echo "## Task spec"; tools/orchestrate/brief.sh "$ID" review >/dev/null; sed '1,/^---$/d' .orchestrate/briefs/$ID-review.md
+  # D-28: on a retry, give the reviewer the previous verdict so it checks fixes instead of hunting new nits
+  PREV=$(ls -t .orchestrate/reviews/$ID-*-*.txt 2>/dev/null | grep -v -- "-$ATT-" | head -1)
+  if [ -n "$PREV" ]; then echo; echo "## Previous review (this is a retry: verify these are fixed, check regressions only)"; grep -o '{"pass".*' "$PREV" | tail -1; fi
   echo; echo "## Diff (staged baseline -> working tree)"; echo '```diff'; git diff -- ${PATHS:-.} ':(exclude)pnpm-lock.yaml' ':(exclude)**/uv.lock' | head -c 400000; echo '```'
 } > "$R"
 OUT=.orchestrate/reviews/$ID-$ATT-$MODEL.txt
