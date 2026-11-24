@@ -42,6 +42,7 @@ Live tracker for [implementation-plan.md](implementation-plan.md). Updated by th
 | P10-02 security pass | OPUS (direct) | — | **done** | 0 | docs/security.md (every Phase 8 area → rule, code, test). Fixed: API security headers + no `X-Powered-By`, request-id validation, production refuses example/short secrets, web CSP via `vite preview` (e2e 7/7 under it). New tests: headers, request id, secrets, token callers cannot attest/report, report 429 + Retry-After, retention purge. API 223. D-251. Follow-ups: rate limits beyond login/reports only if abuse is observed |
 | P10-03 accessibility pass | OPUS (direct) | — | **done** | 0 | `tools/a11y/audit.mjs` (`pnpm a11y`): 58 axe scans + 4 keyboard checks, 0 violations after fixes (gutter and `trust.none` contrast, skip link, Drawer focus restore on unmount). `test/a11y.test.tsx` (token contrast pairs, label shapes/words). Web 411. D-252 |
 | P10-04 docs | OPUS (direct) | — | **done** | 0 | docs/api.md (endpoints, auth, conventions, groups → system-logic sections; every path checked against openapi.json), docs/operations.md (run, health, production checklist, backup/restore), agent skill › Credibility labels (agents never attest/report; source checks with `review` scope), README status/docs/commands. `skill.test.ts` passes |
+| P10-G | OPUS | — | **done** | 0 | Phase 10 gate PASS (report below). Plan.md Phase 8 exit met: restore from backup works on a clean target; the pilot can start |
 | H-1 | orchestrator (delegated) | — | done | — | decided D-14..D-21, see plan §6.1 |
 
 **Orchestration change (user, 2026-11-23):** from P3-D on, the Pi workflow (implementation-plan §5) is skipped; tasks run as Claude subagents in worktrees, the orchestrator reviews and commits (D-27 kept). Briefs: `.orchestrate/claude-common.md`.
@@ -135,3 +136,11 @@ Component crops vs design frames: 340 comparisons at 390/768/1024/1440, **304 pi
 axe with color-contrast on the full gallery: 0 violations at all four widths.
 terra, gallery tiles per width (states not in frames, wrapping, nothing invented): PASS at 390, 768, 1024, 1440. Minor: top-bar placeholder truncated at 768/1024 — identical truncation in the C-TopBar frame (as drawn).
 Orchestrator fixes this phase: D-46 (WorkNav idle weight renders 500), notification dot box-content. Decisions D-32, D-35, D-37, D-39, D-42, D-43, D-46.
+
+## Phase 10 report (P10-G, 2026-11-24)
+
+On main after P10-04 (6e4de0e): `pnpm build`, `pnpm check` (domain 333, contracts 2, web 411, API 223, tooling 28), worker `uv run pytest` (142), `pnpm contracts:check`, `pnpm e2e` (7/7, app served under the new CSP), `pnpm a11y` (58 axe WCAG 2.1 AA scans at 1440/390 + 4 keyboard checks, 0 violations), `make rehearse-backup` (PASS: backup of a live API's database and wiki folder, restore onto an empty database and folder, second restore refused, API on the restored copy serves the same page, labels, follows and audit trail) — all PASS.
+Exit criterion (plan.md Phase 8): "restore from backup works on a clean host; the pilot can start" — met by the rehearsal (two fresh databases on the dev server; a different physical host was not used).
+Decisions this phase: D-250 (backup format and verified restore), D-251 (security headers, request id, production secrets, web CSP), D-252 (contrast fixes, skip link, drawer focus).
+Design deviations: `trust.none` darkened `#6B7280` → `#636A77` and line-number gutters use `text.muted` (accessibility over frame colours, D-252); component/frame pixel comparisons for not-reviewed icons and gutters will differ by that colour.
+Follow-ups: rehearse once on a separate host before go-live; production web server must send `webSecurityHeaders` + HSTS (docs/operations.md); rate limits beyond login/reports only if abuse is observed; F-03 rail facts and *Sources* list need an endpoint (D-240).
