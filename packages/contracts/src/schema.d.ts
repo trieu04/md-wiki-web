@@ -420,6 +420,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/credibility/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["CredibilityQueueController_exportAll"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/credibility/invalidations": {
         parameters: {
             query?: never;
@@ -430,6 +446,22 @@ export interface paths {
         get?: never;
         put?: never;
         post: operations["CredibilityQueueController_invalidation"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/credibility/jobs/{kind}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["CredibilityQueueController_runJob"];
         delete?: never;
         options?: never;
         head?: never;
@@ -476,6 +508,22 @@ export interface paths {
             cookie?: never;
         };
         get: operations["CredibilityQueueController_detail"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/credibility/scores": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["CredibilityQueueController_scores"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1476,6 +1524,54 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/internal/v1/credibility/candidates": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["InternalCredibilityController_candidate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/internal/v1/credibility/invalidations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["InternalCredibilityController_invalidation"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/internal/v1/credibility/scores": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["InternalCredibilityController_scores"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/internal/v1/jobs/{id}/input": {
         parameters: {
             query?: never;
@@ -1947,6 +2043,17 @@ export interface components {
         CredibilityGatesDto: {
             items: components["schemas"]["CredibilityGateDto"][];
         };
+        CredibilityJobDto: {
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: uuid */
+            jobId: string;
+            kind: components["schemas"]["CredibilityJobKind"];
+            status: components["schemas"]["JobStatus"];
+            trigger: string;
+        };
+        /** @enum {string} */
+        CredibilityJobKind: "retraction_check" | "copy_candidates" | "relation_candidates" | "credibility_score";
         CredibilityPageDto: {
             activeReaders30d: number;
             oldestUnchecked: components["schemas"]["OldestUncheckedDto"] | null;
@@ -2443,7 +2550,7 @@ export interface components {
             message: string;
         };
         /** @enum {string} */
-        JobKind: "ping" | "quality_check" | "agent_review";
+        JobKind: "ping" | "quality_check" | "agent_review" | "retraction_check" | "copy_candidates" | "relation_candidates" | "credibility_score";
         JobKindSummaryDto: {
             failed24h: number;
             kind: components["schemas"]["JobKind"];
@@ -2490,7 +2597,7 @@ export interface components {
             title: string | null;
         };
         /** @enum {string} */
-        JobTrigger: "dev" | "submit" | "rerun" | "self_check" | "after_check" | "returned" | "resumed";
+        JobTrigger: "dev" | "submit" | "rerun" | "self_check" | "after_check" | "returned" | "resumed" | "manual" | "weekly" | "daily" | "internal";
         LabelDto: {
             /** @enum {string} */
             label: "checked" | "reviewed" | "not_reviewed" | "recheck" | "error";
@@ -3211,6 +3318,26 @@ export interface components {
         SectionRefDto: {
             anchor: string;
             title: string;
+        };
+        SectionScoreDto: {
+            anchor: string;
+            /** Format: date-time */
+            computedAt: string;
+            flagged: boolean;
+            lower10: number;
+            modelVersion: string;
+            p: number;
+            paramsSha256: string;
+            path: string;
+            r: number;
+            reach: number;
+            s: number;
+            sectionHash: string;
+            u: number;
+        };
+        SectionScoresDto: {
+            items: components["schemas"]["SectionScoreDto"][];
+            nextCursor: string | null;
         };
         SectionWarningDto: {
             fixProposalSlug: string | null;
@@ -5284,6 +5411,45 @@ export interface operations {
             };
         };
     };
+    CredibilityQueueController_exportAll: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description UNAUTHENTICATED */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description FORBIDDEN | ACCOUNT_DISABLED | CSRF_INVALID */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+        };
+    };
     CredibilityQueueController_invalidation: {
         parameters: {
             query?: never;
@@ -5325,6 +5491,63 @@ export interface operations {
             };
             /** @description FORBIDDEN | ACCOUNT_DISABLED | CSRF_INVALID */
             403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+        };
+    };
+    CredibilityQueueController_runJob: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                kind: "retraction_check" | "copy_candidates" | "relation_candidates" | "credibility_score";
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CredibilityJobDto"];
+                };
+            };
+            /** @description VALIDATION_FAILED */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description UNAUTHENTICATED */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description FORBIDDEN | ACCOUNT_DISABLED | CSRF_INVALID */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description NOT_FOUND */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -5482,6 +5705,56 @@ export interface operations {
             };
             /** @description NOT_FOUND */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+        };
+    };
+    CredibilityQueueController_scores: {
+        parameters: {
+            query?: {
+                cursor?: string;
+                limit?: number;
+                path?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SectionScoresDto"];
+                };
+            };
+            /** @description VALIDATION_FAILED */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description UNAUTHENTICATED */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description FORBIDDEN | ACCOUNT_DISABLED | CSRF_INVALID */
+            403: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -7345,7 +7618,7 @@ export interface operations {
         parameters: {
             query?: {
                 cursor?: string;
-                kind?: "ping" | "quality_check" | "agent_review";
+                kind?: "ping" | "quality_check" | "agent_review" | "retraction_check" | "copy_candidates" | "relation_candidates" | "credibility_score";
                 limit?: number;
                 status?: "queued" | "running" | "succeeded" | "failed";
             };
@@ -9671,6 +9944,111 @@ export interface operations {
             };
             /** @description FORBIDDEN | ACCOUNT_DISABLED */
             403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+        };
+    };
+    InternalCredibilityController_candidate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description VALIDATION_FAILED */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description UNAUTHENTICATED */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+        };
+    };
+    InternalCredibilityController_invalidation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description VALIDATION_FAILED */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description UNAUTHENTICATED */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+        };
+    };
+    InternalCredibilityController_scores: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description VALIDATION_FAILED */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description UNAUTHENTICATED */
+            401: {
                 headers: {
                     [name: string]: unknown;
                 };

@@ -1,0 +1,648 @@
+{
+  "modelVersion": "score-v1",
+  "cases": [
+    {
+      "name": "empty node",
+      "params": {
+        "baseRate": 0.8,
+        "weight": 2,
+        "agentWeight": 0,
+        "attestationWeight": 0,
+        "delta": 0.05,
+        "k": 1
+      },
+      "graph": {
+        "derivations": [],
+        "corroborations": [],
+        "contradictions": [],
+        "links": [],
+        "retractedRefs": [],
+        "wrongRoots": [],
+        "nodes": [
+          {
+            "key": "a#x",
+            "currentHash": "h1",
+            "reviews": [],
+            "sourceChecks": [],
+            "ownerConfirmations": [],
+            "errors": [],
+            "attestations": []
+          }
+        ]
+      },
+      "expected": [
+        {
+          "key": "a#x",
+          "p": 0.8,
+          "lower10": 0.504038,
+          "u": 1,
+          "r": 0,
+          "s": 0,
+          "flagged": false,
+          "reach": 0
+        }
+      ]
+    },
+    {
+      "name": "reviewed, checked twice against one source, owner confirmed",
+      "params": {
+        "baseRate": 0.8,
+        "weight": 2,
+        "agentWeight": 0,
+        "attestationWeight": 0,
+        "delta": 0.05,
+        "k": 1
+      },
+      "graph": {
+        "derivations": [],
+        "corroborations": [],
+        "contradictions": [],
+        "links": [],
+        "retractedRefs": [],
+        "wrongRoots": [],
+        "nodes": [
+          {
+            "key": "a#x",
+            "currentHash": "h1",
+            "reviews": [
+              {
+                "sectionHash": "h1"
+              }
+            ],
+            "sourceChecks": [
+              {
+                "sectionHash": "h1",
+                "checkerKind": "person",
+                "result": "supported",
+                "sourceRef": "doi:10.1/a"
+              },
+              {
+                "sectionHash": "h1",
+                "checkerKind": "person",
+                "result": "supported",
+                "sourceRef": "doi:10.1/a"
+              }
+            ],
+            "ownerConfirmations": [
+              {
+                "sectionHash": "h1"
+              }
+            ],
+            "errors": [],
+            "attestations": []
+          }
+        ]
+      },
+      "expected": [
+        {
+          "key": "a#x",
+          "p": 0.95,
+          "lower10": 0.856897,
+          "u": 0.25,
+          "r": 6,
+          "s": 0,
+          "flagged": false,
+          "reach": 0
+        }
+      ]
+    },
+    {
+      "name": "evidence on an old hash counts nothing",
+      "params": {
+        "baseRate": 0.8,
+        "weight": 2,
+        "agentWeight": 0,
+        "attestationWeight": 0,
+        "delta": 0.05,
+        "k": 1
+      },
+      "graph": {
+        "derivations": [],
+        "corroborations": [],
+        "contradictions": [],
+        "links": [],
+        "retractedRefs": [],
+        "wrongRoots": [],
+        "nodes": [
+          {
+            "key": "a#x",
+            "currentHash": "h1",
+            "reviews": [
+              {
+                "sectionHash": "h0"
+              }
+            ],
+            "sourceChecks": [
+              {
+                "sectionHash": "h0",
+                "checkerKind": "person",
+                "result": "supported",
+                "sourceRef": "doi:10.1/a"
+              }
+            ],
+            "ownerConfirmations": [],
+            "errors": [
+              {
+                "sectionHash": "h0"
+              }
+            ],
+            "attestations": []
+          }
+        ]
+      },
+      "expected": [
+        {
+          "key": "a#x",
+          "p": 0.8,
+          "lower10": 0.504038,
+          "u": 1,
+          "r": 0,
+          "s": 0,
+          "flagged": false,
+          "reach": 0
+        }
+      ]
+    },
+    {
+      "name": "not supported and confirmed error; agent weight 0.5",
+      "params": {
+        "baseRate": 0.8,
+        "weight": 2,
+        "agentWeight": 0.5,
+        "attestationWeight": 0,
+        "delta": 0.05,
+        "k": 1
+      },
+      "graph": {
+        "derivations": [],
+        "corroborations": [],
+        "contradictions": [],
+        "links": [],
+        "retractedRefs": [],
+        "wrongRoots": [],
+        "nodes": [
+          {
+            "key": "a#x",
+            "currentHash": "h1",
+            "reviews": [],
+            "sourceChecks": [
+              {
+                "sectionHash": "h1",
+                "checkerKind": "person",
+                "result": "not_supported",
+                "sourceRef": "doi:10.1/a"
+              },
+              {
+                "sectionHash": "h1",
+                "checkerKind": "agent",
+                "result": "supported",
+                "sourceRef": "doi:10.1/b"
+              }
+            ],
+            "ownerConfirmations": [],
+            "errors": [
+              {
+                "sectionHash": "h1"
+              }
+            ],
+            "attestations": []
+          }
+        ]
+      },
+      "expected": [
+        {
+          "key": "a#x",
+          "p": 0.288889,
+          "lower10": 0.105205,
+          "u": 0.222222,
+          "r": 1,
+          "s": 6,
+          "flagged": false,
+          "reach": 0
+        }
+      ]
+    },
+    {
+      "name": "attestations from two teams with weight on",
+      "params": {
+        "baseRate": 0.8,
+        "weight": 2,
+        "agentWeight": 0,
+        "attestationWeight": 1,
+        "delta": 0.05,
+        "k": 1
+      },
+      "graph": {
+        "derivations": [],
+        "corroborations": [],
+        "contradictions": [],
+        "links": [],
+        "retractedRefs": [],
+        "wrongRoots": [],
+        "nodes": [
+          {
+            "key": "a#x",
+            "currentHash": "h1",
+            "reviews": [],
+            "sourceChecks": [],
+            "ownerConfirmations": [],
+            "errors": [],
+            "attestations": [
+              {
+                "sectionHash": "h1",
+                "kind": "checked",
+                "team": "t1",
+                "weight": 1
+              },
+              {
+                "sectionHash": "h1",
+                "kind": "used",
+                "team": "t2",
+                "weight": 1
+              },
+              {
+                "sectionHash": "h1",
+                "kind": "useful",
+                "team": "t3",
+                "weight": 1
+              }
+            ]
+          }
+        ]
+      },
+      "expected": [
+        {
+          "key": "a#x",
+          "p": 0.859824,
+          "lower10": 0.633178,
+          "u": 0.700881,
+          "r": 0.853553,
+          "s": 0,
+          "flagged": false,
+          "reach": 0
+        }
+      ]
+    },
+    {
+      "name": "derivation chain with a retracted root and links",
+      "params": {
+        "baseRate": 0.8,
+        "weight": 2,
+        "agentWeight": 0,
+        "attestationWeight": 0,
+        "delta": 0.05,
+        "k": 1
+      },
+      "graph": {
+        "derivations": [
+          {
+            "from": "a#x",
+            "to": "b#y"
+          },
+          {
+            "from": "b#y",
+            "to": "c#z"
+          }
+        ],
+        "corroborations": [],
+        "contradictions": [],
+        "links": [
+          {
+            "from": "c#z",
+            "to": "a#x"
+          },
+          {
+            "from": "b#y",
+            "to": "a#x"
+          }
+        ],
+        "retractedRefs": [
+          "doi:10.1/r"
+        ],
+        "wrongRoots": [],
+        "nodes": [
+          {
+            "key": "a#x",
+            "currentHash": "h1",
+            "reviews": [
+              {
+                "sectionHash": "h1"
+              }
+            ],
+            "sourceChecks": [
+              {
+                "sectionHash": "h1",
+                "checkerKind": "person",
+                "result": "supported",
+                "sourceRef": "doi:10.1/r"
+              },
+              {
+                "sectionHash": "h1",
+                "checkerKind": "person",
+                "result": "supported",
+                "sourceRef": "doi:10.1/b"
+              }
+            ],
+            "ownerConfirmations": [],
+            "errors": [],
+            "attestations": []
+          },
+          {
+            "key": "b#y",
+            "currentHash": "h1",
+            "reviews": [
+              {
+                "sectionHash": "h1"
+              }
+            ],
+            "sourceChecks": [],
+            "ownerConfirmations": [],
+            "errors": [],
+            "attestations": []
+          },
+          {
+            "key": "c#z",
+            "currentHash": "h1",
+            "reviews": [],
+            "sourceChecks": [],
+            "ownerConfirmations": [],
+            "errors": [],
+            "attestations": []
+          }
+        ]
+      },
+      "expected": [
+        {
+          "key": "a#x",
+          "p": 0.92,
+          "lower10": 0.778062,
+          "u": 0.4,
+          "r": 3,
+          "s": 0,
+          "flagged": true,
+          "reach": 2
+        },
+        {
+          "key": "b#y",
+          "p": 0.926797,
+          "lower10": 0.795507,
+          "u": 0.366013,
+          "r": 3.464286,
+          "s": 0,
+          "flagged": true,
+          "reach": 0
+        },
+        {
+          "key": "c#z",
+          "p": 0.857778,
+          "lower10": 0.628532,
+          "u": 0.711111,
+          "r": 0.8125,
+          "s": 0,
+          "flagged": true,
+          "reach": 0
+        }
+      ]
+    },
+    {
+      "name": "corroboration with disjoint roots; shared roots ignored",
+      "params": {
+        "baseRate": 0.8,
+        "weight": 2,
+        "agentWeight": 0,
+        "attestationWeight": 0,
+        "delta": 0.05,
+        "k": 1
+      },
+      "graph": {
+        "derivations": [],
+        "corroborations": [
+          {
+            "a": "a#x",
+            "b": "b#y"
+          },
+          {
+            "a": "a#x",
+            "b": "c#z"
+          }
+        ],
+        "contradictions": [],
+        "links": [],
+        "retractedRefs": [],
+        "wrongRoots": [],
+        "nodes": [
+          {
+            "key": "a#x",
+            "currentHash": "h1",
+            "reviews": [],
+            "sourceChecks": [
+              {
+                "sectionHash": "h1",
+                "checkerKind": "person",
+                "result": "supported",
+                "sourceRef": "doi:10.1/a"
+              }
+            ],
+            "ownerConfirmations": [],
+            "errors": [],
+            "attestations": []
+          },
+          {
+            "key": "b#y",
+            "currentHash": "h1",
+            "reviews": [],
+            "sourceChecks": [
+              {
+                "sectionHash": "h1",
+                "checkerKind": "person",
+                "result": "supported",
+                "sourceRef": "doi:10.1/b"
+              }
+            ],
+            "ownerConfirmations": [],
+            "errors": [],
+            "attestations": []
+          },
+          {
+            "key": "c#z",
+            "currentHash": "h1",
+            "reviews": [],
+            "sourceChecks": [
+              {
+                "sectionHash": "h1",
+                "checkerKind": "person",
+                "result": "supported",
+                "sourceRef": "doi:10.1/a"
+              }
+            ],
+            "ownerConfirmations": [],
+            "errors": [],
+            "attestations": []
+          }
+        ]
+      },
+      "expected": [
+        {
+          "key": "a#x",
+          "p": 0.931034,
+          "lower10": 0.806503,
+          "u": 0.344828,
+          "r": 3.8,
+          "s": 0,
+          "flagged": false,
+          "reach": 0
+        },
+        {
+          "key": "b#y",
+          "p": 0.931034,
+          "lower10": 0.806503,
+          "u": 0.344828,
+          "r": 3.8,
+          "s": 0,
+          "flagged": false,
+          "reach": 0
+        },
+        {
+          "key": "c#z",
+          "p": 0.9,
+          "lower10": 0.728062,
+          "u": 0.5,
+          "r": 2,
+          "s": 0,
+          "flagged": false,
+          "reach": 0
+        }
+      ]
+    },
+    {
+      "name": "strong and balanced contradictions",
+      "params": {
+        "baseRate": 0.8,
+        "weight": 2,
+        "agentWeight": 0,
+        "attestationWeight": 0,
+        "delta": 0.05,
+        "k": 1
+      },
+      "graph": {
+        "derivations": [],
+        "corroborations": [],
+        "contradictions": [
+          {
+            "a": "a#x",
+            "b": "b#y"
+          },
+          {
+            "a": "c#z",
+            "b": "d#w"
+          }
+        ],
+        "links": [],
+        "retractedRefs": [],
+        "wrongRoots": [
+          "d#w"
+        ],
+        "nodes": [
+          {
+            "key": "a#x",
+            "currentHash": "h1",
+            "reviews": [],
+            "sourceChecks": [
+              {
+                "sectionHash": "h1",
+                "checkerKind": "person",
+                "result": "supported",
+                "sourceRef": "doi:10.1/a"
+              },
+              {
+                "sectionHash": "h1",
+                "checkerKind": "person",
+                "result": "supported",
+                "sourceRef": "doi:10.1/b"
+              }
+            ],
+            "ownerConfirmations": [],
+            "errors": [],
+            "attestations": []
+          },
+          {
+            "key": "b#y",
+            "currentHash": "h1",
+            "reviews": [],
+            "sourceChecks": [
+              {
+                "sectionHash": "h1",
+                "checkerKind": "person",
+                "result": "supported",
+                "sourceRef": "doi:10.1/c"
+              }
+            ],
+            "ownerConfirmations": [],
+            "errors": [],
+            "attestations": []
+          },
+          {
+            "key": "c#z",
+            "currentHash": "h1",
+            "reviews": [],
+            "sourceChecks": [],
+            "ownerConfirmations": [],
+            "errors": [],
+            "attestations": []
+          },
+          {
+            "key": "d#w",
+            "currentHash": "h1",
+            "reviews": [],
+            "sourceChecks": [],
+            "ownerConfirmations": [],
+            "errors": [],
+            "attestations": []
+          }
+        ]
+      },
+      "expected": [
+        {
+          "key": "a#x",
+          "p": 0.928571,
+          "lower10": 0.8001,
+          "u": 0.357143,
+          "r": 3.6,
+          "s": 0,
+          "flagged": false,
+          "reach": 0
+        },
+        {
+          "key": "b#y",
+          "p": 0.72973,
+          "lower10": 0.496079,
+          "u": 0.405405,
+          "r": 2,
+          "s": 0.933333,
+          "flagged": false,
+          "reach": 0
+        },
+        {
+          "key": "c#z",
+          "p": 0.8,
+          "lower10": 0.504038,
+          "u": 1,
+          "r": 0,
+          "s": 0,
+          "flagged": false,
+          "reach": 0
+        },
+        {
+          "key": "d#w",
+          "p": 0.8,
+          "lower10": 0.504038,
+          "u": 1,
+          "r": 0,
+          "s": 0,
+          "flagged": true,
+          "reach": 0
+        }
+      ]
+    }
+  ]
+}

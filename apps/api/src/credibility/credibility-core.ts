@@ -142,6 +142,24 @@ export class CredibilityCore {
    */
   async downstream(roots: readonly { path: string; anchor: string }[], db: Db = this.db) {
     if (!roots.length) return [];
+    const edges = await this.derivationEdges(roots, db);
+    const found = descendants(roots.map(pointOf), edges);
+    const points = found.map((f) => {
+      const [path = '', anchor = ''] = f.key.split('\0');
+      return { path, anchor, depth: f.depth };
+    });
+    const keys = await this.currentKeys(points, db);
+    return keys.map((k) => ({
+      ...k,
+      depth: points.find((p) => p.path === k.path && p.anchor === k.anchor)?.depth ?? 1,
+    }));
+  }
+
+  /**
+   * Derivation edges `from → to` (`path\0anchor` points): source refs of published proposals and
+   * confirmed `copy` edges. `roots` adds anchors of sections that no longer exist.
+   */
+  async derivationEdges(roots: readonly { path: string; anchor: string }[], db: Db = this.db) {
     const refs = await db.$queryRaw<
       { srcPath: string; dstPath: string; section: string | null; anchor: string }[]
     >`
@@ -171,16 +189,7 @@ export class CredibilityCore {
         from: pointOf({ path: c.srcPath, anchor: c.srcAnchor }),
         to: pointOf({ path: c.dstPath, anchor: c.dstAnchor }),
       });
-    const found = descendants(roots.map(pointOf), edges);
-    const points = found.map((f) => {
-      const [path = '', anchor = ''] = f.key.split('\0');
-      return { path, anchor, depth: f.depth };
-    });
-    const keys = await this.currentKeys(points, db);
-    return keys.map((k) => ({
-      ...k,
-      depth: points.find((p) => p.path === k.path && p.anchor === k.anchor)?.depth ?? 1,
-    }));
+    return edges;
   }
 
   /** Flag sections (and notify followers of their pages). Returns the flagged keys. */

@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "RetractionCheckInput",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "refs",
+    "trigger"
+  ],
+  "properties": {
+    "refs": {
+      "type": "array",
+      "maxItems": 2000,
+      "items": {
+        "type": "string",
+        "pattern": "^doi:10\\.\\d{4,9}/\\S+$",
+        "maxLength": 300
+      }
+    },
+    "trigger": {
+      "title": "CredibilityJobTrigger",
+      "type": "string",
+      "enum": [
+        "manual",
+        "weekly",
+        "daily",
+        "submit",
+        "internal"
+      ]
+    }
+  }
+}

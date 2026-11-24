@@ -550,3 +550,41 @@ export class MaintenanceDto {
   @ApiProperty({ type: 'integer' }) pairs!: number;
   @ApiProperty({ type: 'integer' }) digests!: number;
 }
+
+// ---- Phase 9b jobs (system-logic §7.7.12, D-230..D-233) ----------------------------------
+
+const CREDIBILITY_JOBS = ['retraction_check', 'copy_candidates', 'relation_candidates', 'credibility_score'] as const;
+export class CredibilityJobParams {
+  @IsIn(CREDIBILITY_JOBS) kind!: (typeof CREDIBILITY_JOBS)[number];
+}
+export class CredibilityJobDto {
+  @ApiProperty({ type: String, format: 'uuid' }) jobId!: string;
+  @ApiProperty({ enum: CREDIBILITY_JOBS, enumName: 'CredibilityJobKind' }) kind!: (typeof CREDIBILITY_JOBS)[number];
+  @ApiProperty({ enum: ['queued', 'running', 'succeeded', 'failed'], enumName: 'JobStatus' })
+  status!: 'queued' | 'running' | 'succeeded' | 'failed';
+  @ApiProperty({ type: String }) trigger!: string;
+  @ApiProperty({ type: String, format: 'date-time' }) createdAt!: string;
+}
+export class ScoresInput extends ListInput {
+  @IsOptional() @IsString() @MaxLength(200) path?: string;
+}
+/** Shadow score of one section (never shown to readers; owner and research export only). */
+export class SectionScoreDto {
+  @ApiProperty({ type: String }) path!: string;
+  @ApiProperty({ type: String }) anchor!: string;
+  @ApiProperty({ type: String }) sectionHash!: string;
+  @ApiProperty({ type: Number }) p!: number;
+  @ApiProperty({ type: Number }) lower10!: number;
+  @ApiProperty({ type: Number }) u!: number;
+  @ApiProperty({ type: Number }) r!: number;
+  @ApiProperty({ type: Number }) s!: number;
+  @ApiProperty({ type: Boolean }) flagged!: boolean;
+  @ApiProperty({ type: 'integer' }) reach!: number;
+  @ApiProperty({ type: String }) modelVersion!: string;
+  @ApiProperty({ type: String }) paramsSha256!: string;
+  @ApiProperty({ type: String, format: 'date-time' }) computedAt!: string;
+}
+export class SectionScoresDto {
+  @ApiProperty({ type: [SectionScoreDto] }) items!: SectionScoreDto[];
+  @ApiProperty({ type: String, nullable: true }) nextCursor!: string | null;
+}

@@ -10,6 +10,7 @@ import { AuthService } from './auth/auth.service.js';
 import { PublishService } from './review/publish.service.js';
 import { QualityJobs } from './quality/quality-jobs.service.js';
 import { AgentRuns } from './agent/agent-runs.service.js';
+import { CredibilityJobs } from './credibility/credibility-jobs.service.js';
 import { ReviewSettingsService } from './agent/settings.service.js';
 import { WikiIndexer } from './wiki/indexer/wiki-indexer.js';
 
@@ -33,6 +34,8 @@ async function bootstrap(): Promise<void> {
     // Agent reviews: re-send queued jobs, then create any the agent owes (§7.8.6).
     await app.get(AgentRuns).redispatch();
     await app.get(AgentRuns).reconcileAll();
+    // Credibility jobs: re-send queued runs, apply outputs stored but never applied (§7.7.12).
+    await app.get(CredibilityJobs).recover();
     await internal.listen(config.INTERNAL_PORT, config.INTERNAL_HOST);
     await app.listen(config.API_PORT, config.API_HOST);
     logger.info(

@@ -19,6 +19,7 @@ const queued: AiJob = {
   input: { message: 'ping' },
   output: null,
   error: null,
+  appliedAt: null,
   createdAt: new Date(),
   startedAt: null,
   finishedAt: null,

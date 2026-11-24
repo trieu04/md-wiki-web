@@ -6,8 +6,14 @@ import { AppError } from '../common/app-error.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { AgentResults } from '../agent/agent-results.js';
 import { QualityResults } from '../quality/quality-results.js';
+import { isCredibilityJob } from '../credibility/job-bus.js';
+import { CredibilityResults } from './credibility-results.js';
 import {
   readAgentInput,
+  readCopyCandidatesInput,
+  readCredibilityScoreInput,
+  readRelationCandidatesInput,
+  readRetractionCheckInput,
   readAgentOutput,
   readJobError,
   readJobResult,
@@ -26,6 +32,7 @@ export class JobsService {
     @Inject(PrismaService) private readonly prisma: PrismaService,
     @Optional() @Inject(QualityResults) private readonly quality?: QualityResults,
     @Optional() @Inject(AgentResults) private readonly agent?: AgentResults,
+    @Optional() @Inject(CredibilityResults) private readonly credibility?: CredibilityResults,
   ) {}
 
   async createPing(body: unknown) {
@@ -64,12 +71,24 @@ export class JobsService {
     if (row.status !== 'queued' && row.status !== 'running') {
       throw new AppError('PRECONDITION_FAILED');
     }
-    const input =
-      row.kind === 'ping'
-        ? readPingInput(row.input)
-        : row.kind === 'agent_review'
-          ? readAgentInput(row.input)
-          : readQualityInput(row.input);
+    const input = (() => {
+      switch (row.kind) {
+        case 'ping':
+          return readPingInput(row.input);
+        case 'agent_review':
+          return readAgentInput(row.input);
+        case 'retraction_check':
+          return readRetractionCheckInput(row.input);
+        case 'copy_candidates':
+          return readCopyCandidatesInput(row.input);
+        case 'relation_candidates':
+          return readRelationCandidatesInput(row.input);
+        case 'credibility_score':
+          return readCredibilityScoreInput(row.input);
+        default:
+          return readQualityInput(row.input);
+      }
+    })();
     return { jobId: row.id, kind: row.kind, input };
   }
 
@@ -86,6 +105,10 @@ export class JobsService {
     }
     if (row.kind === 'agent_review') {
       await this.agentResult(row, result, body);
+      return;
+    }
+    if (isCredibilityJob(row.kind)) {
+      await this.credibilityResult(row, result, body);
       return;
     }
     if (
@@ -137,6 +160,21 @@ export class JobsService {
     if (!this.agent) throw new Error('AgentResults is not provided');
     if (result.status === 'ok') {
       if (!(await this.agent.store(row, readAgentOutput(result.output))))
+        this.checkReplay(await this.getJob(row.id), body);
+      return;
+    }
+    const updated = await this.prisma.aiJob.updateMany({
+      where: { id: row.id, status: { in: [...active] } },
+      data: { status: 'failed', error: { ...result.error }, finishedAt: new Date() },
+    });
+    if (updated.count === 0) this.checkReplay(await this.getJob(row.id), body);
+  }
+
+  /** §7.7.12: validate the kind's output and store it; the public app applies it (D-230). */
+  private async credibilityResult(row: AiJob, result: JobResult, body: unknown): Promise<void> {
+    if (!this.credibility) throw new Error('CredibilityResults is not provided');
+    if (result.status === 'ok') {
+      if (!(await this.credibility.store(row, result.output)))
         this.checkReplay(await this.getJob(row.id), body);
       return;
     }

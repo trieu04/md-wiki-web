@@ -229,3 +229,40 @@ export function scoreGraph(
     }),
   );
 }
+
+// ---- 7b job output (system-logic §7.7.12, D-231) ---------------------------------------------
+
+export const SCORE_MODEL_VERSION = 'score-v1';
+
+/**
+ * Lower 10% bound of P (D-231): normal approximation of Beta(r + a·W, s + (1−a)·W), clamped to
+ * [0, 1]. Shadow only; never a reader-facing number.
+ */
+export function lower10(
+  score: Pick<Score, 'r' | 's' | 'p'>,
+  params: ScoreParams = DEFAULT_SCORE_PARAMS,
+) {
+  const alpha = score.r + params.baseRate * params.weight;
+  const beta = score.s + (1 - params.baseRate) * params.weight;
+  const n = alpha + beta;
+  const variance = (alpha * beta) / (n * n * (n + 1));
+  return Math.min(1, Math.max(0, score.p - 1.2815515655446004 * Math.sqrt(variance)));
+}
+
+const round6 = (x: number) => Math.round(x * 1e6) / 1e6;
+
+/** The `credibility_score` job output items, sorted by key and rounded to 6 decimals. */
+export function scoreItems(graph: ScoreGraph, params: ScoreParams = DEFAULT_SCORE_PARAMS) {
+  return [...scoreGraph(graph, params)]
+    .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
+    .map(([key, s]) => ({
+      key,
+      p: round6(s.p),
+      lower10: round6(lower10(s, params)),
+      u: round6(s.u),
+      r: round6(s.r),
+      s: round6(s.s),
+      flagged: s.flagged,
+      reach: s.reach,
+    }));
+}

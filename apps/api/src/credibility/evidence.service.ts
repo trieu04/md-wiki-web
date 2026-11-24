@@ -11,6 +11,7 @@ import {
   type SourceTier,
 } from '@md-wiki/domain';
 import { audit } from '../auth/credentials.js';
+import type { UserKind } from '@prisma/client';
 import type { Identity } from '../auth/auth.service.js';
 import { AppError } from '../common/app-error.js';
 import { isUniqueViolation } from '../contributions/pins.js';
@@ -427,12 +428,25 @@ export class EvidenceService {
 
   async invalidation(identity: Identity, input: InvalidationInput): Promise<Wire<InvalidationResultDto>> {
     this.core.require(identity, 'admin.credibility');
+    return this.recordInvalidation(identity.user, input);
+  }
+
+  /** The invalidation write, also used by the 7b jobs (no actor, `jobId` set; D-230). */
+  async recordInvalidation(
+    actor: { id: string; kind: UserKind } | null,
+    input: Pick<InvalidationInput, 'kind' | 'ref' | 'detail'>,
+    jobId: string | null = null,
+  ): Promise<Wire<InvalidationResultDto>> {
     const ref = normalizeSourceRef(input.ref);
     const { id, affected } = await this.db.$transaction(async (tx) => {
       const row = await tx.invalidationEvent.create({
-        data: { kind: input.kind, ref, detail: input.detail, recordedById: identity.user.id },
+        data: { kind: input.kind, ref, detail: input.detail, recordedById: actor?.id ?? null, jobId },
       });
-      await audit(tx, identity.user, 'credibility.invalidation', 'source', row.id, { kind: input.kind, ref });
+      await audit(tx, actor, 'credibility.invalidation', 'source', row.id, {
+        kind: input.kind,
+        ref,
+        ...(jobId && { jobId }),
+      });
       const keys = await this.affected(tx, ref);
       if (input.kind === 'retraction' || input.kind === 'root_wrong') {
         if (input.kind === 'root_wrong')

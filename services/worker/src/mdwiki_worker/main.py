@@ -14,6 +14,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from .agent.review import KIND as AGENT_REVIEW
 from .agent.review import process_agent_review
+from .credibility import copies, relations, retraction, score
 from .ping import QUEUE_NAME, process_ping
 from .providers import AiSettings, ModelConfig, Provider, make_provider
 from .quality.job import KIND as QUALITY_CHECK
@@ -70,6 +71,14 @@ async def dispatch(
         await process_quality_check(api, name, job_id, data, quality_provider)
     elif name == AGENT_REVIEW:
         await process_agent_review(api, public, name, job_id, data, agent_provider)
+    elif name == retraction.KIND:
+        await retraction.process_retraction_check(api, name, job_id, data)
+    elif name == copies.KIND:
+        await copies.process_copy_candidates(api, name, job_id, data)
+    elif name == relations.KIND:
+        await relations.process_relation_candidates(api, name, job_id, data)
+    elif name == score.KIND:
+        await score.process_credibility_score(api, name, job_id, data)
     else:
         await process_ping(api, name, job_id, data)
 

@@ -9,8 +9,12 @@ from pydantic import BaseModel, ConfigDict, Field, RootModel, StrictStr
 
 from . import (
     agent_review_output_schema,
+    copy_candidates_output_schema,
+    credibility_score_output_schema,
     ping_output_schema,
     quality_check_output_schema,
+    relation_candidates_output_schema,
+    retraction_check_output_schema,
 )
 
 
@@ -31,6 +35,10 @@ class JobResultOk(BaseModel):
         ping_output_schema.PingOutput
         | quality_check_output_schema.QualityCheckOutput
         | agent_review_output_schema.AgentReviewOutput
+        | retraction_check_output_schema.RetractionCheckOutput
+        | copy_candidates_output_schema.CopyCandidatesOutput
+        | relation_candidates_output_schema.RelationCandidatesOutput
+        | credibility_score_output_schema.CredibilityScoreOutput
     )
 
 

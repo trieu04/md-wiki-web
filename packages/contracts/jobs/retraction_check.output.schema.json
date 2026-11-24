@@ -1,0 +1,71 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "RetractionCheckOutput",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "checked",
+    "hits"
+  ],
+  "properties": {
+    "checked": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "hits": {
+      "type": "array",
+      "maxItems": 2000,
+      "items": {
+        "title": "RetractionHit",
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "ref",
+          "kind",
+          "detail",
+          "source"
+        ],
+        "properties": {
+          "ref": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 300
+          },
+          "kind": {
+            "title": "RetractionHitKind",
+            "type": "string",
+            "enum": [
+              "retraction",
+              "concern",
+              "source_changed",
+              "version_changed",
+              "contradiction",
+              "root_wrong"
+            ]
+          },
+          "detail": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1000
+          },
+          "source": {
+            "title": "RetractionHitSource",
+            "type": "string",
+            "enum": [
+              "crossref",
+              "retraction_watch",
+              "internal"
+            ]
+          },
+          "noticeDoi": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 300
+          }
+        }
+      }
+    }
+  }
+}

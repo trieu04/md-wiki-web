@@ -21,10 +21,14 @@
       "properties": {
         "status": { "const": "ok" },
         "output": {
-          "oneOf": [
+          "anyOf": [
             { "$ref": "ping.output.schema.json" },
             { "$ref": "quality_check.output.schema.json" },
-            { "$ref": "agent_review.output.schema.json" }
+            { "$ref": "agent_review.output.schema.json" },
+            { "$ref": "retraction_check.output.schema.json" },
+            { "$ref": "copy_candidates.output.schema.json" },
+            { "$ref": "relation_candidates.output.schema.json" },
+            { "$ref": "credibility_score.output.schema.json" }
           ]
         }
       }

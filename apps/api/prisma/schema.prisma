@@ -168,6 +168,10 @@ enum AiJobKind {
   ping
   quality_check
   agent_review
+  retraction_check
+  copy_candidates
+  relation_candidates
+  credibility_score
 }
 
 enum AiJobStatus {
@@ -186,6 +190,10 @@ enum AiJobTrigger {
   after_check
   returned
   resumed
+  manual
+  weekly
+  daily
+  internal
 }
 
 enum FindingSeverity {
@@ -225,6 +233,8 @@ model AiJob {
   dropped       Json?
   findings      Finding[]
   agentReview   AgentReview?
+  /// Credibility jobs (§7.7.12): when the public app applied the output (D-230).
+  appliedAt     DateTime?    @db.Timestamptz(3)
 
   @@index([proposalId, createdAt])
   @@index([draftId, createdAt])
@@ -1037,4 +1047,25 @@ model CredibilityGate {
   runDate    String?
   actorId    String?  @db.Uuid
   updatedAt  DateTime @default(now()) @db.Timestamptz(3)
+}
+
+/// Shadow score cache (system-logic §7.7.12, D-231): Operations and research export only.
+model SectionScore {
+  path         String
+  anchor       String
+  sectionHash  String
+  p            Float
+  lower10      Float
+  u            Float
+  r            Float
+  s            Float
+  flagged      Boolean
+  reach        Int
+  modelVersion String
+  paramsSha256 String
+  jobId        String   @db.Uuid
+  computedAt   DateTime @db.Timestamptz(3)
+
+  @@id([path, anchor, sectionHash])
+  @@index([computedAt])
 }

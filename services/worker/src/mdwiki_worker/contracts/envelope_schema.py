@@ -14,6 +14,10 @@ class JobKind(StrEnum):
     ping = "ping"
     quality_check = "quality_check"
     agent_review = "agent_review"
+    retraction_check = "retraction_check"
+    copy_candidates = "copy_candidates"
+    relation_candidates = "relation_candidates"
+    credibility_score = "credibility_score"
 
 
 class JobEnvelope(BaseModel):

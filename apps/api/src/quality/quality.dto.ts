@@ -16,8 +16,18 @@ const nullableInt = { type: 'integer', nullable: true } as const;
 export const TRIGGERS = ['submit', 'rerun', 'self_check'] as const;
 // Phase 8 adds the agent_review kind and its triggers (system-logic §7.8.6).
 export const AGENT_TRIGGERS = ['after_check', 'returned', 'resumed'] as const;
-export const JOB_TRIGGERS = ['dev', ...TRIGGERS, ...AGENT_TRIGGERS] as const;
-export const JOB_KINDS = ['ping', 'quality_check', 'agent_review'] as const;
+// Phase 9b credibility jobs (system-logic §7.7.12, D-230).
+export const CREDIBILITY_TRIGGERS = ['manual', 'weekly', 'daily', 'internal'] as const;
+export const JOB_TRIGGERS = ['dev', ...TRIGGERS, ...AGENT_TRIGGERS, ...CREDIBILITY_TRIGGERS] as const;
+export const JOB_KINDS = [
+  'ping',
+  'quality_check',
+  'agent_review',
+  'retraction_check',
+  'copy_candidates',
+  'relation_candidates',
+  'credibility_score',
+] as const;
 type RunStatus = (typeof RUN_STATUSES)[number];
 
 const integer = ({ value }: TransformFnParams): unknown =>

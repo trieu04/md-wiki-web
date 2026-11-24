@@ -5,10 +5,20 @@ export type FindingSeverity = "info" | "warning" | "blocking";
 export type FindingOrigin = "model" | "rule";
 export type AgentReviewOutcome = "approved" | "rejected" | "escalated" | "left_pending";
 export type AgentVerdict = "approve" | "reject" | "escalate";
+export type RetractionHitKind =
+  "retraction" | "concern" | "source_changed" | "version_changed" | "contradiction" | "root_wrong";
+export type RetractionHitSource = "crossref" | "retraction_watch" | "internal";
 
 export interface JobResultOk {
   status: "ok";
-  output: PingOutput | QualityCheckOutput | AgentReviewOutput;
+  output:
+    | PingOutput
+    | QualityCheckOutput
+    | AgentReviewOutput
+    | RetractionCheckOutput
+    | CopyCandidatesOutput
+    | RelationCandidatesOutput
+    | CredibilityScoreOutput;
 }
 export interface PingOutput {
   /**
@@ -249,6 +259,84 @@ export interface AgentRefusal {
         string,
         string
       ];
+}
+export interface RetractionCheckOutput {
+  checked: number;
+  /**
+   * @maxItems 2000
+   */
+  hits: RetractionHit[];
+}
+export interface RetractionHit {
+  ref: string;
+  kind: RetractionHitKind;
+  detail: string;
+  source: RetractionHitSource;
+  noticeDoi?: string | null;
+}
+export interface CopyCandidatesOutput {
+  /**
+   * @maxItems 1000
+   */
+  candidates: CopyCandidatesItem[];
+}
+export interface CopyCandidatesItem {
+  kind: "copy";
+  src: SectionPoint;
+  dst: SectionPoint1;
+  score: number;
+  detail: {
+    [k: string]: string | number | boolean;
+  };
+}
+export interface SectionPoint {
+  path: string;
+  anchor: string;
+}
+export interface SectionPoint1 {
+  path: string;
+  anchor: string;
+}
+export interface RelationCandidatesOutput {
+  /**
+   * @maxItems 1000
+   */
+  candidates: RelationCandidatesItem[];
+}
+export interface RelationCandidatesItem {
+  kind: "corroborates" | "contradicts" | "lab_data";
+  src: SectionPoint2;
+  dst: SectionPoint3;
+  score: number;
+  detail: {
+    [k: string]: string | number | boolean;
+  };
+}
+export interface SectionPoint2 {
+  path: string;
+  anchor: string;
+}
+export interface SectionPoint3 {
+  path: string;
+  anchor: string;
+}
+export interface CredibilityScoreOutput {
+  modelVersion: string;
+  paramsSha256: string;
+  /**
+   * @maxItems 20000
+   */
+  scores: SectionScoreItem[];
+}
+export interface SectionScoreItem {
+  key: string;
+  p: number;
+  lower10: number;
+  u: number;
+  r: number;
+  s: number;
+  flagged: boolean;
+  reach: number;
 }
 export interface JobResultFailed {
   status: "failed";

@@ -4,6 +4,8 @@ import { PrismaModule } from '../prisma/prisma.module.js';
 import { AgentResults } from '../agent/agent-results.js';
 import { QualityResults } from '../quality/quality-results.js';
 import { DevPingController } from './dev-ping.controller.js';
+import { CredibilityResults } from './credibility-results.js';
+import { InternalCredibilityController } from './internal-credibility.controller.js';
 import { JobsController } from './jobs.controller.js';
 import { JobsService } from './jobs.service.js';
 import { JobQueue } from './ping-queue.js';
@@ -16,12 +18,12 @@ export class QueueModule {}
 // the public SSE streams through the process bus (§7.6.7).
 @Module({
   imports: [PrismaModule],
-  providers: [JobsService, QualityResults, AgentResults, EventsService],
-  exports: [JobsService],
+  providers: [JobsService, QualityResults, AgentResults, CredibilityResults, EventsService],
+  exports: [JobsService, CredibilityResults],
 })
 class JobsModule {}
 
-@Module({ imports: [JobsModule], controllers: [JobsController] })
+@Module({ imports: [JobsModule], controllers: [JobsController, InternalCredibilityController] })
 export class InternalJobsModule {}
 
 @Module({ imports: [JobsModule, QueueModule], controllers: [DevPingController] })

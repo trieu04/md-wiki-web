@@ -1,0 +1,302 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "CredibilityScoreInput",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "params",
+    "graph",
+    "trigger"
+  ],
+  "properties": {
+    "params": {
+      "title": "ScoreParamsInput",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "baseRate",
+        "weight",
+        "agentWeight",
+        "attestationWeight",
+        "delta",
+        "k"
+      ],
+      "properties": {
+        "baseRate": {
+          "type": "number"
+        },
+        "weight": {
+          "type": "number"
+        },
+        "agentWeight": {
+          "type": "number"
+        },
+        "attestationWeight": {
+          "type": "number"
+        },
+        "delta": {
+          "type": "number"
+        },
+        "k": {
+          "type": "number"
+        }
+      }
+    },
+    "graph": {
+      "title": "ScoreGraphInput",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "nodes",
+        "derivations",
+        "corroborations",
+        "contradictions",
+        "links",
+        "retractedRefs",
+        "wrongRoots"
+      ],
+      "properties": {
+        "nodes": {
+          "type": "array",
+          "maxItems": 20000,
+          "items": {
+            "title": "ScoreNodeInput",
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "key",
+              "currentHash",
+              "reviews",
+              "sourceChecks",
+              "ownerConfirmations",
+              "errors",
+              "attestations"
+            ],
+            "properties": {
+              "key": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 401
+              },
+              "currentHash": {
+                "type": "string"
+              },
+              "reviews": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "sectionHash"
+                  ],
+                  "properties": {
+                    "sectionHash": {
+                      "type": "string"
+                    }
+                  }
+                }
+              },
+              "sourceChecks": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "sectionHash",
+                    "checkerKind",
+                    "result",
+                    "sourceRef"
+                  ],
+                  "properties": {
+                    "sectionHash": {
+                      "type": "string"
+                    },
+                    "checkerKind": {
+                      "type": "string",
+                      "enum": [
+                        "person",
+                        "agent"
+                      ]
+                    },
+                    "result": {
+                      "type": "string",
+                      "enum": [
+                        "supported",
+                        "not_supported",
+                        "unverifiable"
+                      ]
+                    },
+                    "sourceRef": {
+                      "type": "string"
+                    }
+                  }
+                }
+              },
+              "ownerConfirmations": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "sectionHash"
+                  ],
+                  "properties": {
+                    "sectionHash": {
+                      "type": "string"
+                    }
+                  }
+                }
+              },
+              "errors": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "sectionHash"
+                  ],
+                  "properties": {
+                    "sectionHash": {
+                      "type": "string"
+                    }
+                  }
+                }
+              },
+              "attestations": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "sectionHash",
+                    "kind",
+                    "team",
+                    "weight"
+                  ],
+                  "properties": {
+                    "sectionHash": {
+                      "type": "string"
+                    },
+                    "kind": {
+                      "type": "string",
+                      "enum": [
+                        "checked",
+                        "used",
+                        "useful"
+                      ]
+                    },
+                    "team": {
+                      "type": "string"
+                    },
+                    "weight": {
+                      "type": "number"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "derivations": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "from",
+              "to"
+            ],
+            "properties": {
+              "from": {
+                "type": "string"
+              },
+              "to": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "corroborations": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "a",
+              "b"
+            ],
+            "properties": {
+              "a": {
+                "type": "string"
+              },
+              "b": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "contradictions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "a",
+              "b"
+            ],
+            "properties": {
+              "a": {
+                "type": "string"
+              },
+              "b": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "links": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "from",
+              "to"
+            ],
+            "properties": {
+              "from": {
+                "type": "string"
+              },
+              "to": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "retractedRefs": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "wrongRoots": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "trigger": {
+      "title": "CredibilityJobTrigger",
+      "type": "string",
+      "enum": [
+        "manual",
+        "weekly",
+        "daily",
+        "submit",
+        "internal"
+      ]
+    }
+  }
+}

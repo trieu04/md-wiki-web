@@ -1,5 +1,5 @@
 import { Controller, Get, HttpCode, Inject, Param, Post, Put, Req } from '@nestjs/common';
-import { ApiBody, ApiCreatedResponse, ApiOkResponse, ApiParam, ApiQuery } from '@nestjs/swagger';
+import { ApiAcceptedResponse, ApiBody, ApiCreatedResponse, ApiOkResponse, ApiParam, ApiQuery } from '@nestjs/swagger';
 import { QUEUE_TYPES } from '@md-wiki/domain';
 import { principal, Requires } from '../auth/auth-http.js';
 import type { AuthRequest } from '../auth/auth.service.js';
@@ -49,7 +49,12 @@ import {
   WhyDto,
   WhyInput,
   AttestationWithdrawInput,
+  CredibilityJobDto,
+  CredibilityJobParams,
+  ScoresInput,
+  SectionScoresDto,
 } from './credibility.dto.js';
+import { CredibilityJobs } from './credibility-jobs.service.js';
 import { EvidenceService } from './evidence.service.js';
 import { CredibilityGates } from './gates.service.js';
 import { CredibilityMaintenance } from './maintenance.service.js';
@@ -242,6 +247,7 @@ export class CredibilityQueueController {
   constructor(
     @Inject(QueueService) private readonly queue: QueueService,
     @Inject(EvidenceService) private readonly evidence: EvidenceService,
+    @Inject(CredibilityJobs) private readonly jobs: CredibilityJobs,
   ) {}
 
   @Get('queue')
@@ -305,6 +311,31 @@ export class CredibilityQueueController {
   @ApiProblemResponse('VALIDATION_FAILED')
   invalidation(@Req() req: AuthRequest, @InputBody(InvalidationInput) input: InvalidationInput) {
     return this.evidence.invalidation(principal(req), input);
+  }
+
+  @Post('jobs/:kind')
+  @HttpCode(202)
+  @ApiParam({ name: 'kind', enum: ['retraction_check', 'copy_candidates', 'relation_candidates', 'credibility_score'] })
+  @ApiAcceptedResponse({ type: CredibilityJobDto })
+  @ApiProblemResponse('NOT_FOUND')
+  @ApiProblemResponse('VALIDATION_FAILED')
+  runJob(@Req() req: AuthRequest, @InputParams(CredibilityJobParams) params: CredibilityJobParams) {
+    return this.jobs.run(principal(req), params.kind);
+  }
+
+  @Get('scores')
+  @apiPagination()
+  @ApiQuery({ name: 'path', type: String, required: false })
+  @ApiOkResponse({ type: SectionScoresDto })
+  @ApiProblemResponse('VALIDATION_FAILED')
+  scores(@Req() req: AuthRequest, @InputQuery(ScoresInput) query: ScoresInput) {
+    return this.jobs.scores(principal(req), query);
+  }
+
+  @Get('export')
+  @ApiOkResponse({ schema: { type: 'object', additionalProperties: true } })
+  exportAll(@Req() req: AuthRequest) {
+    return this.jobs.export(principal(req));
   }
 }
 

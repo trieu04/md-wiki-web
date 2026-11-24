@@ -1,7 +1,7 @@
 import { parseQualityRules, type RunFacts, type Severity } from '@md-wiki/domain';
 import type { AiJob, Finding, User } from '@prisma/client';
 import type { Wire } from '../wiki/read.dto.js';
-import type { FindingDto, JobListItemDto, QualityRunDto } from './quality.dto.js';
+import type { FindingDto, JobListItemDto, QualityRunDto, TRIGGERS } from './quality.dto.js';
 
 /** Row → DTO mapping for quality runs (system-logic §7.6.7). Pure. */
 
@@ -80,7 +80,7 @@ export function runDto(
     trigger:
       row.trigger === 'dev'
         ? 'rerun'
-        : (row.trigger as Exclude<typeof row.trigger, 'dev' | 'after_check' | 'returned' | 'resumed'>),
+        : (row.trigger as (typeof TRIGGERS)[number]),
     status: row.status,
     bundleHash: row.bundleHash ?? '',
     current: row.bundleHash === ctx.hash,

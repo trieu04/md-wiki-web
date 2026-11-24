@@ -1,0 +1,78 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "CredibilityScoreOutput",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "modelVersion",
+    "paramsSha256",
+    "scores"
+  ],
+  "properties": {
+    "modelVersion": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 40
+    },
+    "paramsSha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "scores": {
+      "type": "array",
+      "maxItems": 20000,
+      "items": {
+        "title": "SectionScoreItem",
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "key",
+          "p",
+          "lower10",
+          "u",
+          "r",
+          "s",
+          "flagged",
+          "reach"
+        ],
+        "properties": {
+          "key": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 401
+          },
+          "p": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          },
+          "lower10": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          },
+          "u": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          },
+          "r": {
+            "type": "number",
+            "minimum": 0
+          },
+          "s": {
+            "type": "number",
+            "minimum": 0
+          },
+          "flagged": {
+            "type": "boolean"
+          },
+          "reach": {
+            "type": "integer",
+            "minimum": 0
+          }
+        }
+      }
+    }
+  }
+}

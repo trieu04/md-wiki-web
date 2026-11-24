@@ -9,5 +9,13 @@ export type { QualityCheckInput } from './jobs/quality_check.input.js';
 export type { QualityCheckOutput } from './jobs/quality_check.output.js';
 export type { AgentReviewInput } from './jobs/agent_review.input.js';
 export type { AgentReviewOutput } from './jobs/agent_review.output.js';
+export type { RetractionCheckInput } from './jobs/retraction_check.input.js';
+export type { RetractionCheckOutput } from './jobs/retraction_check.output.js';
+export type { CopyCandidatesInput } from './jobs/copy_candidates.input.js';
+export type { CopyCandidatesOutput } from './jobs/copy_candidates.output.js';
+export type { RelationCandidatesInput } from './jobs/relation_candidates.input.js';
+export type { RelationCandidatesOutput } from './jobs/relation_candidates.output.js';
+export type { CredibilityScoreInput } from './jobs/credibility_score.input.js';
+export type { CredibilityScoreOutput } from './jobs/credibility_score.output.js';
 
 export const contractsPlaceholder = 'md-wiki-contracts';

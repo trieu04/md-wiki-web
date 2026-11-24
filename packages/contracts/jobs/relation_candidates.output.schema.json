@@ -1,0 +1,95 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "RelationCandidatesOutput",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "candidates"
+  ],
+  "properties": {
+    "candidates": {
+      "type": "array",
+      "maxItems": 1000,
+      "items": {
+        "title": "RelationCandidatesItem",
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "kind",
+          "src",
+          "dst",
+          "score",
+          "detail"
+        ],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "corroborates",
+              "contradicts",
+              "lab_data"
+            ]
+          },
+          "src": {
+            "title": "SectionPoint",
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "path",
+              "anchor"
+            ],
+            "properties": {
+              "path": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 200
+              },
+              "anchor": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 200
+              }
+            }
+          },
+          "dst": {
+            "title": "SectionPoint",
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "path",
+              "anchor"
+            ],
+            "properties": {
+              "path": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 200
+              },
+              "anchor": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 200
+              }
+            }
+          },
+          "score": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          },
+          "detail": {
+            "type": "object",
+            "additionalProperties": {
+              "type": [
+                "string",
+                "number",
+                "boolean"
+              ]
+            },
+            "maxProperties": 20
+          }
+        }
+      }
+    }
+  }
+}

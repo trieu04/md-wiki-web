@@ -12,6 +12,10 @@ export type JobKind = components['schemas']['JobKind'];
 export const JOB_KINDS = [
   'quality_check',
   'agent_review',
+  'retraction_check',
+  'copy_candidates',
+  'relation_candidates',
+  'credibility_score',
   'ping',
 ] as const satisfies readonly JobKind[];
 export const JOB_STATUSES = [
@@ -102,6 +106,10 @@ const TRIGGER_TEXT: Record<JobListItemDto['trigger'], string> = {
   after_check: 'Agent review',
   returned: 'Agent re-review',
   resumed: 'Agent resumed',
+  manual: 'Run now',
+  weekly: 'Weekly',
+  daily: 'Daily',
+  internal: 'Internal API',
 };
 
 /** Derived *AI jobs* rows (D-16, D-152): metadata only; drafts stay private (D-141). */
