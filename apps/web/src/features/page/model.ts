@@ -161,3 +161,18 @@ export function changedOutsideReviewNote(page: Pick<PageDto, 'changedOutsideRevi
       }
     : null;
 }
+
+type FollowLike = { path: string; anchor: string | null; muted: boolean };
+
+/** The viewer follows the page itself, unmuted (F-03 *Following*, D-171). */
+export function isFollowing(follows: readonly FollowLike[], path: string) {
+  return follows.some((follow) => follow.path === path && follow.anchor == null && !follow.muted);
+}
+
+/** The section the reader acts on: the hash they read (SECTION_CHANGED otherwise, §7.7.6). */
+export function sectionFor(page: PageDto, anchor: string) {
+  const section = page.sections.find((item) => item.anchor === anchor);
+  return section
+    ? { path: page.path, anchor: section.anchor, sectionHash: section.hash, title: section.title }
+    : null;
+}

@@ -339,7 +339,7 @@ function Editor({ draft, topBar }: { draft: DraftDto; topBar: TopBarProps }) {
     const saved = await autosave.flush();
     actions.submit.mutate(saved, {
       onSuccess() {
-        void navigate({ to: '/me' });
+        void navigate({ to: '/me', search: { tab: 'suggestions' } });
       },
     });
   }

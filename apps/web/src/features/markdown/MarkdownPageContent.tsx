@@ -1,4 +1,5 @@
 import { Link } from '@tanstack/react-router';
+import type { ReactNode } from 'react';
 import type { PageArticleModel } from '../page/model';
 import { Callout } from '../../ui/Callout';
 import { TrustBadge } from '../../ui/TrustBadge';
@@ -8,10 +9,13 @@ export function MarkdownPageContent({
   markdown,
   selected,
   onSelectSection,
+  sectionFooter,
 }: {
   markdown: PageArticleModel['markdown'];
   selected: string;
   onSelectSection: (anchor: string) => void;
+  /** Rendered under the selected section (F-03 *This section:* row). */
+  sectionFooter?: (anchor: string) => ReactNode;
 }) {
   return (
     <div className="wiki-markdown flex min-w-0 flex-col gap-22px">
@@ -60,6 +64,7 @@ export function MarkdownPageContent({
             </div>
           )}
           {renderMarkdown(content)}
+          {section && section.anchor === selected && sectionFooter?.(section.anchor)}
         </section>
       ))}
       {markdown.footnotes && renderMarkdown(markdown.footnotes)}

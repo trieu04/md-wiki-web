@@ -40,7 +40,7 @@ test('self-check in the editor, the quality card in review, and the owner screen
   // Advice only: submitting works while the self-check has not finished.
   await expect(author.getByText('Quality check (about 2 min)')).toBeVisible();
   await author.getByRole('button', { name: 'Submit proposal' }).click();
-  await expect(author).toHaveURL(/\/me$/u);
+  await expect(author).toHaveURL(/\/me\?tab=suggestions$/u);
   await context.close();
 
   await signIn(page, owner);

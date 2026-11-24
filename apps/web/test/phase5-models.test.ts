@@ -259,9 +259,17 @@ describe('SSE invalidation (D-96)', () => {
     expect(invalidationsFor({ type: 'page.changed', path: 'a.md' })).toEqual([
       queryKeys.page('a.md'),
       queryKeys.history('a.md'),
+      ['why', 'a.md'],
+      ['people', 'a.md'],
       ['wiki.tree'],
       ['wiki.recent'],
       ['search'],
+      // Phase 9 (§7.7.13): credibility views and the viewer's notices.
+      ['credibility'],
+      ['me.notices'],
+      ['me.follows'],
+      ['me.activity'],
+      queryKeys.notifications,
     ]);
     expect(invalidationsFor({ type: 'proposal.changed' })).toEqual([
       ['proposals'],

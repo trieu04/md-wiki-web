@@ -13,6 +13,8 @@ import {
 } from '@tanstack/react-router';
 import type { RouterHistory } from '@tanstack/react-router';
 import { ConflictScreen } from './features/conflict/ConflictScreen';
+import { CredibilityScreen } from './features/credibility/CredibilityScreen';
+import { credibilityTab } from './features/credibility/model';
 import { AskScreen } from './features/discussions/AskScreen';
 import { DiscussionsScreen } from './features/discussions/DiscussionsScreen';
 import { discussionsHref, topicFilter } from './features/discussions/model';
@@ -24,6 +26,8 @@ import { inboxTab } from './features/inbox/model';
 import { inboxCountsQueryOptions } from './features/inbox/queries';
 import { LoginScreen } from './features/login/LoginScreen';
 import { pageQueryOptions } from './features/markdown/page-query';
+import { NotificationsScreen } from './features/notifications/NotificationsScreen';
+import { unreadQueryOptions } from './features/notifications/queries';
 import { AuditScreen, JobsScreen, OpsScreen } from './features/ops/OpsScreen';
 import { PageScreen } from './features/page/PageScreen';
 import { proposalTab } from './features/review/model';
@@ -35,12 +39,12 @@ import { SearchScreen } from './features/search/SearchScreen';
 import { settingsTab } from './features/settings/model';
 import { SettingsScreen } from './features/settings/SettingsScreen';
 import { hasWorkspace, workNavCounts } from './features/workspace/model';
+import { youTab } from './features/you/model';
 import { YouScreen } from './features/you/YouScreen';
 import { ApiContext, createWebData, safeNext, useApi, useWikiMeta } from './lib/api';
 import { useServerEvents } from './lib/events';
 import { useSession } from './lib/session';
 import type { TopBarActive } from './ui/TopBar';
-import { WorkspaceLayout } from './ui/WorkspaceLayout';
 import type { WorkNavActive, WorkNavProps } from './ui/WorkNav';
 
 const root = createRootRouteWithContext<ReturnType<typeof createWebData>>()({
@@ -68,7 +72,14 @@ function ServerEvents() {
 function useTopBar(active: TopBarActive, query = '') {
   const meta = useWikiMeta();
   const { data } = useSession();
+  const router = useRouter();
+  const unread = useQuery({
+    ...unreadQueryOptions(useApi()),
+    enabled: data?.user?.kind === 'human' && import.meta.env.MODE !== 'test',
+  });
   return {
+    notificationCount: unread.data ?? 0,
+    onNotifications: () => void router.navigate({ to: '/notifications' }),
     active,
     query,
     wikiName: meta.data?.wikiName ?? 'Wiki',
@@ -91,12 +102,6 @@ function useWorkNav(active: WorkNavActive): WorkNavProps {
   const inboxCounts = useQuery({ ...inboxCountsQueryOptions(api), enabled: !!data?.user });
   const navCounts = workNavCounts(counts.data, roles, topics.data, inboxCounts.data);
   return { active, ...(navCounts && { counts: navCounts }) };
-}
-
-function workspaceScreen(active: WorkNavActive) {
-  return function WorkspaceScreen() {
-    return <WorkspaceLayout topBar={useTopBar('workspace')} workNav={useWorkNav(active)} />;
-  };
 }
 
 const home = createRoute({
@@ -172,11 +177,27 @@ const editor = createRoute({
     );
   },
 });
+const notifications = createRoute({
+  getParentRoute: () => root,
+  path: '/notifications',
+  component: function Notifications() {
+    return <NotificationsScreen topBar={useTopBar('none')} />;
+  },
+});
 const you = createRoute({
   getParentRoute: () => root,
   path: '/me',
+  validateSearch: ({ tab }) => ({ tab: youTab(tab) }),
   component: function You() {
-    return <YouScreen topBar={useTopBar('you')} />;
+    const { tab } = you.useSearch();
+    const navigate = you.useNavigate();
+    return (
+      <YouScreen
+        tab={tab}
+        onTab={(next) => void navigate({ search: { tab: next }, replace: true })}
+        topBar={useTopBar('you')}
+      />
+    );
   },
 });
 // `:id` is the proposal slug (D-99).
@@ -293,7 +314,19 @@ const ask = createRoute({
 const credibility = createRoute({
   getParentRoute: () => root,
   path: '/work/credibility',
-  component: workspaceScreen('recheck'),
+  validateSearch: ({ tab }) => ({ tab: credibilityTab(tab) }),
+  component: function Credibility() {
+    const { tab } = credibility.useSearch();
+    const navigate = credibility.useNavigate();
+    return (
+      <CredibilityScreen
+        tab={tab}
+        onTab={(next) => void navigate({ search: { tab: next }, replace: true })}
+        topBar={useTopBar('workspace')}
+        workNav={useWorkNav('recheck')}
+      />
+    );
+  },
 });
 const ops = createRoute({
   getParentRoute: () => root,
@@ -372,6 +405,7 @@ const routeTree = root.addChildren([
   login,
   editor,
   you,
+  notifications,
   conflict,
   inbox,
   proposals,

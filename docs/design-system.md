@@ -135,6 +135,7 @@ Exact values that appear in a frame but were missing from §2.1–2.3 are added 
 | `size.ops-agent` (`flex-ops-agent`: `flex 1 1 360px`; `grid-cols-metrics`: `minmax(0, 1fr) auto`) | 360px | F-13 *Reviewer agent · last 7 days* section (D-222) |
 | `size.inbox-list` / `size.inbox-detail` (`flex 1 1 420px` / `flex 1.3 1 440px`) | 420px / 440px | F-08 item list and selected item (D-220) |
 | `size.inbox-term` (`grid-cols-inbox-props`: `140px minmax(0, 1fr)`) | 140px | F-08 selected-item properties `dl` |
+| `size.rail-page` / `container.rail-page` | 300px basis / 340px max | F-03 *About this page* rail and F-05 side cards (`flex: 1 1 300px; max-width: 340px`, D-240) |
 | `size.stat-min` | 170px (`grid-cols-stats`: `repeat(auto-fill, minmax(170px, 1fr))`; the frames use `auto-fit` with 4–5 cards, `auto-fill` keeps the card width when fewer cards have data) | F-09 stats, F-13 health cards |
 | `size.filter-basis` / `size.filter-max` | 240px / 320px | F-09 filter input |
 | `size.review-aside` / `size.review-aside-max` | 380px / 480px | F-10 review panel |

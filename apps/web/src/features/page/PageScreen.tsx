@@ -1,6 +1,14 @@
 import { createLink, Link, useNavigate } from '@tanstack/react-router';
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
-import { useEffect, useMemo, type ComponentProps, type ReactNode } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ComponentProps,
+  type ReactNode,
+} from 'react';
 import { useApi } from '../../lib/api';
 import { useSession } from '../../lib/session';
 import { messageForError } from '../../lib/error-copy';
@@ -16,8 +24,12 @@ import { askHref } from '../discussions/model';
 import { MarkdownPageContent } from '../markdown/MarkdownPageContent';
 import type { PageDto } from '../markdown/model';
 import { pageQueryOptions } from '../markdown/page-query';
+import { citedChoices, type TrustMode } from '../trust/model';
+import { TrustDrawer } from '../trust/TrustDrawer';
+import { FollowButton, PageFeedback, PageRail, SectionActions } from './PageTrust';
 import {
   canSuggest,
+  sectionFor,
   changedOutsideReviewNote,
   historyModel,
   pageArticleModel,
@@ -179,6 +191,7 @@ function ReadingHeader({ model, selected }: { model: PageHeaderModel; selected: 
         )}
       </div>
       <div className="flex flex-wrap gap-8px pt-4px">
+        {session.data?.user && <FollowButton path={model.path} />}
         {canSuggest(session.data?.user?.roles) && (
           <Link
             className={actionLinkClass}
@@ -285,6 +298,19 @@ function ReadingPage({
   const article = useMemo(() => (history ? null : pageArticleModel(page)), [history, page]);
   const selected = anchor || article?.defaultAnchor || '';
   const outside = changedOutsideReviewNote(page);
+  const signedIn = !!useSession().data?.user;
+  const target = useMemo(() => sectionFor(page, selected), [page, selected]);
+  const cited = useMemo(() => citedChoices(page.markdown), [page.markdown]);
+  const trigger = useRef<HTMLElement | null>(null);
+  const [drawer, setDrawer] = useState<{ mode: TrustMode; quote: string } | null>(null);
+  const [revealed, setRevealed] = useState<Record<string, boolean>>({});
+  const closeDrawer = useCallback(() => {
+    setDrawer(null);
+  }, []);
+  const openDrawer = (mode: TrustMode, element: HTMLElement, quote = '') => {
+    trigger.current = element;
+    setDrawer({ mode, quote });
+  };
   useEffect(() => {
     if (article && anchor) document.getElementById(anchor)?.scrollIntoView();
   }, [article, anchor]);
@@ -320,8 +346,21 @@ function ReadingPage({
                 markdown={article.markdown}
                 selected={selected}
                 onSelectSection={(section) => void navigate(sectionTarget(section))}
+                sectionFooter={() =>
+                  signedIn &&
+                  target && (
+                    <SectionActions
+                      section={target}
+                      sawCounts={!!revealed[target.anchor]}
+                      onOpen={(mode, element, quote) => {
+                        openDrawer(mode, element, quote);
+                      }}
+                    />
+                  )
+                }
               />
             )}
+            {signedIn && !article.empty && <PageFeedback key={page.versionLabel} page={page} />}
           </>
         ) : (
           <>
@@ -338,6 +377,38 @@ function ReadingPage({
           </>
         )}
       </article>
+      {article && target && drawer ? (
+        <TrustDrawer
+          open
+          onClose={closeDrawer}
+          triggerRef={trigger}
+          mode={drawer.mode}
+          onMode={(mode) => {
+            setDrawer((current) => current && { ...current, mode });
+          }}
+          section={target}
+          pageTitle={page.title}
+          maintainers={page.maintainers.map(({ name }) => name)}
+          cited={cited}
+          quote={drawer.quote}
+          sawCounts={!!revealed[target.anchor]}
+          signedIn={signedIn}
+        />
+      ) : (
+        article && (
+          <PageRail
+            page={page}
+            section={target}
+            revealed={!!(target && revealed[target.anchor])}
+            onReveal={(value) => {
+              if (target) setRevealed((current) => ({ ...current, [target.anchor]: value }));
+            }}
+            onFull={(element) => {
+              openDrawer('why', element);
+            }}
+          />
+        )
+      )}
     </>
   );
 }

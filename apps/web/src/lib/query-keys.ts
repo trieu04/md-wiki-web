@@ -38,4 +38,20 @@ export const queryKeys = {
   escalation: (slug: string) => ['escalation', slug] as const,
   reviewSettings: ['admin.review', {}],
   agentMetrics: (days: number) => ['ops', 'agent', { days }] as const,
+  // Phase 9 (system-logic §7.7.13).
+  why: (path: string, anchor: string) => ['why', path, anchor] as const,
+  people: (path: string, anchor: string, reveal: boolean) =>
+    ['people', path, anchor, { reveal }] as const,
+  follows: ['me.follows', {}],
+  activity: (kind: string) => ['me.activity', { kind }] as const,
+  summary: ['me.summary', {}],
+  notificationPrefs: ['me.notification-preferences', {}],
+  notices: ['me.notices', {}],
+  recentMine: ['wiki.recent', { scope: 'mine' }],
+  notifications: ['notifications', {}],
+  credibilityQueue: (type: string) => ['credibility', 'queue', { type }] as const,
+  credibilityItem: (type: string, id: string) => ['credibility', 'item', type, id] as const,
+  credibilityPages: ['credibility', 'pages'],
+  credibilitySources: ['credibility', 'sources'],
+  credibilityGates: ['admin.credibility-gates', {}],
 } as const;

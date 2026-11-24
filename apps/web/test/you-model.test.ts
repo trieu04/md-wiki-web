@@ -101,8 +101,8 @@ describe('F-05 Your suggestions (D-69)', () => {
 
   it('shows the user name in the subtitle', () => {
     expect(youSubtitle('m.nguyen')).toBe(
-      'm.nguyen · Your drafts and suggestions, and what happened to them.',
+      'm.nguyen. Pages you follow, and what happened to your checks, reports and suggestions.',
     );
-    expect(youSubtitle(null)).toMatch(/^You · /);
+    expect(youSubtitle(null)).toMatch(/^You\. /);
   });
 });

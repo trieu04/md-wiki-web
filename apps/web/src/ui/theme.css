@@ -136,6 +136,7 @@
   --container-workspace: 1400px;
   --container-rail-min: 260px;
   --container-rail-max: 400px;
+  --container-rail-page: 340px;
   --spacing-topbar: 56px;
   --spacing-topbar-search: 38px;
   --spacing-home-control: 48px;
@@ -164,6 +165,7 @@
   --spacing-search-filter-basis: 240px;
   --spacing-search-filter-max: 280px;
   --spacing-drawer-basis: 440px;
+  --spacing-rail-page: 300px;
   --spacing-drawer-max: 520px;
   --spacing-table-home: 640px;
   --spacing-settings-label: 300px;

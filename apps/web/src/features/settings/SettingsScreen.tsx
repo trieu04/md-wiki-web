@@ -43,6 +43,9 @@ import {
   type Scope,
   type SettingsRow,
   type SettingsTabId,
+  type CredibilityGateDto,
+  gateInput,
+  gateRow,
   type TeamDto,
   type UserDto,
 } from './model';
@@ -52,6 +55,7 @@ import {
   useModelsSettings,
   useReviewSettings,
   useReviewSettingsMutations,
+  useCredibilityGates,
 } from './queries';
 
 type FormState = { message?: string | undefined; fields: FieldErrors };
@@ -909,8 +913,116 @@ function ReviewPanel() {
   );
 }
 
+function GateRow({ gate }: { gate: CredibilityGateDto }) {
+  const { save } = useCredibilityGates();
+  const row = gateRow(gate);
+  const [enabling, setEnabling] = useState(false);
+  const [form, setForm] = useState({ runRecord: '', runDate: '' });
+  const [errors, setErrors] = useState<Partial<Record<'runRecord' | 'runDate', string>>>({});
+  const submit = (enabled: boolean) => {
+    const built = gateInput(enabled, form, new Date());
+    if (!built.ok) {
+      setErrors(built.errors);
+      return;
+    }
+    setErrors({});
+    save.mutate(
+      { capability: gate.capability, body: built.input },
+      {
+        onSuccess: () => {
+          setEnabling(false);
+        },
+      },
+    );
+  };
+  return (
+    <Row label={row.title} help={row.help} value={row.enabled ? 'On' : 'Off'} note={row.reference}>
+      {row.updated && <span className="text-12 text-muted">{row.updated}</span>}
+      {enabling ? (
+        <form
+          noValidate
+          className="flex flex-col gap-10px"
+          onSubmit={(event) => {
+            event.preventDefault();
+            submit(true);
+          }}
+        >
+          <TextInput
+            label="Run record"
+            hint="e.g. experiments/runs/e8d/2027-01-10.json"
+            value={form.runRecord}
+            maxLength={300}
+            error={errors.runRecord}
+            onChange={(event) => {
+              setForm((current) => ({ ...current, runRecord: event.target.value }));
+            }}
+          />
+          <TextInput
+            label="Result date"
+            hint="YYYY-MM-DD"
+            value={form.runDate}
+            error={errors.runDate}
+            onChange={(event) => {
+              setForm((current) => ({ ...current, runDate: event.target.value }));
+            }}
+          />
+          <div className="flex flex-wrap gap-8px">
+            <Button type="submit" loading={save.isPending}>
+              Turn on
+            </Button>
+            <Button
+              variant="secondary"
+              onClick={() => {
+                setEnabling(false);
+                setErrors({});
+              }}
+            >
+              Cancel
+            </Button>
+          </div>
+        </form>
+      ) : (
+        <Button
+          variant="secondary"
+          className="self-start"
+          loading={save.isPending}
+          onClick={() => {
+            if (row.enabled) submit(false);
+            else setEnabling(true);
+          }}
+        >
+          {row.enabled ? 'Turn off' : 'Turn on…'}
+        </Button>
+      )}
+      {save.error && <p className="text-12 text-trust-error-fg">{messageForError(save.error)}</p>}
+    </Row>
+  );
+}
+
+function TrustPanel() {
+  const { gates } = useCredibilityGates();
+  return (
+    <ListState queries={[gates]} title="Trust labels">
+      {() =>
+        gates.data ? (
+          <>
+            <p className="pt-10px text-13 text-muted">
+              Labels follow fixed rules. Each capability below stays off until its experiment has
+              shown that it predicts accuracy; turning one on records the run it relies on.
+            </p>
+            {gates.data.items.map((gate) => (
+              <GateRow key={gate.capability} gate={gate} />
+            ))}
+          </>
+        ) : null
+      }
+    </ListState>
+  );
+}
+
 const panels: Partial<Record<SettingsTabId, () => ReactNode>> = {
   review: () => <ReviewPanel />,
+  trust: () => <TrustPanel />,
   people: () => <PeoplePanel />,
   agents: () => <AgentsPanel />,
   models: () => <ModelsPanel />,
@@ -939,7 +1051,7 @@ function SettingsContent({
           tabs={SETTINGS_TABS.map(({ id, label, implemented }) => ({
             id,
             label,
-            // Deferred tabs (review, trust, storage) have no data yet: no panel (D-49).
+            // Storage has no data yet: no panel (D-49).
             panel:
               implemented && id === tab ? (
                 <div className="px-22px pt-6px pb-22px">{panels[id]?.()}</div>

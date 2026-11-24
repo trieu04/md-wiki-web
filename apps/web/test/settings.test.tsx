@@ -13,6 +13,7 @@ import {
   visualTokens,
   visualUsers,
 } from '../src/dev/fixtures/settings';
+import { visualGates } from '../src/dev/fixtures/credibility';
 import { visualModels, visualRules } from '../src/dev/fixtures/quality';
 import { createAppRouter } from '../src/router';
 
@@ -116,12 +117,47 @@ it('renders the F-14 tabs and the People and teams rows for an owner', async () 
   expect(await screen.findByText('Token …9f2a · scopes review, discuss')).toBeVisible();
 });
 
-it('renders no panel content for tabs owned by later phases', async () => {
-  open('/work/settings?tab=trust');
-  const tab = await screen.findByRole('tab', { name: 'Trust labels', selected: true });
+it('renders no panel content for Storage (no data yet)', async () => {
+  open('/work/settings?tab=storage');
+  const tab = await screen.findByRole('tab', { name: 'Storage', selected: true });
   const panel = document.getElementById(tab.getAttribute('aria-controls') ?? '');
   expect(panel).toBeEmptyDOMElement();
   expect(adminCalls).toEqual([]);
+});
+
+it('Trust labels: a gate needs a run record and date to turn on (§7.7.10)', async () => {
+  const puts: unknown[] = [];
+  server.use(
+    http.get('*/api/v1/admin/credibility-gates', () => HttpResponse.json(visualGates)),
+    http.put('*/api/v1/admin/credibility-gates/:capability', async ({ params, request }) => {
+      const body = (await request.json()) as { enabled: boolean };
+      puts.push({ capability: params.capability, ...body });
+      const gate = visualGates.items.find(({ capability }) => capability === params.capability);
+      return HttpResponse.json({ ...gate, ...body });
+    }),
+  );
+  open('/work/settings?tab=trust');
+  const user = userEvent.setup();
+  expect(await screen.findByText('Order re-checks by score')).toBeVisible();
+  const [first] = screen.getAllByRole('button', { name: 'Turn on…' });
+  if (!first) throw new Error('no gate');
+  await user.click(first);
+  await user.click(screen.getByRole('button', { name: 'Turn on' }));
+  expect(await screen.findByText('Enter the experiment run record.')).toBeVisible();
+  expect(puts).toEqual([]);
+  await user.type(screen.getByLabelText('Run record'), 'experiments/runs/e8d/2026-11-01.json');
+  await user.type(screen.getByLabelText('Result date'), '2026-11-01');
+  await user.click(screen.getByRole('button', { name: 'Turn on' }));
+  await waitFor(() => {
+    expect(puts).toEqual([
+      {
+        capability: 'label_threshold',
+        enabled: true,
+        runRecord: 'experiments/runs/e8d/2026-11-01.json',
+        runDate: '2026-11-01',
+      },
+    ]);
+  });
 });
 
 it('Models tab shows the effective model config, local endpoint and quality rules (read-only)', async () => {

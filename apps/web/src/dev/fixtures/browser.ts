@@ -24,6 +24,7 @@ import {
   visualProposalList,
 } from './review';
 import { visualAgentMetrics, visualEscalation, visualInbox, visualReviewSettings } from './agent';
+import { credibilityHandlers } from './credibility-handlers';
 import { frameSamples } from './samples';
 import { visualHistory, visualMeta, visualPage, visualPageTopic } from './reading';
 import { adminPage, visualOwnerSession, visualTeams, visualTokens, visualUsers } from './settings';
@@ -39,6 +40,7 @@ const draft = () => visualDraft(new URLSearchParams(globalThis.location.search).
 // Private visual-mode transport. Add typed /api/v1 handlers here as the
 // corresponding screens and API bindings are implemented.
 const worker = setupWorker(
+  ...credibilityHandlers('/api/v1'),
   http.get('/api/v1/meta', () =>
     HttpResponse.json({
       ...visualMeta,

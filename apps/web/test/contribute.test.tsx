@@ -10,6 +10,7 @@ import { emptySummary, visualSelfCheck } from '../src/dev/fixtures/quality';
 import type { QualityReportDto } from '../src/features/quality/model';
 import { visualPage, visualSession } from '../src/dev/fixtures/reading';
 import type { DraftDto } from '../src/features/editor/model';
+import { credibilityHandlers } from '../src/dev/fixtures/credibility-handlers';
 import { createAppRouter } from '../src/router';
 import { DiffView } from '../src/ui/DiffView';
 import { MarkdownToolbar } from '../src/ui/MarkdownToolbar';
@@ -40,6 +41,7 @@ function need<T>(value: T | null | undefined): T {
 }
 
 const server = setupServer(
+  ...credibilityHandlers('*/api/v1'),
   http.get('*/api/v1/drafts/:id/self-check', () => HttpResponse.json(selfCheck)),
   http.post('*/api/v1/drafts/:id/self-check', ({ params }) => {
     selfChecks.push(String(params.id));
@@ -232,13 +234,15 @@ it('submits and lands on Your suggestions; a reason error stays on the field', a
 });
 
 it('renders Your suggestions with its count and the D-69 rows', async () => {
-  open('/me');
+  open('/me?tab=suggestions');
   expect(await screen.findByRole('tab', { name: 'Your suggestions 3' })).toHaveAttribute(
     'aria-selected',
     'true',
   );
   expect(
-    screen.getByText('m.nguyen · Your drafts and suggestions, and what happened to them.'),
+    screen.getByText(
+      'm.nguyen. Pages you follow, and what happened to your checks, reports and suggestions.',
+    ),
   ).toBeVisible();
   const table = await screen.findByRole('table', { name: 'Your suggestions' });
   const rows = within(table).getAllByRole('row').slice(1);
@@ -250,9 +254,43 @@ it('renders Your suggestions with its count and the D-69 rows', async () => {
   expect(
     within(rows[2] as HTMLElement).getByRole('link', { name: 'Continue: Draft: pinhole units' }),
   ).toHaveAttribute('href', '/wiki/confocal-microscopy.md/edit?section=principle');
+  // Phase 9 (F-05): the other tabs and the side cards.
+  expect(screen.getByRole('tab', { name: /^Followed pages/u })).toBeVisible();
+  expect(screen.getByRole('region', { name: 'Tell me when' })).toBeVisible();
+  expect(screen.getByRole('region', { name: 'Your part this year' })).toBeVisible();
+});
+
+it('F-05 lists followed pages, checks and reports, and saves preferences', async () => {
+  const saved: unknown[] = [];
+  server.use(
+    http.put('*/api/v1/me/notification-preferences', async ({ request }) => {
+      const body = await request.json();
+      saved.push(body);
+      return HttpResponse.json(body);
+    }),
+  );
+  const router = open('/me');
+  const follows = await screen.findByRole('table', { name: 'Followed pages' });
   expect(
-    screen.queryByText(/Followed pages|Tell me when|Your part this year/u),
-  ).not.toBeInTheDocument();
+    within(follows).getByRole('link', { name: 'Check again: Point spread function' }),
+  ).toHaveAttribute('href', '/wiki/point-spread-function.md#table');
+  await userEvent.click(screen.getByRole('tab', { name: /^Your checks and reports/u }));
+  expect(router.state.location.search).toEqual({ tab: 'trust' });
+  const activity = await screen.findByRole('table', { name: 'Your checks and reports' });
+  expect(within(activity).getByText('“The table is for 20 °C; noted in the text.”')).toBeVisible();
+  const weekly = await screen.findByRole('switch', { name: 'Weekly summary of followed pages' });
+  await userEvent.click(weekly);
+  expect(saved).toEqual([
+    {
+      events: {
+        section_recheck: true,
+        section_edited: true,
+        report_outcome: true,
+        weekly_summary: true,
+      },
+      channel: 'wiki',
+    },
+  ]);
 });
 
 it('shows the empty state when there are no suggestions', async () => {
@@ -261,7 +299,7 @@ it('shows the empty state when there are no suggestions', async () => {
       HttpResponse.json({ items: [], nextCursor: null, total: 0 }),
     ),
   );
-  open('/me');
+  open('/me?tab=suggestions');
   expect(await screen.findByText(/^No suggestions yet\./u)).toBeVisible();
   expect(screen.getByRole('tab', { name: 'Your suggestions 0' })).toBeVisible();
 });

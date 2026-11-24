@@ -134,3 +134,32 @@ export function useReviewSettingsMutations() {
     }),
   };
 }
+
+/** F-14 *Trust labels* (system-logic §7.7.10): experiment gates. */
+export function useCredibilityGates() {
+  const api = useApi();
+  const client = useQueryClient();
+  return {
+    gates: useQuery({
+      queryKey: queryKeys.credibilityGates,
+      queryFn: async ({ signal }) =>
+        apiData(await api.GET('/api/v1/admin/credibility-gates', { signal })),
+    }),
+    save: useMutation({
+      mutationFn: async ({
+        capability,
+        body,
+      }: {
+        capability: components['schemas']['CredibilityGateDto']['capability'];
+        body: components['schemas']['GateInput'];
+      }) =>
+        apiData(
+          await api.PUT('/api/v1/admin/credibility-gates/{capability}', {
+            params: { path: { capability } },
+            body,
+          }),
+        ),
+      onSettled: () => client.invalidateQueries({ queryKey: queryKeys.credibilityGates }),
+    }),
+  };
+}

@@ -1,5 +1,5 @@
 import type { components } from '@md-wiki/contracts';
-import { formatDate, formatDateTime, roleAllowsScope } from '@md-wiki/domain';
+import { formatDate, formatDateTime, roleAllowsScope, validateGateChange } from '@md-wiki/domain';
 import { ApiError } from '../../lib/api';
 import { errorCopy, messageForError } from '../../lib/error-copy';
 
@@ -29,10 +29,10 @@ export const SCOPES = [
   'publish',
 ] as const satisfies readonly Scope[];
 
-/** F-14 tab order and copy. People and Agents (D-49), Models from Phase 7 (D-151), Review from Phase 8 (D-221). */
+/** F-14 tab order and copy. People and Agents (D-49), Models from Phase 7 (D-151), Review from Phase 8 (D-221), Trust labels from Phase 9 (D-240). */
 export const SETTINGS_TABS = [
   { id: 'review', label: 'Review and publishing', implemented: true },
-  { id: 'trust', label: 'Trust labels', implemented: false },
+  { id: 'trust', label: 'Trust labels', implemented: true },
   { id: 'people', label: 'People and teams', implemented: true },
   { id: 'agents', label: 'Agents and tokens', implemented: true },
   { id: 'models', label: 'Models', implemented: true },
@@ -495,4 +495,51 @@ export function reviewUpdatedText(s: ReviewSettingsDto) {
   return s.updatedAt
     ? `Last changed${who(s.updatedBy)}, ${formatDateTime(new Date(s.updatedAt))}.`
     : 'Defaults; never changed.';
+}
+
+// ---------- F-14 Trust labels: experiment gates (system-logic §7.7.10, 7d) ----------
+
+export type CredibilityGateDto = components['schemas']['CredibilityGateDto'];
+
+const GATE_TITLE: Record<CredibilityGateDto['capability'], string> = {
+  label_threshold: 'Score thresholds move labels',
+  recheck_ordering: 'Order re-checks by score',
+  attestation_weights: 'Reader checks count',
+  report_detection: 'Detect problems from reports',
+  assistant_disclosure: 'Tell the assistant about credibility',
+};
+
+export function gateRow(gate: CredibilityGateDto) {
+  return {
+    key: gate.capability,
+    title: GATE_TITLE[gate.capability],
+    help: `${gate.description} Needs experiment ${gate.experiment}.`,
+    enabled: gate.enabled,
+    reference: gate.reference
+      ? `Run ${gate.reference.runRecord} (${gate.reference.runDate})`
+      : 'No experiment run recorded',
+    updated:
+      gate.updatedAt && gate.updatedBy
+        ? `Changed by ${gate.updatedBy.name}, ${formatDate(new Date(gate.updatedAt))}`
+        : null,
+  };
+}
+
+/** Enabling needs the run record and date (domain `validateGateChange`); disabling needs nothing. */
+export function gateInput(
+  enabled: boolean,
+  form: { runRecord: string; runDate: string },
+  today: Date,
+):
+  | { ok: true; input: components['schemas']['GateInput'] }
+  | { ok: false; errors: Partial<Record<'runRecord' | 'runDate', string>> } {
+  if (!enabled) return { ok: true, input: { enabled: false } };
+  const runRecord = form.runRecord.trim();
+  const issues = validateGateChange({ enabled, runRecord, runDate: form.runDate }, today);
+  if (issues.length)
+    return {
+      ok: false,
+      errors: Object.fromEntries(issues.map(({ path, message }) => [path, `${message}.`])),
+    };
+  return { ok: true, input: { enabled, runRecord, runDate: form.runDate } };
 }

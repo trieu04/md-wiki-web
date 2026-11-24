@@ -15,9 +15,12 @@ import {
   visualPageTopic,
   visualSession,
 } from '../src/dev/fixtures/reading';
+import { visualQueueItems } from '../src/dev/fixtures/credibility';
+import { credibilityHandlers } from '../src/dev/fixtures/credibility-handlers';
 import { createAppRouter } from '../src/router';
 
 const server = setupServer(
+  ...credibilityHandlers('*/api/v1'),
   http.get('*/api/v1/meta', () =>
     HttpResponse.json({ wikiName: 'A runtime wiki', wikiDescription: '' }),
   ),
@@ -99,8 +102,15 @@ it.each([
   expect(screen.getByRole('link', { name: active, current: 'page' })).toBeVisible();
   const search = screen.getByRole('search', { name: 'Search from home' });
   expect(search).toHaveAttribute('action', '/search');
+  // Signed in: *Pages you use* is the default scope (F-01, §7.7.9).
+  expect(screen.getByRole('button', { name: 'Pages you use' })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  );
   expect(
-    await within(screen.getByRole('table')).findByRole('link', { name: 'Confocal microscopy' }),
+    await within(await screen.findByRole('table')).findByRole('link', {
+      name: 'Confocal microscopy',
+    }),
   ).toHaveAttribute('href', '/wiki/confocal-microscopy.md');
   expect(screen.getByRole('img', { name: /^41% checked against source/u })).toBeVisible();
   // D-102: the section subline and *What changed* come from the version's publication.
@@ -108,7 +118,11 @@ it.each([
   expect(row).toHaveTextContent('Detectors');
   expect(row).toHaveTextContent('Hybrid detectors named HyD; link to Detectors page');
   expect(screen.getByRole('columnheader', { name: 'What changed' })).toBeVisible();
-  expect(screen.queryByText('On pages you use')).not.toBeInTheDocument();
+  expect(await screen.findByText('On pages you use')).toBeVisible();
+  expect(screen.getByRole('link', { name: 'Check again' })).toHaveAttribute(
+    'href',
+    '/wiki/point-spread-function.md#table',
+  );
 });
 
 it('sends search controls through the generated binding, keeps recheck, and links to the section', async () => {
@@ -182,26 +196,56 @@ it('renders the Inbox at /work', async () => {
   expect(screen.getByRole('tablist', { name: 'Inbox filter' })).toBeVisible();
 });
 
-it.each([['/work/credibility', '/work/credibility', 'Credibility']])(
-  'uses the empty workspace screen for %s',
-  async (path, id, active) => {
-    const router = open(path);
-    expect(await screen.findByRole('main')).toBeEmptyDOMElement();
-    expect(router.state.matches.at(-1)?.routeId).toBe(id);
-    expect(
-      within(screen.getByRole('navigation', { name: 'Workspace' })).getByRole('link', {
-        name: active,
-        current: 'page',
-      }),
-    ).toBeVisible();
-    expect(
-      await within(screen.getByRole('banner')).findByRole('link', {
-        name: 'Workspace',
-        current: 'page',
-      }),
-    ).toBeVisible();
-  },
-);
+it('F-12 Credibility lists the queue by reach, shows the detail and saves a decision', async () => {
+  const decisions: unknown[] = [];
+  server.use(
+    http.post('*/api/v1/credibility/decisions', async ({ request }) => {
+      const body = (await request.json()) as { id: string };
+      decisions.push(body);
+      const item = visualQueueItems.find(({ id }) => id === body.id);
+      return HttpResponse.json({ ...item, can: { decide: false } });
+    }),
+  );
+  const router = open('/work/credibility');
+  expect(await screen.findByRole('heading', { level: 1, name: 'Credibility' })).toBeVisible();
+  expect(router.state.matches.at(-1)?.routeId).toBe('/work/credibility');
+  expect(
+    within(screen.getByRole('navigation', { name: 'Workspace' })).getByRole('link', {
+      name: 'Credibility',
+      current: 'page',
+    }),
+  ).toBeVisible();
+  expect(await screen.findByRole('tab', { name: 'Needs a person 5' })).toHaveAttribute(
+    'aria-selected',
+    'true',
+  );
+  const detail = await screen.findByRole('region', { name: 'Source retracted' });
+  expect(within(detail).getByText('Deconvolution › Richardson–Lucy')).toBeVisible();
+  const user = userEvent.setup();
+  await user.click(within(detail).getByRole('button', { name: 'Save decision' }));
+  expect(
+    await within(detail).findByText('Give a reason. It is shown in the section’s evidence.'),
+  ).toBeVisible();
+  expect(decisions).toEqual([]);
+  await user.type(
+    within(detail).getByLabelText('Reason (shown in the section’s evidence)'),
+    'Replaced by Pawley ch. 25',
+  );
+  await user.click(within(detail).getByRole('button', { name: 'Save decision' }));
+  await vi.waitFor(() => {
+    expect(decisions).toEqual([
+      {
+        type: 'retraction',
+        id: visualQueueItems[0]?.id,
+        outcome: 'still_correct',
+        reason: 'Replaced by Pawley ch. 25',
+      },
+    ]);
+  });
+  await user.click(screen.getByRole('tab', { name: /^Sources/u }));
+  expect(router.state.location.search).toEqual({ tab: 'sources' });
+  expect(await screen.findByRole('table', { name: 'Sources' })).toBeVisible();
+});
 
 it.each(['', '123', 'null', '"quoted"', '日本語 & | ! :*', 'a'.repeat(201)])(
   'keeps the literal search query: %s',
@@ -228,7 +272,7 @@ const problem = (code: string, status: number, headers: Record<string, string> =
   );
 
 it.each([
-  ['/', 'Recently updated', 'No recent changes yet.'],
+  ['/', 'Recently updated', 'No recent changes on the pages you follow.'],
   ['/search?q=objective', 'Results', 'Didn’t find what you need?'],
 ])('renders loading, retry and empty states at %s', async (path, region, empty) => {
   let finish = () => {};
@@ -332,16 +376,23 @@ it('shows page and section labels, follows section anchors and omits deferred re
     'href',
     `/ask?path=${visualPage.path}&section=overview`,
   );
+  // Phase 9 (F-03): Follow, the *This section:* row, page feedback and the rail.
+  expect(await within(article).findByRole('button', { name: 'Following' })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  );
+  expect(within(article).getByRole('group', { name: 'This section: Overview' })).toBeVisible();
+  expect(within(article).getByText('Did this page help with your work?')).toBeVisible();
+  expect(within(article).queryByText('Changed outside review')).not.toBeInTheDocument();
+  const rail = screen.getByRole('complementary', { name: 'About this page' });
   expect(
-    within(article).queryByText(
-      /^(Follow|Sources|Changed outside review|Did this page help with your work\?|This section:)$/u,
-    ),
-  ).not.toBeInTheDocument();
-  expect(screen.queryByRole('complementary', { name: 'About this page' })).not.toBeInTheDocument();
+    within(rail).getByRole('heading', { name: 'Why “Overview” has this label' }),
+  ).toBeVisible();
+  expect(await within(rail).findByText('Approved by the reviewer agent')).toBeVisible();
 });
 
 it.each(['click', 'Enter', 'Space'] as const)(
-  'selects a section with the heading TrustBadge by %s without opening the Why rail',
+  'selects a section with the heading TrustBadge by %s and shows it in the Why rail',
   async (input) => {
     const url = `/wiki/${visualPage.path}?section=overview`;
     const router = open(`${url}#overview`);
@@ -369,9 +420,10 @@ it.each(['click', 'Enter', 'Space'] as const)(
       'location',
     );
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    const rail = screen.getByRole('complementary', { name: 'About this page' });
     expect(
-      screen.queryByRole('complementary', { name: 'About this page' }),
-    ).not.toBeInTheDocument();
+      within(rail).getByRole('heading', { name: 'Why “Resolution” has this label' }),
+    ).toBeVisible();
   },
 );
 

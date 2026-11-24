@@ -33,7 +33,7 @@ async function propose(browser, path, line, reason) {
   await source.pressSequentially(`\n\n${line}\n`);
   await page.getByLabel('Reason (required)').fill(reason);
   await page.getByRole('button', { name: 'Submit proposal' }).click();
-  await expect(page).toHaveURL(/\/me$/u);
+  await expect(page).toHaveURL(/\/me\?tab=suggestions$/u);
   await context.close();
 }
 
@@ -95,6 +95,8 @@ test('an owner approves a contribution and it is auto-published as Reviewed', as
 
   // Home lists the published version with its summary (D-102).
   await page.goto('/#recent');
+  // Signed-in people start on *Pages you use* (F-01); the owner does not follow this page.
+  await page.getByRole('button', { name: 'All pages' }).click();
   const recent = page.getByRole('table', { name: 'Recently updated pages' });
   await expect(recent.getByRole('row').filter({ hasText: reason })).toHaveCount(1);
 });

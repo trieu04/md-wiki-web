@@ -1,5 +1,5 @@
 import type { components } from '@md-wiki/contracts';
-import { formatRelative, labelMeta } from '@md-wiki/domain';
+import { formatDate, formatRelative, labelMeta } from '@md-wiki/domain';
 import type { Label } from '@md-wiki/domain';
 
 export type Tree = components['schemas']['TreeDto'];
@@ -74,4 +74,61 @@ export function recentRows(recent: Recent, labels: ReadonlyMap<string, Label>, n
     timestamp: item.at,
     when: formatRelative(new Date(item.at), now),
   }));
+}
+
+// ---------- Phase 9: *On pages you use* and the scope toggle (F-01, §7.7.9) ----------
+
+export type NoticeDto = components['schemas']['NoticeDto'];
+export type HomeScope = 'mine' | 'all';
+
+export const HOME_SCOPES: readonly { id: HomeScope; label: string }[] = [
+  { id: 'mine', label: 'Pages you use' },
+  { id: 'all', label: 'All pages' },
+];
+
+/** Signed-in people start on their pages; anonymous readers only have *All pages*. */
+export function defaultScope(signedIn: boolean): HomeScope {
+  return signedIn ? 'mine' : 'all';
+}
+
+const NOTICE_ACTION: Record<NoticeDto['action'], string> = {
+  read_section: 'Read the section',
+  see_affected: 'See what is affected',
+  check_again: 'Check again',
+  see_outcome: 'See the outcome',
+};
+
+function noticeTitle(notice: NoticeDto) {
+  switch (notice.event) {
+    case 'section_recheck':
+      return `${notice.pageTitle}: a section you use is under re-check`;
+    case 'section_edited':
+      return `${notice.pageTitle}: a section you checked was edited`;
+    case 'report_outcome':
+      return `Your report on ${notice.pageTitle} was answered`;
+    case 'report_received':
+      return `New report on ${notice.pageTitle}`;
+    case 'mention':
+      return `You were mentioned on ${notice.pageTitle}`;
+    default:
+      return notice.pageTitle;
+  }
+}
+
+export function noticeRow(notice: NoticeDto) {
+  const page = `/wiki/${notice.path.split('/').map(encodeURIComponent).join('/')}`;
+  return {
+    key: notice.id,
+    label: (notice.event === 'section_recheck' || notice.event === 'report_received'
+      ? 'recheck'
+      : notice.event === 'section_edited'
+        ? 'not_reviewed'
+        : 'reviewed') as Label,
+    title: noticeTitle(notice),
+    text: notice.text,
+    action: NOTICE_ACTION[notice.action],
+    href: notice.anchor ? `${page}#${encodeURIComponent(notice.anchor)}` : page,
+    at: notice.createdAt,
+    when: formatDate(new Date(notice.createdAt)),
+  };
 }

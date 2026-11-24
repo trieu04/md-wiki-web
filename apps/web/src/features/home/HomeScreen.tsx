@@ -1,7 +1,10 @@
 import { labelMeta } from '@md-wiki/domain';
+import { useState } from 'react';
 import { useWikiMeta } from '../../lib/api';
+import { useSession } from '../../lib/session';
 import { Button } from '../../ui/Button';
 import { Card } from '../../ui/Card';
+import { PillToggle } from '../../ui/PillToggle';
 import { QueryFailure } from '../../ui/QueryFailure';
 import { ReadingLayout } from '../../ui/ReadingLayout';
 import { SearchInput } from '../../ui/SearchInput';
@@ -11,7 +14,16 @@ import { TrustBadge } from '../../ui/TrustBadge';
 import { TrustIcon } from '../../ui/TrustIcon';
 import type { TopBarProps } from '../../ui/TopBar';
 import { wikiPageHref } from '../navigation/model';
-import { homeTreeModel, recentRows, trustLegend } from './model';
+import {
+  HOME_SCOPES,
+  defaultScope,
+  homeTreeModel,
+  noticeRow,
+  recentRows,
+  trustLegend,
+  type HomeScope,
+  type NoticeDto,
+} from './model';
 import { useHomeQueries } from './queries';
 
 type TreeModel = ReturnType<typeof homeTreeModel>;
@@ -105,9 +117,56 @@ function RecentTable({ rows }: { rows: ReturnType<typeof recentRows> }) {
   );
 }
 
+function Notices({ items }: { items: readonly NoticeDto[] }) {
+  return (
+    <Card
+      title="On pages you use"
+      actions={
+        <a href="/me" className="text-13 font-medium">
+          Followed pages
+        </a>
+      }
+      state={
+        items.length
+          ? undefined
+          : { type: 'empty', message: 'Nothing new on the pages you follow.' }
+      }
+    >
+      <ul className="flex flex-col">
+        {items.map(noticeRow).map((row) => (
+          <li
+            key={row.key}
+            className="flex gap-14px border-b border-row px-18px py-14px last:border-b-0"
+          >
+            <span className="mt-3px">
+              <TrustIcon label={row.label} size={14} />
+            </span>
+            <div className="flex min-w-0 flex-auto flex-col gap-3px">
+              <span className="font-semibold">{row.title}</span>
+              <span className="text-secondary">{row.text}</span>
+              <span className="mt-2px flex flex-wrap gap-14px text-13">
+                <a href={row.href} className="font-medium">
+                  {row.action}
+                </a>
+                <time dateTime={row.at} className="text-trust-none">
+                  {row.when}
+                </time>
+              </span>
+            </div>
+          </li>
+        ))}
+      </ul>
+    </Card>
+  );
+}
+
 export function HomeScreen({ topBar }: { topBar: TopBarProps }) {
   const meta = useWikiMeta();
-  const { tree, recent } = useHomeQueries();
+  const session = useSession();
+  const signedIn = !!session.data?.user;
+  const [picked, setScope] = useState<HomeScope | null>(null);
+  const scope = signedIn ? (picked ?? defaultScope(signedIn)) : 'all';
+  const { tree, recent, notices } = useHomeQueries(scope, signedIn, !session.isPending);
   const model = tree.data && homeTreeModel(tree.data);
   const rows = model && recent.data && recentRows(recent.data, model.pageLabels, new Date());
   const recentFailure = recent.isError ? recent : tree.isError ? tree : undefined;
@@ -170,13 +229,30 @@ export function HomeScreen({ topBar }: { topBar: TopBarProps }) {
         </>
       }
     >
+      {signedIn && notices.data && <Notices items={notices.data.items} />}
       <div id="recent">
         <Card
           title="Recently updated"
           actions={
-            <span className="rounded-7 border border-accent bg-selected px-10px py-5px text-13 leading-control font-semibold">
-              All pages
-            </span>
+            signedIn ? (
+              <div role="group" aria-label="Which pages" className="flex gap-4px">
+                {HOME_SCOPES.map(({ id, label }) => (
+                  <PillToggle
+                    key={id}
+                    pressed={scope === id}
+                    onClick={() => {
+                      setScope(id);
+                    }}
+                  >
+                    {label}
+                  </PillToggle>
+                ))}
+              </div>
+            ) : (
+              <span className="rounded-7 border border-accent bg-selected px-10px py-5px text-13 leading-control font-semibold">
+                All pages
+              </span>
+            )
           }
           state={
             recentFailure
@@ -184,7 +260,13 @@ export function HomeScreen({ topBar }: { topBar: TopBarProps }) {
               : !rows
                 ? { type: 'loading' }
                 : !rows.length
-                  ? { type: 'empty', message: 'No recent changes yet.' }
+                  ? {
+                      type: 'empty',
+                      message:
+                        scope === 'mine'
+                          ? 'No recent changes on the pages you follow.'
+                          : 'No recent changes yet.',
+                    }
                   : undefined
           }
         >

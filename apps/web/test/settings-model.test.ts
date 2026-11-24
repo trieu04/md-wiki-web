@@ -44,6 +44,7 @@ describe('settings tabs and access', () => {
     ]);
     expect(SETTINGS_TABS.filter((tab) => tab.implemented).map(({ id }) => id)).toEqual([
       'review',
+      'trust',
       'people',
       'agents',
       'models',

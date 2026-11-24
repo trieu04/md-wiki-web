@@ -35,11 +35,24 @@ export function invalidationsFor(event: Partial<EventDto> | null | undefined): Q
         ['inbox'],
       ];
     case 'page.changed':
+      // Credibility writes and decisions also emit page.changed (system-logic §7.7.13).
       return [
-        ...(event.path ? [queryKeys.page(event.path), queryKeys.history(event.path)] : []),
+        ...(event.path
+          ? [
+              queryKeys.page(event.path),
+              queryKeys.history(event.path),
+              ['why', event.path],
+              ['people', event.path],
+            ]
+          : []),
         ['wiki.tree'],
         ['wiki.recent'],
         ['search'],
+        ['credibility'],
+        ['me.notices'],
+        ['me.follows'],
+        ['me.activity'],
+        queryKeys.notifications,
       ];
     case 'discussion.changed':
       return [
