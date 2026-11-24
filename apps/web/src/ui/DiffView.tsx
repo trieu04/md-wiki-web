@@ -68,7 +68,7 @@ export function DiffView({
           if (row.kind === 'same')
             return (
               <li key={index} id={anchor(row)} className="flex">
-                <span className="w-diff-number shrink-0 pr-14px text-right text-placeholder">
+                <span className="w-diff-number shrink-0 pr-14px text-right text-muted">
                   {row.number ?? ''}
                 </span>
                 <span className="w-diff-sign shrink-0" />

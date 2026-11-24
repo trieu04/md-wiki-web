@@ -25,15 +25,26 @@ export function Drawer({
   const heading = useRef<HTMLHeadingElement>(null);
   const opener = useRef<HTMLElement | null>(null);
 
+  // Focus moves to the heading on open and back to the trigger on close (D-39). The restore runs in
+  // the layout phase (after React's own focus restore); a parent that unmounts the drawer instead of
+  // passing open={false} gets the same restore from the unmount cleanup (P10-03, D-252).
+  const restoreFocus = useRef(() => {
+    const target = opener.current;
+    opener.current = null;
+    if (target?.isConnected) target.focus();
+  });
   useLayoutEffect(() => {
     if (open) {
       opener.current = triggerRef.current;
       heading.current?.focus();
-    } else {
-      if (opener.current?.isConnected) opener.current.focus();
-      opener.current = null;
-    }
+    } else restoreFocus.current();
   }, [open, triggerRef]);
+  useLayoutEffect(() => {
+    const restore = restoreFocus.current;
+    return () => {
+      restore();
+    };
+  }, []);
 
   useEffect(() => {
     if (!open) return;

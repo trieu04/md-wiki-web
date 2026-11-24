@@ -58,6 +58,20 @@ export function TopBar({
       ref={headerRef}
       className="flex min-h-topbar w-full flex-wrap items-center gap-x-22px gap-y-8px border-b border-edge bg-surface px-20px py-8px leading-control"
     >
+      {/* P10-03 (D-252): first stop for keyboard users; hidden until focused. */}
+      <a
+        href="#main"
+        className="sr-only rounded-8 bg-surface px-12px py-8px text-14 font-semibold text-accent focus:not-sr-only"
+        onClick={(event) => {
+          const main = event.currentTarget.ownerDocument.querySelector('main');
+          if (!main) return;
+          event.preventDefault();
+          main.setAttribute('tabindex', '-1');
+          main.focus();
+        }}
+      >
+        Skip to content
+      </a>
       <a href="/" className="inline-flex items-center gap-10px text-primary no-underline">
         <span className="inline-flex size-28px items-center justify-center rounded-7 bg-primary text-surface">
           <svg

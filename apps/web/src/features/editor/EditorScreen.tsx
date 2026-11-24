@@ -482,7 +482,7 @@ function Editor({ draft, topBar }: { draft: DraftDto; topBar: TopBarProps }) {
                   <div className="flex font-mono text-13 leading-editor">
                     <div
                       aria-hidden="true"
-                      className="bg-subtle-gutter py-14px pr-10px pl-16px text-right text-placeholder border-r border-divider"
+                      className="bg-subtle-gutter py-14px pr-10px pl-16px text-right text-muted border-r border-divider"
                     >
                       {gutter.map((line) => (
                         <div key={line}>{line}</div>

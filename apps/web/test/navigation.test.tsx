@@ -60,6 +60,8 @@ it('supports the native Tab order, ⌘K focus, search submission and keyboard no
     submitted(new FormData(form).get('q'));
   });
   await user.tab();
+  expect(screen.getByRole('link', { name: 'Skip to content' })).toHaveFocus();
+  await user.tab();
   expect(screen.getByRole('link', { name: 'md-wiki Bioimaging core' })).toHaveFocus();
   await user.tab();
   expect(
@@ -75,6 +77,21 @@ it('supports the native Tab order, ⌘K focus, search submission and keyboard no
   expect(screen.getByRole('button', { name: 'Notifications' })).toHaveFocus();
   await user.keyboard('{Enter}');
   expect(onNotifications).toHaveBeenCalledOnce();
+});
+
+it('skips to the main landmark and focuses it (D-252)', async () => {
+  const user = userEvent.setup();
+  render(
+    <>
+      <TopBar />
+      <main>Body</main>
+    </>,
+  );
+  await user.tab();
+  await user.keyboard('{Enter}');
+  const main = screen.getByRole('main');
+  expect(main).toHaveFocus();
+  expect(main).toHaveAttribute('tabindex', '-1');
 });
 
 it.each([

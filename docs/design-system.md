@@ -59,7 +59,7 @@ A task cites a node as `F-03 Page › <element>` (heading text or `aria-label` f
 | `trust.reviewed` | `#7A5A00` | icon stroke/fill |
 | `trust.reviewed.bar` | `#B07C00` | spread bar segment |
 | `trust.reviewed.bg / fg` | `#FFF4DB` / `#5C4300` | callouts |
-| `trust.none` | `#6B7280` | icon stroke |
+| `trust.none` | `#636A77` (frames `#6B7280`; darkened in P10-03, D-252: 4.31:1 on `selected`, 4.47:1 on `subtle-section`) | icon stroke, “Not reviewed” words |
 | `trust.none.bar` | `#C5C9D1` | spread bar segment |
 | `trust.recheck` | `#C25A0A` | icon fill, notification dot |
 | `trust.recheck.bg / fg / border` | `#FDF1E7` / `#8A3D05`, `#5E2A03` / `#F0C9A6` | "Use with care" notes |
@@ -181,7 +181,7 @@ Each component lives in `apps/web/src/ui/<Name>.tsx`, takes only presentational 
 | `Mono` | JetBrains Mono inline text | F-07, F-10, F-13, F-14 |
 | `Mark` | search highlight | F-02 |
 | `Drawer` | right drawer `role="dialog"` with tabs and close — [D-37] opens/closes instantly, no animation; [D-39] non-modal side panel as drawn (`aria-modal="false"`, no scrim, page stays interactive, **no focus trap**): on open focus moves to the drawer heading/first control, Esc and the close button close it, focus returns to the trigger | F-04 |
-| `DiffView` | line diff with flagged phrase, inline; F-10 adds unchanged context rows (`text.placeholder` numbers), collapsed "N unchanged lines" rows (`bg.canvas`) and a 12px heading | F-06 Changes, F-10 Changes (CodeMirror merge) |
+| `DiffView` | line diff with flagged phrase, inline; F-10 adds unchanged context rows (`text.muted` numbers; frames `text.placeholder` = 3.1:1, D-252), collapsed "N unchanged lines" rows (`bg.canvas`) and a 12px heading | F-06 Changes, F-10 Changes (CodeMirror merge) |
 | `MarkdownToolbar` | B, I, H, [ ], ¹, ⊞ buttons with aria-labels | F-06 |
 | `PublishProgress` | phase steps: ✓ done, current "…" 600, later `trust.none` (`ui/PublishProgress.tsx`) | F-10 scenario publishing/blocked |
 | `StatusDot` | 8px dot + words; tones pending (`trust.reviewed.bar`), escalated (`trust.recheck`), error, publishing (`accent`), published (`trust.checked`), closed (`text.placeholder`) | F-07, F-09, F-10, F-13 |

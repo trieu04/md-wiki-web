@@ -136,6 +136,46 @@ it('moves focus in on open, allows Tab to leave, and restores opener focus on Es
   expect(trigger).toHaveFocus();
 });
 
+it('restores opener focus when the parent unmounts the drawer (D-252)', async () => {
+  function Unmounting() {
+    const [open, setOpen] = useState(false);
+    const trigger = useRef<HTMLButtonElement>(null);
+    return (
+      <>
+        <button
+          type="button"
+          ref={trigger}
+          onClick={() => {
+            setOpen(true);
+          }}
+        >
+          Open
+        </button>
+        {open && (
+          <Drawer
+            title="Details"
+            open
+            triggerRef={trigger}
+            onClose={() => {
+              setOpen(false);
+            }}
+          >
+            <button type="button">Panel action</button>
+          </Drawer>
+        )}
+      </>
+    );
+  }
+  const user = userEvent.setup();
+  render(<Unmounting />);
+  const trigger = screen.getByRole('button', { name: 'Open' });
+  await user.click(trigger);
+  expect(within(screen.getByRole('dialog')).getByRole('heading')).toHaveFocus();
+  await user.keyboard('{Escape}');
+  expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  expect(trigger).toHaveFocus();
+});
+
 it('has no axe violations in the new gallery sections or undrawn states', async () => {
   const { container } = render(
     <main>

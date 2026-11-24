@@ -43,7 +43,7 @@ exports[`lists the design-system §2 tokens and the exact frame additions in §2
   "--color-trust-error-bg": "#fcedec",
   "--color-trust-error-border": "#f0c2bf",
   "--color-trust-error-fg": "#7d1b16",
-  "--color-trust-none": "#6b7280",
+  "--color-trust-none": "#636a77",
   "--color-trust-none-bar": "#c5c9d1",
   "--color-trust-recheck": "#c25a0a",
   "--color-trust-recheck-bg": "#fdf1e7",
