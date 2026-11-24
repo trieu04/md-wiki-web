@@ -11,7 +11,7 @@
     "build": "turbo run build",
     "lint": "eslint eslint.config.js && turbo run lint",
     "typecheck": "turbo run typecheck",
-    "test": "turbo run test && node --test tools/design-ref/*.test.mjs tools/visual/*.test.mjs",
+    "test": "turbo run test && node --test tools/design-ref/*.test.mjs tools/visual/*.test.mjs tools/backup/*.test.mjs",
     "format": "prettier --write .",
     "check": "pnpm lint && pnpm typecheck && pnpm test",
     "contracts:gen": "node packages/contracts/scripts/contracts.mjs gen",

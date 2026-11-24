@@ -23,7 +23,7 @@ DOCKER_ENV = env -u DOCKER_HOST DOCKER_CONTEXT=default
 endif
 COMPOSE = $(DOCKER_ENV) docker compose -f "$(CURDIR)/infra/docker-compose.yml"
 
-.PHONY: up down ps dev check test tunnel tunnel-down docker-config
+.PHONY: up down ps dev check test tunnel tunnel-down docker-config backup restore rehearse-backup
 
 docker-config:
 	@mkdir -p "$(LOCAL_DOCKER_CONFIG)/bin"
@@ -78,3 +78,17 @@ test:
 	pnpm test
 	cd services/worker && uv run --with pytest pytest -q ../../tools/tests
 	cd services/worker && uv run pytest
+
+# Backup and restore (P10-01, docs/operations.md). pg_dump/psql run inside the Postgres container.
+PG_EXEC = $(COMPOSE) exec -T postgres
+BACKUP_DIR ?= backups/$(shell date -u +%Y%m%dT%H%M%SZ)
+
+backup: docker-config
+	MW_PG_EXEC='$(PG_EXEC)' node tools/backup/backup.mjs "$(BACKUP_DIR)"
+
+restore: docker-config
+	@test -n "$(FROM)" || (echo "usage: make restore FROM=backups/<stamp>"; exit 2)
+	MW_PG_EXEC='$(PG_EXEC)' node tools/backup/restore.mjs "$(FROM)"
+
+rehearse-backup: docker-config
+	MW_PG_EXEC='$(PG_EXEC)' node tools/backup/rehearse.mjs
