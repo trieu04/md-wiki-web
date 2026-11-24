@@ -156,6 +156,8 @@ async function main() {
         WIKI_ROOT: wikiDir,
         WIKI_NAME: 'E2E wiki',
         NODE_ENV: 'production',
+        // Production refuses the .env.example service token (D-251); the worker is not started here.
+        SERVICE_TOKEN: randomBytes(24).toString('hex'),
         AUTO_PUBLISH: 'true',
       },
     });

@@ -52,6 +52,8 @@ async function startApi(settings, databaseUrl, wikiRoot, owner) {
       OWNER_PASSWORD: owner.password,
       WIKI_ROOT: wikiRoot,
       NODE_ENV: 'production',
+      // Production refuses the .env.example service token (D-251); the worker is not started here.
+      SERVICE_TOKEN: randomBytes(24).toString('hex'),
       REVIEWER_AGENT_TOKEN: '',
     },
   });

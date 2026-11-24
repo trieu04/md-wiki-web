@@ -5,6 +5,9 @@ import { configureHttp } from '../src/config/http.js';
 
 it('does not mount either public ping endpoint in production', async () => {
   vi.stubEnv('NODE_ENV', 'production');
+  // Production refuses the .env.example secrets (D-251).
+  vi.stubEnv('SERVICE_TOKEN', 'x'.repeat(40));
+  vi.stubEnv('OWNER_PASSWORD', 'a-real-owner-password');
   try {
     const { AppModule } = await import('../src/app.module.js');
     const app = await NestFactory.create(AppModule);

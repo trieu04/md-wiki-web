@@ -143,3 +143,41 @@ it('rejects unknown properties and invalid nested DTO values with field errors',
   });
   expect((await post({ item: { name: 'valid' } })).status).toBe(201);
 });
+
+it('sends security headers, hides the framework and never caches by default (D-251)', async () => {
+  const response = await fetch(`${url}/health`);
+  expect(response.headers.get('x-powered-by')).toBeNull();
+  expect(
+    Object.fromEntries(
+      [
+        'x-content-type-options',
+        'x-frame-options',
+        'referrer-policy',
+        'cross-origin-resource-policy',
+        'content-security-policy',
+        'cache-control',
+      ].map((name) => [name, response.headers.get(name)]),
+    ),
+  ).toEqual({
+    'x-content-type-options': 'nosniff',
+    'x-frame-options': 'DENY',
+    'referrer-policy': 'no-referrer',
+    'cross-origin-resource-policy': 'same-origin',
+    'content-security-policy': "default-src 'none'; frame-ancestors 'none'",
+    'cache-control': 'no-store',
+  });
+  // Errors carry them too.
+  expect((await fetch(`${url}/test/conflict`)).headers.get('x-content-type-options')).toBe(
+    'nosniff',
+  );
+});
+
+it('keeps a plain caller request id and replaces anything else', async () => {
+  const id = (value: string) =>
+    fetch(`${url}/health`, { headers: { 'X-Request-Id': value } }).then((r) =>
+      r.headers.get('x-request-id'),
+    );
+  expect(await id('trace-01.a:b_c')).toBe('trace-01.a:b_c');
+  for (const bad of ['has space', 'a'.repeat(129), '{"level":60}'])
+    expect(await id(bad)).toMatch(/^[0-9a-f-]{36}$/);
+});

@@ -1,7 +1,7 @@
 import { parseEnv } from 'node:util';
 import { readFileSync } from 'node:fs';
 import { expect, it } from 'vitest';
-import { parseConfig } from '../src/config/env.js';
+import { parseConfig, weakSecrets } from '../src/config/env.js';
 
 const example = parseEnv(readFileSync(new URL('../../../.env.example', import.meta.url), 'utf8'));
 
@@ -31,7 +31,9 @@ it('defaults the credibility settings (system-logic §7.7.7, §7.7.9)', () => {
   });
   expect(config.MAIL_TRANSPORT).toBe('log');
   expect(config.CREDIBILITY_RETENTION_DAYS).toBe(90);
-  expect(parseConfig({ ...example, CREDIBILITY_RETENTION_DAYS: '30' }).CREDIBILITY_RETENTION_DAYS).toBe(30);
+  expect(
+    parseConfig({ ...example, CREDIBILITY_RETENTION_DAYS: '30' }).CREDIBILITY_RETENTION_DAYS,
+  ).toBe(30);
   expect(() => parseConfig({ ...example, CREDIBILITY_RETENTION_DAYS: '0' })).toThrow(
     'CREDIBILITY_RETENTION_DAYS',
   );
@@ -76,4 +78,26 @@ it('defaults the quality rules file to rules/quality.md and keeps model settings
   expect(parsed.QUALITY_RULES_PATH.endsWith('/rules/quality.md')).toBe(true);
   expect(parsed.AI_DEFAULT__MODEL).toBeUndefined();
   expect(parseConfig({ ...example, AI_DEFAULT__MODEL: 'm' }).AI_DEFAULT__MODEL).toBe('m');
+});
+
+it('refuses the example secrets and short service tokens in production only (D-251)', () => {
+  const strong = { SERVICE_TOKEN: 'k'.repeat(32), OWNER_PASSWORD: 'correct horse' };
+  expect(weakSecrets(strong)).toEqual([]);
+  expect(weakSecrets({ ...strong, SERVICE_TOKEN: 'k'.repeat(31) })).toEqual(['SERVICE_TOKEN']);
+  expect(
+    weakSecrets({
+      SERVICE_TOKEN: example.SERVICE_TOKEN ?? '',
+      OWNER_PASSWORD: example.OWNER_PASSWORD ?? '',
+    }),
+  ).toEqual(['SERVICE_TOKEN', 'OWNER_PASSWORD']);
+  expect(() => parseConfig({ ...example, NODE_ENV: 'production' })).toThrow(
+    'SERVICE_TOKEN, OWNER_PASSWORD',
+  );
+  expect(() => parseConfig({ ...example, NODE_ENV: 'production' })).not.toThrow(/replace-with/);
+  expect(parseConfig({ ...example, NODE_ENV: 'production', ...strong }).SERVICE_TOKEN).toBe(
+    'k'.repeat(32),
+  );
+  expect(parseConfig({ ...example, NODE_ENV: 'development' }).SERVICE_TOKEN).toBe(
+    example.SERVICE_TOKEN,
+  );
 });

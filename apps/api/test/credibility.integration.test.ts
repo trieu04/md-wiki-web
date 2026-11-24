@@ -83,7 +83,11 @@ async function user(address: string, roles: string[]) {
 }
 const enc = encodeURIComponent;
 async function page(path: string) {
-  return body<PageDto>(await as(owner).get(`/wiki/pages/${enc(path)}`).expect(200));
+  return body<PageDto>(
+    await as(owner)
+      .get(`/wiki/pages/${enc(path)}`)
+      .expect(200),
+  );
 }
 async function section(path: string, anchor: string) {
   const s = (await page(path)).sections.find((x) => x.anchor === anchor);
@@ -93,7 +97,9 @@ async function section(path: string, anchor: string) {
 /** The contributor proposes `content`; the owner approves and publishes it. */
 async function publish(path: string, content: string) {
   const ctx = body<{ versionLabel: string; sha256: string }>(
-    await as(contributor).get(`/context?path=${enc(path)}`).expect(200),
+    await as(contributor)
+      .get(`/context?path=${enc(path)}`)
+      .expect(200),
   );
   const res = await as(contributor).post('/contributions', {
     targetPath: path,
@@ -117,8 +123,10 @@ async function publish(path: string, content: string) {
 }
 
 const PATH = 'imaging/lens.md';
-const V1 = '# Lens\n\nIntro.\n\n## Detectors\n\nPMT gain may vary [1](https://doi.org/10.1101/abc).\n\n## Other\n\nX.\n';
-const V2 = '# Lens\n\nIntro.\n\n## Detectors\n\nPMT gain may vary [1](https://doi.org/10.1101/abc), fixed.\n\n## Other\n\nX.\n';
+const V1 =
+  '# Lens\n\nIntro.\n\n## Detectors\n\nPMT gain may vary [1](https://doi.org/10.1101/abc).\n\n## Other\n\nX.\n';
+const V2 =
+  '# Lens\n\nIntro.\n\n## Detectors\n\nPMT gain may vary [1](https://doi.org/10.1101/abc), fixed.\n\n## Other\n\nX.\n';
 
 beforeAll(async () => {
   database.migrate();
@@ -150,7 +158,12 @@ beforeAll(async () => {
   reviewer = await user('cred-reviewer@example.org', ['reviewer']);
   contributor = await user('cred-contrib@example.org', ['contributor']);
   for (const n of [1, 2, 3]) readers.push(await user(`reader${String(n)}@example.org`, ['reader']));
-  await storage.write(wikiPath(PATH), Buffer.from(V1.replace('may vary', 'varies')), { kind: 'create' }, {});
+  await storage.write(
+    wikiPath(PATH),
+    Buffer.from(V1.replace('may vary', 'varies')),
+    { kind: 'create' },
+    {},
+  );
   await app.get(WikiIndexer).observe(wikiPath(PATH));
   await publish(PATH, V1);
 }, 60_000);
@@ -182,7 +195,11 @@ describe('labels follow evidence, never votes (E8a)', () => {
       expect(body<AttestationResultDto>(res).label.label).toBe('reviewed');
     }
     await as(readers[0] ?? owner)
-      .post('/page-feedback', { path: PATH, versionLabel: (await page(PATH)).versionLabel, answer: 'yes' })
+      .post('/page-feedback', {
+        path: PATH,
+        versionLabel: (await page(PATH)).versionLabel,
+        answer: 'yes',
+      })
       .expect(201);
     expect((await section(PATH, 'detectors')).label.label).toBe('reviewed');
     // The same kind twice by the same person on the same hash is a duplicate.
@@ -212,11 +229,15 @@ describe('labels follow evidence, never votes (E8a)', () => {
   it('hides counts until the reader acted or asked to reveal', async () => {
     const fresh = await user('reader-fresh@example.org', ['reader']);
     const hidden = body<PeopleDto>(
-      await as(fresh).get(`/sections/${enc(PATH)}/detectors/people`).expect(200),
+      await as(fresh)
+        .get(`/sections/${enc(PATH)}/detectors/people`)
+        .expect(200),
     );
     expect(hidden).toMatchObject({ hidden: true, useful: null });
     const shown = body<PeopleDto>(
-      await as(fresh).get(`/sections/${enc(PATH)}/detectors/people?reveal=true`).expect(200),
+      await as(fresh)
+        .get(`/sections/${enc(PATH)}/detectors/people?reveal=true`)
+        .expect(200),
     );
     expect(shown.hidden).toBe(false);
     expect(shown.useful).toBe(3);
@@ -235,7 +256,9 @@ describe('evidence writes (§7.7.3)', () => {
         result: 'supported',
       })
       .expect(409)
-      .expect((res) => { expect(res.body).toMatchObject({ code: 'SECTION_CHANGED' }); });
+      .expect((res) => {
+        expect(res.body).toMatchObject({ code: 'SECTION_CHANGED' });
+      });
     const res = await as(reviewer).post('/source-checks', {
       path: PATH,
       anchor: 'detectors',
@@ -247,7 +270,9 @@ describe('evidence writes (§7.7.3)', () => {
     expect(res.status, JSON.stringify(res.body)).toBe(201);
     expect(body<SourceCheckResultDto>(res).label.label).toBe('checked');
     const why = body<WhyDto>(
-      await as(readers[1] ?? owner).get(`/sections/${enc(PATH)}/detectors/why`).expect(200),
+      await as(readers[1] ?? owner)
+        .get(`/sections/${enc(PATH)}/detectors/why`)
+        .expect(200),
     );
     expect(why.label.label).toBe('checked');
     expect(why.evidence.some((e) => e.kind === 'source_check' && e.contributes)).toBe(true);
@@ -290,7 +315,9 @@ describe('reports, the queue and fixes (§7.7.6, §7.7.8)', () => {
     expect(result.attestation.topicId).toBeTruthy();
     expect(result.following).toBe(true);
     // The page author is the human whose proposal was published (no owners.md).
-    const notes = body<NotificationListDto>(await as(contributor).get('/notifications').expect(200));
+    const notes = body<NotificationListDto>(
+      await as(contributor).get('/notifications').expect(200),
+    );
     expect(notes.items.some((n) => n.event === 'report_received')).toBe(true);
     const queue = body<CredibilityQueueDto>(
       await as(owner).get('/credibility/queue?type=report').expect(200),
@@ -316,7 +343,12 @@ describe('reports, the queue and fixes (§7.7.6, §7.7.8)', () => {
 
   it('confirming puts the section under re-check in the same request', async () => {
     await as(readers[0] ?? owner)
-      .post('/credibility/decisions', { type: 'report', id: reportId, outcome: 'confirm', reason: 'x' })
+      .post('/credibility/decisions', {
+        type: 'report',
+        id: reportId,
+        outcome: 'confirm',
+        reason: 'x',
+      })
       .expect(403);
     const res = await as(owner).post('/credibility/decisions', {
       type: 'report',
@@ -327,8 +359,15 @@ describe('reports, the queue and fixes (§7.7.6, §7.7.8)', () => {
     expect(res.status, JSON.stringify(res.body)).toBe(200);
     expect((await section(PATH, 'detectors')).label.label).toBe('recheck');
     await as(owner)
-      .post('/credibility/decisions', { type: 'report', id: reportId, outcome: 'dismiss', reason: 'x' })
-      .expect((r) => { expect([404, 409]).toContain(r.status); });
+      .post('/credibility/decisions', {
+        type: 'report',
+        id: reportId,
+        outcome: 'dismiss',
+        reason: 'x',
+      })
+      .expect((r) => {
+        expect([404, 409]).toContain(r.status);
+      });
   });
 
   it('a published fix resets evidence and tells the reporter it was fixed', async () => {
@@ -338,7 +377,11 @@ describe('reports, the queue and fixes (§7.7.6, §7.7.8)', () => {
     expect(after.hash).not.toBe(before.hash);
     // Hash change resets evidence: the old source check no longer counts.
     expect(after.label.label).toBe('reviewed');
-    const notes = body<NotificationListDto>(await as(readers[2] ?? owner).get('/notifications').expect(200));
+    const notes = body<NotificationListDto>(
+      await as(readers[2] ?? owner)
+        .get('/notifications')
+        .expect(200),
+    );
     expect(notes.items.some((n) => n.event === 'report_outcome')).toBe(true);
     const events = await db.attestationEvent.findMany({ where: { attestationId: reportId } });
     expect(events.map((e) => e.status)).toContain('fixed');
@@ -372,7 +415,9 @@ describe('confirmed errors from spot checks (D-214)', () => {
 
 describe('gates and maintenance (§7.7.7, §7.7.10)', () => {
   it('enabling a gate needs a run record and a past date; readers cannot', async () => {
-    await as(readers[0] ?? owner).get('/admin/credibility-gates').expect(403);
+    await as(readers[0] ?? owner)
+      .get('/admin/credibility-gates')
+      .expect(403);
     await as(owner).put('/admin/credibility-gates/nope', { enabled: true }).expect(404);
     await as(owner).put('/admin/credibility-gates/label_threshold', { enabled: true }).expect(400);
     await as(owner)
@@ -389,7 +434,9 @@ describe('gates and maintenance (§7.7.7, §7.7.10)', () => {
         runDate: '2026-01-10',
       })
       .expect(200);
-    const gates = body<CredibilityGatesDto>(await as(owner).get('/admin/credibility-gates').expect(200));
+    const gates = body<CredibilityGatesDto>(
+      await as(owner).get('/admin/credibility-gates').expect(200),
+    );
     expect(gates.items.find((g) => g.capability === 'label_threshold')).toMatchObject({
       enabled: true,
       experiment: 'E8d',
@@ -404,5 +451,77 @@ describe('gates and maintenance (§7.7.7, §7.7.10)', () => {
     );
     expect(res.purged).toEqual({ attestations: 0, feedback: 0 });
     expect(typeof res.pairs).toBe('number');
+  });
+});
+
+describe('security pass (P10-02): who may write evidence, report limits, retention', () => {
+  it('refuses attestations and reports from API-token callers, even for a person', async () => {
+    const fresh = await user('reader-token@example.org', ['reader']);
+    const me = body<{ user: { id: string } }>(await as(fresh).get('/auth/session').expect(200));
+    const created = await as(owner)
+      .post('/admin/tokens', { userId: me.user.id, name: 'script', scopes: ['read', 'discuss'] })
+      .expect(201);
+    const bearer = `Bearer ${body<{ token: string }>(created).token}`;
+    const s = await section(PATH, 'other');
+    for (const [url, data] of [
+      ['/attestations', { kind: 'useful', sawCounts: false }],
+      ['/reports', { kind: 'wrong', quote: 'X', evidence: 'e', blocking: false, sawCounts: false }],
+    ] as const) {
+      const res = await http()
+        .post(`/api/v1${url}`)
+        .set('Authorization', bearer)
+        .send({ path: PATH, anchor: 'other', sectionHash: s.hash, ...data });
+      expect(res.status, url).toBe(403);
+      expect(res.body).toMatchObject({ code: 'FORBIDDEN' });
+    }
+  });
+
+  it('limits reports to 5 per person per page per 7 days with Retry-After', async () => {
+    const fresh = await user('reader-reports@example.org', ['reader']);
+    const s = await section(PATH, 'other');
+    const report = () =>
+      as(fresh).post('/reports', {
+        path: PATH,
+        anchor: 'other',
+        sectionHash: s.hash,
+        kind: 'unclear',
+        quote: 'X.',
+        evidence: 'Too short to follow.',
+        blocking: false,
+        sawCounts: false,
+      });
+    for (let n = 0; n < 5; n += 1) expect((await report()).status).toBe(201);
+    const limited = await report();
+    expect(limited.status).toBe(429);
+    expect(limited.body).toMatchObject({ code: 'RATE_LIMITED' });
+    expect(Number(limited.header['retry-after'])).toBeGreaterThan(6 * 24 * 3600);
+  });
+
+  it('retention folds old feedback into counts and deletes the raw rows', async () => {
+    const me = body<{ user: { id: string } }>(
+      await as(readers[1] ?? owner)
+        .get('/auth/session')
+        .expect(200),
+    );
+    const old = await db.pageFeedback.create({
+      data: {
+        path: PATH,
+        versionLabel: 'old-version',
+        actorId: me.user.id,
+        answer: 'no',
+        createdAt: new Date(
+          Date.now() - (config.CREDIBILITY_RETENTION_DAYS + 5) * 24 * 3600 * 1000,
+        ),
+      },
+    });
+    const res = body<MaintenanceDto>(
+      await as(owner).post('/admin/credibility/maintenance').expect(200),
+    );
+    expect(res.purged.feedback).toBe(1);
+    expect(await db.pageFeedback.findUnique({ where: { id: old.id } })).toBeNull();
+    const folded = await db.credibilityAggregate.findMany({
+      where: { path: PATH, versionLabel: 'old-version', metric: 'feedback_no' },
+    });
+    expect(folded.map((row) => row.count)).toEqual([1]);
   });
 });

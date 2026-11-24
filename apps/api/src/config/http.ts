@@ -21,11 +21,27 @@ function serviceAuth(token: string): RequestHandler {
   };
 }
 
+/**
+ * Response headers for every API response (P10-02, D-251). JSON only, never framed, never cached
+ * unless a handler says otherwise (ETag'd drafts set their own validators; no-store still applies).
+ */
+export const securityHeaders: RequestHandler = (_req, res, next) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'DENY');
+  res.setHeader('Referrer-Policy', 'no-referrer');
+  res.setHeader('Cross-Origin-Resource-Policy', 'same-origin');
+  res.setHeader('Content-Security-Policy', "default-src 'none'; frame-ancestors 'none'");
+  if (!res.getHeader('Cache-Control')) res.setHeader('Cache-Control', 'no-store');
+  next();
+};
+
 export function configureHttp(
   app: INestApplication,
   listener: { public: true } | { serviceToken: string },
 ): void {
+  (app as NestExpressApplication).disable('x-powered-by');
   app.use(requestIdMiddleware);
+  app.use(securityHeaders);
   if ('serviceToken' in listener) {
     app.use(serviceAuth(listener.serviceToken));
     app.setGlobalPrefix('internal/v1');

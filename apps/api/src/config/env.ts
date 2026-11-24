@@ -65,6 +65,15 @@ const schema = z.object({
 export type ApiConfig = z.infer<typeof schema>;
 export const API_CONFIG = Symbol('API_CONFIG');
 
+/** Example values from .env.example and short service tokens are refused in production (D-251). */
+export function weakSecrets(config: Pick<ApiConfig, 'SERVICE_TOKEN' | 'OWNER_PASSWORD'>): string[] {
+  const weak: string[] = [];
+  if (config.SERVICE_TOKEN.length < 32 || config.SERVICE_TOKEN.startsWith('replace-with'))
+    weak.push('SERVICE_TOKEN');
+  if (config.OWNER_PASSWORD.startsWith('replace-with')) weak.push('OWNER_PASSWORD');
+  return weak;
+}
+
 export function parseConfig(env: NodeJS.ProcessEnv): ApiConfig {
   const result = schema.safeParse(env);
   if (!result.success) {
@@ -73,6 +82,11 @@ export function parseConfig(env: NodeJS.ProcessEnv): ApiConfig {
       `Missing or invalid API configuration: ${result.error.issues.map((issue) => issue.path.join('.')).join(', ')}`,
     );
   }
+  const weak = env.NODE_ENV === 'production' ? weakSecrets(result.data) : [];
+  if (weak.length)
+    throw new Error(
+      `Refusing example or short secrets in production: ${weak.join(', ')} (SERVICE_TOKEN needs 32+ random characters)`,
+    );
   return result.data;
 }
 

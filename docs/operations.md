@@ -2,6 +2,14 @@
 
 How to run, back up and restore md-wiki. Contracts and rules: `system-logic.md`. Architecture: `architecture.md`.
 
+## Production checklist
+
+- `NODE_ENV=production`. The API then refuses example secrets: `SERVICE_TOKEN` needs 32+ random characters (`openssl rand -hex 32`), shared with the worker; `OWNER_PASSWORD` must not be the example value (docs/security.md).
+- `INTERNAL_HOST` stays on loopback or the private compose network; never publish `INTERNAL_PORT`.
+- Serve `apps/web/dist` and proxy `/api/v1` (and `/mcp` for agents) to `API_PORT` from one origin over TLS. The web server sends the headers in `apps/web/vite.config.ts` (`webSecurityHeaders`: CSP, `nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy`) plus `Strict-Transport-Security`, and answers unknown paths with `index.html`.
+- Disable response buffering for `/api/v1/events` (server-sent events).
+- Schedule `make backup` and copy the folder off the host.
+
 ## Backup and restore
 
 A backup is a folder with three files:
