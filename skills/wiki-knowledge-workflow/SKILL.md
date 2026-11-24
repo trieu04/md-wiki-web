@@ -37,6 +37,14 @@ Authors and reviewers both follow [references/quality.md](references/quality.md)
 - Send back exactly what you read (version labels, hashes, preview binding, discussion versions). After `STALE_BASE`, `SOURCE_CHANGED` or `DISCUSSION_CHANGED`, reread and reassess; never guess a newer value.
 - Never write the wiki directly. Publication happens only through review.
 
+## Credibility labels
+
+Every section of a page carries one label, derived from evidence for its current hash: *Checked against source* (a person compared it with its source), *Reviewed* (a reviewer approved the change), *Not reviewed*, *Under re-check* (a confirmed report or a retracted source) and *Confirmed error*. `wiki_read` and `GET /wiki/pages/{path}` return it per section (`sections[].label`); `GET /sections/{path}/{anchor}/why` explains it.
+
+- Treat *Under re-check* and *Confirmed error* sections as unreliable: say so when you use them, and prefer proposing a fix.
+- Agents never record attestations, reports or page feedback (people only). If you find a problem, open a topic on the section (`topic_open` with the anchor) or submit a proposal that fixes it.
+- With the `review` scope, record a source check only after comparing the exact section text with the source (`POST /source-checks`, bound to the section hash you read).
+
 ## Versions
 
 `YYYYMMDD-N` is the UTC day new content was observed plus a sequence per page per day. It is not an effective or publication date. A pinned version (label + sha256) is what a proposal is bound to; `current` on a reference means the pinned bytes still match the page, not that the knowledge is correct.

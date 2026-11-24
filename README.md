@@ -11,11 +11,25 @@ The UI is wiki first: employees mostly come to read, so home, search and pages s
 | `services/worker` | Python | AI work: quality check, reviewer agent, retraction check, copy/relation candidates, shadow credibility score |
 | Storage | Local folder adapter | Markdown files on disk |
 
-**Status:** planning. No code yet.
+**Status:** phases 0–10 implemented (docs/progress.md); ready for the pilot.
 
-- [Architecture](docs/architecture.md)
-- [UI/UX design](docs/ux.md)
-- [Plan](docs/plan.md)
+- [Architecture](docs/architecture.md) · [UI/UX design](docs/ux.md) · [Plan](docs/plan.md)
+- [System logic](docs/system-logic.md) (binding contract) · [API overview](docs/api.md) · [Design system](docs/design-system.md)
+- [Operations](docs/operations.md) (run, production checklist, backup/restore) · [Security review](docs/security.md)
+- Agent skill: [skills/wiki-knowledge-workflow](skills/wiki-knowledge-workflow/SKILL.md)
+
+## Commands
+
+| Command | What |
+| --- | --- |
+| `pnpm install` / `pnpm build` | install, build all packages |
+| `make up` / `make down` | dev Postgres + Redis (Docker) |
+| `make dev` | API, web and worker with `.env` (`tools/dev.py`) |
+| `pnpm check` | lint, typecheck, unit and integration tests (needs `make up`) |
+| `cd services/worker && uv run pytest` | worker tests |
+| `pnpm e2e` | Playwright flows against a throwaway stack (below) |
+| `pnpm a11y` | axe WCAG 2.1 AA + keyboard checks on every screen of the fixture build |
+| `make backup` / `make restore FROM=…` / `make rehearse-backup` | backup and restore (docs/operations.md) |
 
 ## End-to-end tests (Playwright)
 

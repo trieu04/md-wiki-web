@@ -2,6 +2,20 @@
 
 How to run, back up and restore md-wiki. Contracts and rules: `system-logic.md`. Architecture: `architecture.md`.
 
+## Run
+
+| Process | Command | Notes |
+| --- | --- | --- |
+| Postgres 17 + Redis 7 | `make up` (`infra/docker-compose.yml`) | ports bound to 127.0.0.1 |
+| Migrations | `cd apps/api && pnpm exec prisma migrate deploy` | before starting a new version |
+| API | `node apps/api/dist/main.js` | public listener `API_HOST:API_PORT`, internal `INTERNAL_HOST:INTERNAL_PORT`; at boot: seed owner and reviewer agent, reindex the wiki folder, publish recovery, re-dispatch queued jobs |
+| Worker | `uv run --directory services/worker -- python -m mdwiki_worker` | needs `REDIS_URL`, `INTERNAL_API_URL`, `SERVICE_TOKEN`, model settings (`.env.example`) |
+| Web | static files from `apps/web/dist` | `/api/v1` and `/mcp` proxied to the API |
+
+`make dev` runs all three from `.env` for development. Configuration is validated at boot; a bad value stops the API and names the key (never the value).
+
+**Health:** `GET /api/v1/health` reports `db`, `redis` and `storage` separately. Workspace › Operations shows blocked publications, background jobs and reviewer-agent metrics; Operations › Audit log shows every change.
+
 ## Production checklist
 
 - `NODE_ENV=production`. The API then refuses example secrets: `SERVICE_TOKEN` needs 32+ random characters (`openssl rand -hex 32`), shared with the worker; `OWNER_PASSWORD` must not be the example value (docs/security.md).
